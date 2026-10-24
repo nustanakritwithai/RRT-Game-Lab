@@ -1149,7 +1149,7 @@ function setupMultiTargets(){
  for(let i=0;i<multi.count;i++)addSimpleTarget(i);
  ui.redStyle.closest('.strategy-grid').style.display='none';
  ui.auto.closest('label').style.display=multi.melee?'':'none';
- ui.activeDefense.checked=!multi.melee; // Threat awareness in melee is driven by multi-visible tracks, not a fictional RED proxy.
+ ui.activeDefense.checked=!multi.melee||multi.enemyMode!=='melee'; // Ranged defenders retain original dynamic relocation; melee retains v0.6.6 predictive policy.
  renderMultiTargetRows();
 }
 function findSimpleSpawn(exclude=[]){
