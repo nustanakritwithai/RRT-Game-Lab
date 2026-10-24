@@ -1162,12 +1162,26 @@ function findSimpleSpawn(exclude=[]){
 }
 function addSimpleTarget(index){const p=findSimpleSpawn(multi.targets),kind=multi.melee?'hunt':['patrol','wander','flee','stay','approach'][index%5];
  const t={id:'T'+String(index+1).padStart(2,'0'),team:'neutral',x:p.x,y:p.y,start:copy(p),hp:42,maxHp:42,active:true,respawnAt:0,kind,wp:null,patrolIndex:0,timer:0,speed:(multi.melee?meleeCore.statsFor(multi.difficulty).speed*(.92+(index%3)*.06):(.16+(index%3)*.023))*S,nextAttackAt:rand(.35,1.7),lastKnownBlue:null,lastSeenBlue:-100,hitFlash:0};
+ // Keep the original BLUE and target registry; substitute a basic ranged FSM only for eligible targets.
+ const ranged=multi.melee&&(multi.enemyMode==='ranged'||multi.enemyMode==='mixed'&&index%3===0);
+ if(ranged){
+  const slot=multi.enemyMode==='ranged'?index:Math.floor(index/3);
+  const role=rangedCore.ROLES[slot%rangedCore.ROLES.length];
+  const patrolPoint={x:clamp(p.x+S*.18,R*2,W-R*2),y:p.y};
+  const waypoint=freePoint(patrolPoint,R+1)?patrolPoint:copy(p);
+  Object.assign(t,rangedCore.createRangedBot({id:t.id,x:p.x,y:p.y,role,difficulty:multi.difficulty,
+   waypoints:[copy(p),waypoint],heading:0,readyAt:rand(.2,.9)}));
+  t.kind=role;t.respawnAt=Infinity;t.start=copy(p);t.hitFlash=0;
+ }
  multi.targets.push(t);
  const brain=mem.createMemory();brain.danger=multi.sharedBrain.danger;brain.encounters=multi.sharedBrain.encounters;
  multi.brains[t.id]=brain;
  return t;
 }
-function setSimpleCommand(id,kind){const t=multi.targets.find(x=>x.id===id);if(!t||!multiModes[kind])return false;t.kind=kind;t.wp=null;t.timer=0;t.patrolIndex=0;renderMultiTargetRows();return true;}
+function setSimpleCommand(id,kind){const t=multi.targets.find(x=>x.id===id);if(!t)return false;
+ if(t.team==='ranged'){if(!rangedModes[kind])return false;t.role=kind;t.kind=kind;t.track=null;t.waypointIndex=0;}
+ else{if(!multiModes[kind])return false;t.kind=kind;t.wp=null;t.timer=0;t.patrolIndex=0;}
+ renderMultiTargetRows();return true;}
 function renderMultiTargetRows(){
  multiUI.list.replaceChildren();multiUI.count.textContent=multi.targets.length+' ตัว';if([4,8,12,16,24].includes(multi.targets.length))multiUI.preset.value=String(multi.targets.length);
  for(const t of multi.targets){
@@ -1178,7 +1192,7 @@ function renderMultiTargetRows(){
   const lock=document.createElement('button');lock.type='button';lock.title='ล็อกติดตาม '+t.id;lock.setAttribute('aria-label','ล็อกติดตาม '+t.id);lock.textContent='🎯';lock.style.cssText='border:0;background:transparent;color:#ffe09a;cursor:pointer;padding:0 4px;font-size:14px';lock.addEventListener('click',e=>{e.stopPropagation();multiManualSelect(t.id);});
   top.append(name,status,lock);
   const select=document.createElement('select');select.setAttribute('aria-label','คำสั่งของบอต '+t.id);
-  for(const [key,label] of Object.entries(multiModes)){const option=document.createElement('option');option.value=key;option.textContent=label;select.append(option);}
+  for(const [key,label] of Object.entries(t.team==='ranged'?rangedModes:multiModes)){const option=document.createElement('option');option.value=key;option.textContent=label;select.append(option);}
   select.value=t.kind;
   select.addEventListener('change',()=>setSimpleCommand(t.id,select.value));
   box.addEventListener('click',ev=>{if(ev.target===select)return;multiManualSelect(t.id);});
@@ -1204,6 +1218,7 @@ function simpleMove(t,point,dt){
 }
 function stepSimpleTargets(dt){
  for(const t of multi.targets){
+  if(t.team==='ranged')continue;
   if(!t.active){if(!multi.melee&&elapsed>=t.respawnAt){const p=findSimpleSpawn(multi.targets);Object.assign(t,{x:p.x,y:p.y,start:copy(p),hp:t.maxHp,active:true,wp:null});delete multi.tracks[t.id];multi.brains[t.id]=mem.createMemory();multi.brains[t.id].danger=multi.sharedBrain.danger;multi.brains[t.id].encounters=multi.sharedBrain.encounters;log(t.id+' กลับเข้าสนามอีกครั้ง');}continue;}
   if(t.kind==='stay')continue;
   t.hitFlash=Math.max(0,(t.hitFlash||0)-dt);
@@ -1226,6 +1241,60 @@ function stepSimpleTargets(dt){
   }
   simpleMove(t,t.wp,dt);
  }
+}
+// World-only ranged controllers. Enemy sensors inspect BLUE only via bounded LOS.
+function stepRangedTargets(dt){
+ if(!multi.melee||multi.enemyMode==='melee')return;
+ const blue=bots[0];
+ for(const t of multi.targets){
+  if(t.team!=='ranged'||!t.active)continue;
+  t.hitFlash=Math.max(0,(t.hitFlash||0)-dt);
+  const obs=rangedCore.observeBlue(t,blue,elapsed,{range:S*.84,ttl:5,canSee:clearSight});
+  if(obs.status==='visible')t.track={x:obs.x,y:obs.y,lastSeen:obs.lastSeen};
+  if(obs.status==='unknown')t.track=null;
+  const intent=rangedCore.planBasicBot(t,obs,elapsed,{scale:S,radius:R,width:W,height:H});
+  const next=rangedCore.moveBasicBot(t,intent,dt,{
+   scale:S,width:W,height:H,radius:R+1,
+   isFree:p=>freePoint(p,R+1)&&dist(p,blue)>R*1.65&&multi.targets.every(e=>e===t||!e.active||dist(p,e)>R*1.45),
+   pathClear:(a,b)=>!blocked(a,b,R+1)
+  });
+  Object.assign(t,next);
+  const fired=rangedCore.tryFire(t,obs,elapsed,{scale:S,radius:R,canSee:clearSight,rng:Math.random});
+  Object.assign(t,fired.bot);
+  if(fired.shot){
+   fired.shot.px=fired.shot.x;fired.shot.py=fired.shot.y;
+   multi.rangedShots.push(fired.shot);multi.rangedFired++;
+   if(multi.rangedFired<=2)log('🔫 '+t.id+' ยิงไปยัง BLUE','red');
+  }
+ }
+}
+function stepRangedProjectiles(dt){
+ if(!multi.rangedShots.length)return;
+ const blue=bots[0];
+ for(let k=multi.rangedShots.length-1;k>=0;k--){
+  const shot=multi.rangedShots[k];
+  const r=rangedCore.advanceProjectile(shot,dt,{width:W,height:H,walls,
+   targets:[{id:'blue',x:blue.x,y:blue.y,radius:R,active:blue.hp>0}]});
+  if(r.impact?.type==='target'&&blue.hp>0){
+   const damage=r.impact.damage;
+   blue.hp=Math.max(0,blue.hp-damage);blue.hitFlash=.18;blue.lastDamageAt=elapsed;
+   multi.rangedHits++;multi.rangedDamage+=damage;multi.damageTaken+=damage;
+   mem.rememberDanger(blue.brain,{x:blue.x/W,y:blue.y/H},elapsed,Math.min(1,damage/10));
+   burst(r.impact.point.x,r.impact.point.y,'#ffbb76',6,2);
+   if(multi.rangedHits<=3||multi.rangedHits%6===0)log('🔫 BLUE ถูกยิง (-'+damage.toFixed(1)+' HP)','red');
+  }else if(r.impact?.type==='wall')burst(r.impact.point.x,r.impact.point.y,'#ffc880',2,1);
+  if(r.projectile)multi.rangedShots[k]={...r.projectile,px:shot.x,py:shot.y};
+  else multi.rangedShots.splice(k,1);
+ }
+}
+function drawRangedShots(){
+ if(!multiActive()||!multi.rangedShots.length)return;
+ ctx.save();ctx.lineWidth=2.1;ctx.strokeStyle='#ffb878';ctx.lineCap='round';
+ for(const p of multi.rangedShots){
+  ctx.beginPath();ctx.moveTo(p.px??p.x,p.py??p.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+  ctx.fillStyle='#ffdf93';ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
 }
 function senseMultiWorld(){
  if(elapsed-multi.sensorAt<.12)return;multi.sensorAt=elapsed;
@@ -1278,6 +1347,7 @@ function meleeWaveAttacks(){
  const blue=bots[0];if(blue.hp<=0)return;
  let hitsThisStep=0;
  for(const attacker of multi.targets){
+  if(attacker.team==='ranged')continue;
   const hit=meleeCore.strike(attacker,blue,elapsed,{radius:R,canSee:clearSight,difficulty:multi.difficulty});
   if(!hit.hit)continue;
   attacker.nextAttackAt=hit.nextAttackAt;
@@ -1302,7 +1372,8 @@ function finishMultiWave(outcome){
  showNotice(outcome.reason+' — กดรอบต่อไปเพื่อทดสอบซ้ำ');
  showOverlay(won?'🏆':'💥',won?'BLUE ระยะไกลชนะ!':'บอตประชิดชนะ!',outcome.reason,'กำจัด '+multi.eliminated+'/'+multi.targets.length+' · BLUE เหลือ '+Math.ceil(bots[0].hp)+' HP · '+formatTime(elapsed));
 }
-function visibleMeleeTracks(){return Object.fromEntries(Object.entries(multi.tracks).filter(([id,t])=>t.status==='visible'&&multi.targets.some(e=>e.id===id&&e.active)));}
+function meleeOnlyTracks(){return Object.fromEntries(Object.entries(multi.tracks).filter(([id,t])=>multi.targets.some(e=>e.id===id&&e.active&&e.team!=='ranged')));}
+function visibleMeleeTracks(){return Object.fromEntries(Object.entries(meleeOnlyTracks()).filter(([id,t])=>t.status==='visible'));}
 function multiKiteGoal(bot){
  if(!multi.melee||!multi.kiteEnabled)return null;
  const v=visibleMeleeTracks(),threat=meleeCore.assessThreat(bot,v,{scale:S,ammo:bot.ammo});
@@ -1318,9 +1389,9 @@ function multiKiteGoal(bot){
 }
 // V0.6.6 Predictive Anti-Encirclement: forecast from BLUE's own tracks (visible + bounded
 // last-seen memory). Enemy speed is the public difficulty rule, never a hidden live value.
-function predictiveActive(){return multiActive()&&multi.melee&&multi.predictive;}
+function predictiveActive(){return multiActive()&&multi.melee&&multi.predictive&&multi.enemyMode!=='ranged';}
 function swarmForecast(bot){
- const threats=swarmCore.perceive(multi.tracks,elapsed,{memoryHorizon:2.4,width:W,height:H});
+ const threats=swarmCore.perceive(meleeOnlyTracks(),elapsed,{memoryHorizon:2.4,width:W,height:H});
  const enemySpeed=meleeCore.statsFor(multi.difficulty).speed*S,reach=R*2.42,ray=S*.12;
  const map=swarmCore.threatMap(bot,threats,{speed:enemySpeed,reach,horizon:2.6,
   open:a=>!blocked(bot,{x:bot.x+Math.cos(a)*ray,y:bot.y+Math.sin(a)*ray},R+1)});
@@ -1349,7 +1420,7 @@ function predictiveCheck(blue){
 }
 function loopMultiStep(dt){
  if(phase!=='running')return;
- elapsed+=dt;stepSimpleTargets(dt);senseMultiWorld();
+ elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);senseMultiWorld();
  const blue=bots[0];
  if(predictiveActive()&&multi.sensorAt===elapsed)predictiveCheck(blue);
  // Reflex-level micro avoidance: never peeks at hidden enemy positions and never teleports.
@@ -1367,7 +1438,7 @@ function loopMultiStep(dt){
  if(multi.melee&&multi.kiteEnabled&&elapsed-multi.lastKiteAt>.95){const t=meleeCore.assessThreat(blue,visibleMeleeTracks(),{scale:S,ammo:blue.ammo});if(t.critical||t.kite&&blue.intent!=='swarm_kite'&&blue.intent!=='swarm_evade'){blue.path=[];blue.planner=null;blue.goal=null;blue.thinkCooldown=0;blue.planCooldown=0;multi.lastKiteAt=elapsed;}}
  if(blue.planner)runPlanner(blue,28);
  if(!dodgeMove(blue,dt))moveBot(blue,dt);
- shoot(blue);multiProjectiles(dt);meleeWaveAttacks();
+ shoot(blue);multiProjectiles(dt);stepRangedProjectiles(dt);meleeWaveAttacks();
  if(multi.melee){const outcome=meleeCore.waveOutcome({blueHp:blue.hp,alive:multi.targets.filter(t=>t.active).length,total:multi.targets.length,seconds:elapsed,limit:150});if(outcome)finishMultiWave(outcome);}
  for(let k=particles.length-1;k>=0;k--){const p=particles[k];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.life<=0)particles.splice(k,1);}
  sampleAcc+=dt;if(sampleAcc>=.25){sampleAcc=0;snapshot();}
@@ -1689,7 +1760,7 @@ function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
  }
 }
 function findThreatDodge(bot,dt){bot.dodgeCooldown=Math.max(0,bot.dodgeCooldown-dt);if(bot.dodgeCooldown>0||bot.dodgeTimer>0||bot.hp<=0)return;
-  for(const shot of bullets){if(shot.team===bot.team)continue;let rx=bot.x-shot.x,ry=bot.y-shot.y,v2=shot.vx**2+shot.vy**2;let t=(rx*shot.vx+ry*shot.vy)/v2;if(t<.07||t>.37)continue;let cx=shot.x+shot.vx*t,cy=shot.y+shot.vy*t;if(Math.hypot(cx-bot.x,cy-bot.y)>R*1.5)continue;
+  for(const shot of (multiActive()&&multi.melee?bullets.concat(multi.rangedShots.filter(s=>dist(bot,s)<S*.7&&clearSight(bot,s))):bullets)){if(shot.team===bot.team)continue;let rx=bot.x-shot.x,ry=bot.y-shot.y,v2=shot.vx**2+shot.vy**2;let t=(rx*shot.vx+ry*shot.vy)/v2;if(t<.07||t>.37)continue;let cx=shot.x+shot.vx*t,cy=shot.y+shot.vy*t;if(Math.hypot(cx-bot.x,cy-bot.y)>R*1.5)continue;
     let u={x:-shot.vy/Math.sqrt(v2),y:shot.vx/Math.sqrt(v2)};const scale=S*.16;let b1={x:bot.x+u.x*scale,y:bot.y+u.y*scale};let b2={x:bot.x-u.x*scale,y:bot.y-u.y*scale};if(!freePoint(b1,R+1)&&!freePoint(b2,R+1))return;if(!freePoint(b1,R+1))u={x:-u.x,y:-u.y};
     bot.dodgeVec=u;bot.dodgeTimer=.24;bot.dodgeCooldown=1.65;bot.mode='หลบกระสุน';burst(bot.x,bot.y,colors[bot.team],4,3);return;
   }
@@ -1863,7 +1934,7 @@ function drawReplay(){if(!timeline.length)return;
 }
 function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(w);
  if(replayActive){drawReplay();return;}
- drawMemory();for(const b of bots)drawTree(b);for(const b of bots)drawPath(b);drawTactics();for(const s of bullets)drawShot(s);for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.total);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,S*.004),0,Math.PI*2);ctx.fill();ctx.restore();}
+ drawMemory();for(const b of bots)drawTree(b);for(const b of bots)drawPath(b);drawTactics();for(const s of bullets)drawShot(s);drawRangedShots();for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.total);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,S*.004),0,Math.PI*2);ctx.fill();ctx.restore();}
  if(tool==='order'&&bots[0]&&bots[0].manual){const p=bots[0].manual;ctx.save();ctx.strokeStyle='#ffdf8a';ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p.x,p.y,R*.9,0,Math.PI*2);ctx.stroke();ctx.restore();}
  if(multiActive()){drawMultiTargets();drawSwarmForecast();drawFighter(bots[0]);}else for(const b of bots)drawFighter(b);
  ctx.fillStyle='#b6d4eb';ctx.font=`700 ${clamp(S*.026,10,13)}px system-ui`;ctx.textAlign='left';ctx.fillText('RRT TACTICAL · '+ui.map.selectedOptions[0].textContent.split('·').pop().trim(),12,H-14);
