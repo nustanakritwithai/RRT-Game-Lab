@@ -70,7 +70,8 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 .modePanel .multiInputs select,.modePanel .meleeSettings select{min-width:0;max-width:100%}
 @media(max-width:460px){.modePanel select{min-width:145px}.multiInputs{grid-template-columns:1fr 1fr}.multiBotList{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.multiBotRow{padding:6px}}
 
-.multiWaveStats.teamStatus{height:28px;min-height:28px;display:block;white-space:nowrap;text-overflow:hidden;text-overflow:ellipsis;line-height:1.35;padding-top:6px}
+.multiWaveStats.teamStatus{height:28px;min-height:28px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;padding-top:6px}
+@media(max-width:600px){.multiBotList{height:225px;min-height:225px;max-height:225px;overflow-y:auto}}
 </style>
 </head>
 <body><main>
