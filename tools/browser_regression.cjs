@@ -17,7 +17,7 @@ const check=(ok,msg)=>{console.log((ok?'  ✓ ':'  ✗ ')+msg);if(!ok)failures++
 const frozen=()=>{function m(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}Math.random=m(7);window.requestAnimationFrame=()=>0;};
 const layout=()=>{const r=e=>document.querySelector(e)?.getBoundingClientRect();return {stageTop:Math.round(r('#stage').top),stageH:Math.round(r('#stage').height),
  fighters:[...document.querySelectorAll('.fighter')].map(f=>Math.round(f.getBoundingClientRect().height)),wave:Math.round(r('#multiWaveStats').height),
- scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};};
+ scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth,scrollY:Math.round(window.scrollY),documentStageTop:Math.round(r('#stage').top+window.scrollY),tops:Object.fromEntries(['header','.modePanel','#multiPanel','.stats','.layout','.arena','.panelhead','#stage'].map(k=>[k,Math.round(r(k)?.top||0)])),heights:Object.fromEntries(['header','.modePanel','#multiPanel','.multiSummary','.meleeSettings','.multiInputs','.multiBotList','#blueTeamStatus','.help','.stats'].map(k=>[k,Math.round(r(k)?.height||0)]))};};
 const finiteState=s=>[s.blue?.x,s.blue?.y,s.blue?.hp].every(Number.isFinite)&&s.targets.every(t=>Number.isFinite(t.x)&&Number.isFinite(t.y));
 
 async function main(){
@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.8/.test(duel.title),'title shows V0.6.8: '+duel.title);
+  check(/RRT ARENA 06\.9/.test(duel.title),'title shows V0.6.9: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -125,6 +125,110 @@ async function main(){
   check(rdef.valid,'ranged defense: fighters outside walls, collision-free routes');
   check(rdef.hasMobileSwitch&&rdef.mobile&&rdef.bridge+rdef.jinks>0,'keep moving: enabled by default, BLUE moved while planning/exposed ('+rdef.bridge+' bridge steps, '+rdef.jinks+' jinks)');
   check(!rdef.offEnabled&&rdef.offMoves===0&&!['ranged_cover','ranged_hold'].includes(rdef.offIntent),'ranged defense off: V0.6.7 policy restored');
+  // V0.6.9: the exact published BLUE v0.6.8 brain drives B1 and B2 independently.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2');
+  const duo=await page.evaluate(({layoutSrc})=>{
+   const layout=eval(layoutSrc),$=id=>document.getElementById(id),md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   $('multiDifficulty').value='training';$('multiDifficulty').dispatchEvent(new Event('change',{bubbles:true}));
+   const initial=md.getState(),shape=layout();
+   $('start').click();let stable=true,valid=true,aliveSamples=0;
+   for(let i=0;i<20&&d.getState().phase==='running';i++){
+    d.advance(.5);
+    const v=d.validate(),s=md.getState();
+    valid=valid&&v.fightersFree&&v.waypointsClear;
+    stable=stable&&JSON.stringify(layout())===JSON.stringify(shape);
+    aliveSamples+=s.team.blues.filter(b=>b.hp>0).length;
+   }
+   const state=md.getState();
+   return {mode:state.team.mode,count:state.team.count,alive:state.team.alive,blues:state.team.blues,
+    memories:state.team.memorySeparated,radioSent:state.team.radioSent,stable,valid,
+    allFinite:state.team.blues.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),
+    plans:state.team.blues.map(b=>b.planCount),scroll:layout().scroll,activeSamples:aliveSamples,initialLayout:shape,finalLayout:layout()};
+  },{layoutSrc:'('+layout.toString()+')'});
+  check(duo.mode==='independent'&&duo.count===2&&duo.blues.map(b=>b.id).join('/')==='B1/B2',
+   'duo independent: two ORIGINAL BLUE agents with distinct IDs');
+  check(duo.memories&&duo.radioSent===0,'duo independent: isolated per-BLUE memories, no team radio');
+  check(duo.plans.every(n=>n>0)&&duo.allFinite&&duo.valid,
+   'duo independent: both used RRT and obeyed collisions ('+duo.plans.join('/')+' plans)');
+  check(duo.stable&&duo.scroll<=0,'duo independent: fixed mobile HUD and no horizontal scroll, first='+JSON.stringify(duo.initialLayout)+' last='+JSON.stringify(duo.finalLayout));
+
+  // Cooperative mode adds *only* bounded visible sightings; physics, weapons and BLUE unchanged.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop');
+  const coop=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();
+   for(let k=0;k<24&&d.getState().phase==='running';k++)d.advance(.5);
+   const state=md.getState(),v=d.validate();
+   return {mode:state.team.mode,count:state.team.count,memories:state.team.memorySeparated,
+    sent:state.team.radioSent,delivered:state.team.radioDelivered,valid:v.fightersFree&&v.waypointsClear,
+    bluePlans:state.team.blues.map(b=>b.planCount),scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};
+  });
+  check(coop.mode==='cooperative'&&coop.count===2&&coop.memories,
+   'duo cooperative: same two independent BLUE brains, explicitly enabled team radio');
+  check(coop.sent>0&&coop.delivered>0,
+   'duo cooperative: observed sightings really relayed with delay ('+coop.sent+' sent, '+coop.delivered+' delivered)');
+  check(coop.valid&&coop.scroll<=0,'duo cooperative: valid collisions and stable viewport');
+
+  // Killing B1 cannot end the match while B2 remains alive and enemies remain.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2');
+  const survivor=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   const $=id=>document.getElementById(id);
+   $('multiDifficulty').value='training';$('multiDifficulty').dispatchEvent(new Event('change',{bubbles:true}));
+   $('start').click();d.force('blue',{hp:0});
+   d.advance(.5);
+   const s=md.getState();
+   return {mode:s.team.mode,teamAlive:s.team.alive,phase:d.getState().phase,
+    survivors:s.team.blues.filter(b=>b.hp>0).map(b=>b.id),enemies:s.targets.filter(t=>t.active).length};
+  });
+  check(survivor.phase==='running'&&survivor.teamAlive===1&&survivor.survivors[0]==='B2'&&survivor.enemies>0,
+   'duo survival: B2 continues after B1 is eliminated');
+  // A melee attacker must be able to damage B2 directly, without touching B1.
+  await page.goto(base+sep+'mode=multi&blue=2&enemy=melee');
+  const meleeB2=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();
+   const s=md.getState(),b1=s.team.blues[0],b2=s.team.blues[1];
+   const target=s.targets.find(t=>t.team!=='ranged');
+   const rect=document.querySelector('#stage').getBoundingClientRect();
+   const radius=Math.max(7.5,Math.min(17,Math.min(rect.width,rect.height)*.027));
+   let didPlace=false,gotHit=false,zeroDamageB1=true;
+   if(target&&b2)for(let k=0;k<16&&!gotHit;k++){
+    const ang=k*Math.PI*2/16;
+    const p={x:b2.x+Math.cos(ang)*radius*2.1,y:b2.y+Math.sin(ang)*radius*2.1};
+    if(!d.freePoint(p)||!d.sight(p,b2)||Math.hypot(p.x-b1.x,p.y-b1.y)<radius*2.9)continue;
+    if(!md.forceTarget(target.id,p))continue;didPlace=true;
+    const before=md.getState().team.blues;
+    md.simulateStrike(target.id);
+    const after=md.getState().team.blues;
+    gotHit=after[1].hp<before[1].hp;
+    zeroDamageB1=after[0].hp===before[0].hp;
+   }
+   d.advance(3);
+   const after=md.getState();
+   return {mode:after.team.mode,didPlace,gotHit,zeroDamageB1,
+    valid:d.validate().fightersFree&&d.validate().waypointsClear,
+    plans:after.team.blues.map(b=>b.planCount)};
+  });
+  check(meleeB2.mode==='independent'&&meleeB2.didPlace&&meleeB2.gotHit&&meleeB2.zeroDamageB1,
+   'duo melee: real close-range enemy chooses B2 without hurting distant B1');
+  check(meleeB2.valid,'duo melee: both agents keep valid positions after melee contact');
+
+  // Mixed wave keeps simple melee and ranged enemies present while team radio is active.
+  await page.goto(base+sep+'mode=multi&blue=2&team=coop&enemy=mixed');
+  const mixedDuo=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();d.advance(8);
+   const s=md.getState(),v=d.validate();
+   return {mode:s.team.mode,blueCount:s.team.count,
+    ranged:s.targets.filter(t=>t.team==='ranged').length,
+    melee:s.targets.filter(t=>t.team!=='ranged').length,
+    valid:v.fightersFree&&v.waypointsClear,
+    finite:s.team.blues.every(b=>[b.x,b.y,b.hp].every(Number.isFinite))};
+  });
+  check(mixedDuo.mode==='cooperative'&&mixedDuo.blueCount===2&&mixedDuo.ranged>0&&mixedDuo.melee>0,
+   'duo mixed: both simple enemy types and both original BLUEs present');
+  check(mixedDuo.valid&&mixedDuo.finite,'duo mixed: finite collision-free physics and routes');
   check(errors.length===0,'no page errors '+errors.join(' | '));
   await ctx.close();
  }

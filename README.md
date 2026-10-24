@@ -1,4 +1,45 @@
-# RRT Arena V0.6.8 — Ranged Threat Defense
+# RRT Arena V0.6.9 — BLUE Team Combat Lab
+
+## ทดลอง BLUE สองตัวด้วย AI ต้นฉบับ V0.6.8
+
+- [🔷 BLUE 1 ตัว · Solo](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged)
+- [🔷🔷 BLUE 2 ตัว · Independent](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2)
+- [📡 BLUE 2 ตัว · Cooperative](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2&team=coop)
+- [⚔️🔫 BLUE 2 ตัว vs Mixed Bots](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=mixed&blue=2&team=coop)
+- [โหมดดวลเดิม](https://nustanakritwithai.github.io/RRT-Game-Lab/)
+
+ทั้ง **B1 และ B2** สร้างจาก `spawnBot('blue')` ของ V0.6.8 และรันชุด `sense → currentIntent → chooseGoal → beginPlan → runPlanner → moveBot → shoot` เดิมทุกขั้น ไม่สร้าง AI ตัวใหม่หรือให้ความสามารถแอบแฝง เรียกใช้ `Ranged Threat Defense`, `Keep Moving`, `Memory-Guided RRT`, `Dynamic Defense`, `Predictive Swarm` เหมือนกัน
+
+### แยก Solo / Duo Independent / Duo Cooperative
+
+- **Solo:** โหมดเดียวกับ V0.6.8 อย่างเดิม ใช้ baseline เดิมได้ ไม่สร้าง B2
+- **Duo Independent:** B1/B2 มี HP, ammo, memory, target focus, observations, RRT tree, active plan, defensive state และ explore coverage เป็นของตนเอง ไม่มีข้อมูลส่งต่อกัน
+- **Duo Cooperative:** ยังใช้ BLUE เดิมสองตัว แต่มี radio ที่ส่งเฉพาะ sightings ที่เจ้าของมองเห็นจริง โดยมี latency 0.3 s, max range 0.95·S, TTL 3.5 s. ผู้รับเก็บเป็น `memory` ความมั่นใจต่ำกว่า 1 และ **ยิงใส่ข้อมูลที่เพื่อนเล่าอย่างเดียวไม่ได้**; B2 พยายามหลีกการเลือกเป้าหมายซ้ำเมื่อมีทางเลือกที่ตนเองรู้จริง
+- **Basic enemies unchanged:** Sentry / Patrol / Hunter และ melee bots เลือก BLUE ที่เห็นตาม LOS และระยะจริง ไม่ได้อัปเกรด AI และไม่รู้ตำแหน่งของ BLUE ที่ซ่อนตัว
+- **Friendly safety:** ทั้ง BLUE และศัตรูตรวจการชนจริง; กระสุน BLUE ชนเพื่อนแล้วหยุดโดยไม่สร้างดาเมจ ไม่สามารถทะลุเพื่อน; HP หรือ ammo ของ BLUE ไม่เปลี่ยนเพื่อเอื้อผลการทดลอง
+- **Team outcome:** BLUE ฝ่ายทีมชนะเมื่อกำจัดศัตรูทั้งหมดและมี BLUE อย่างน้อยหนึ่งตัวรอด. จะจบแพ้เมื่อ B1+B2 ตายทั้งหมดหรือครบ 150 วินาทีโดยยังมีศัตรู
+- **Research:** ห้ามสรุป Teamwork ทำให้ win rate ดีขึ้นเพียงจาก 2 ตัว; เปรียบเทียบ Duo Independent/Cooperative ที่ใช้ seeds, enemy loadouts และ viewport เหมือนกัน พร้อมรายงานความแปรปรวน
+
+### การควบคุม
+
+หน้า `?mode=multi` มีเมนู **ทีม BLUE** ให้เลือก 1 ตัว / 2 ตัวอิสระ / 2 ตัวร่วมมือ บริเวณการตั้งค่าศัตรู รองรับศัตรู 4–24 ตัว โหมดประชิด / ระยะไกล / ผสม และความยากเดิม
+
+แถบสถานะแสดง HP และจำนวนกระสุนของ B1/B2 ความสูงคงที่บนมือถือ, Replay JSON มีทั้งสองตัวและค่า Team Mode, และ `?seed=42` ยังรองรับการทดลองซ้ำ
+
+### Tests และหลักฐาน
+
+```bash
+node --test *.test.cjs
+node tools/browser_regression.cjs
+```
+
+GitHub Actions ทดสอบ Source-inline Integrity, Unit Cases, และ Chromium Browser Regression บน viewport 320/393/1365px รวมการตรวจ Solo/Duo สองแบบ, การสื่อสารที่ส่งจริง, การตายของ B1 แล้ว B2 ยังเล่นต่อ, เส้นทาง/การชน และโหมดดวลเดิม
+
+โหมดเดิมยังเป็น baseline; ผลสรุปประสิทธิภาพ Duo ต่อศัตรู 24 ตัวจะต้องมาจากการทดลองหลาย seeds ไม่ใช่ตัวเลขคาดการณ์
+
+---
+
+## อ้างอิง — V0.6.8 Ranged Threat Defense
 
 ## ใหม่ใน V0.6.8
 
