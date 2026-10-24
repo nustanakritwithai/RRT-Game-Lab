@@ -72,6 +72,12 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 
 .multiWaveStats.teamStatus{height:28px;min-height:28px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;padding-top:6px}
 @media(max-width:600px){.multiBotList{height:225px;min-height:225px;max-height:225px;overflow-y:auto}}
+
+/* The arena heading's live label changes during play. Never let it add a line on phones. */
+.panelhead{height:44px;min-height:44px;overflow:hidden;flex-wrap:nowrap}
+.panelhead #arenaHead{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panelhead .live{flex:0 0 auto;max-width:48%;min-width:0;white-space:nowrap;overflow:hidden}
+.panelhead .live .muted{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body><main>
