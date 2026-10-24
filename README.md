@@ -1,4 +1,40 @@
-# RRT Arena V0.6.6 — Predictive Swarm Defense
+# RRT Arena V0.6.7 — Basic Ranged Enemy Lab
+
+**BLUE Agent ตัวเดิม** (Memory-Guided RRT + Tactical Positioning + Dynamic Defense + Predictive Anti-Encirclement) ต่อสู้กับบอตพื้นฐานที่ยิงระยะไกลได้จริง โดยไม่เพิ่ม AI Agent ใหม่หรือโกงตำแหน่งศัตรู
+
+## เล่นเกม / เลือกโหมด
+
+- [🔫 BLUE vs Ranged Bots (Sentry / Patrol / Hunter)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged)
+- [⚔️🔫 BLUE vs Mixed Swarm (ประชิด + ยิงไกล)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=mixed)
+- [⚔️ BLUE vs Melee Swarm (V0.6.6 เดิม)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi)
+- [🔷 โหมดดวล BLUE vs RED 1 ต่อ 1](https://nustanakritwithai.github.io/RRT-Game-Lab/)
+
+ในหน้าเว็บเลือก **ประเภทศัตรู** ได้จากเมนู: ประชิด / ยิงไกล / ผสม และเลือกจำนวน 4–24 ตัว ความยาก ฝึกซ้อม/สมดุล/ยาก เปลี่ยนคำสั่งให้บอตแต่ละตัวได้ (Sentry, Patrol, Hunter) ปิดการต่อสู้เพื่อกลับไปโหมดติดตามพื้นฐานโดยไม่สร้าง BLUE ใหม่
+
+## ระบบศัตรูยิงไกล V0.6.7
+
+- **Sentry:** เฝ้าตำแหน่ง ถ้าเห็น BLUE อยู่ในระยะและไม่มีผนังบังจึงยิง
+- **Patrol:** เดินจุดตรวจด้วย local steering พื้นฐาน หยุดและยิงเมื่อเห็น BLUE
+- **Hunter:** เข้าหา/รักษาระยะจาก BLUE ที่ตรวจพบ หรือเดินตรวจตำแหน่งที่เคยเห็นเป็นเวลาจำกัด; ไม่รู้ตำแหน่งที่มองไม่เห็น
+- **Physical projectiles:** ยิงกระสุนจริง มี cooldown/reload/ammo/accuracy; ตรวจชนกำแพงและ BLUE ด้วย swept collision; ไม่มีการโดนยิงจากการเรียกฟังก์ชัน shoot โดยตรง
+- **Fairness:** ศัตรูไม่ใช้ RRT/LLM, ยิงไม่ได้หาก BLUE หลุดสายตา; BLUE ยังใช้เซนเซอร์และ Memory เดิม ตรวจเห็นกระสุนได้ตามการมองเห็นเท่านั้น ไม่เพิ่มเลือด ดาเมจ หรือความเร็ว
+- **Mixed:** ส่วนที่เป็นประชิดยังใช้ Predictive Anti-Encirclement V0.6.6, ส่วนที่เป็น ranged ใช้ FSM พื้นฐาน ไม่ถูกประเมินเป็นผู้โจมตีประชิด
+- **Replay & seeded mode:** `?mode=multi&enemy=ranged&seed=42` สำหรับผลทดลองทำซ้ำ; Replay JSON มีประเภทศัตรู จำนวนยิง/โดน/ความเสียหาย และสถานะเกม
+
+## การทดสอบ
+
+```bash
+node --test *.test.cjs
+node tools/browser_regression.cjs   # ต้องติดตั้ง Playwright + Chromium
+```
+
+GitHub Actions บน Pull Request จะรัน Unit Tests, source-inline integrity, syntax verification และ Chromium gameplay regression สำหรับ 320px / 393px / 1365px ครอบคลุม Duel, Tracking, Melee, Ranged และ Mixed
+
+ชุดสถานการณ์ที่เสนอไว้ใน `RANGED_LAB_V067_MATRIX.json` เป็น **แผนการวิจัย** ยังไม่ใช่ผลอัตราชนะของ V0.6.7 และไม่มีการรับประกัน BLUE ชนะทุกครั้ง
+
+---
+
+## อ้างอิง — V0.6.6 Predictive Swarm Defense
 
 - 🎮 **[เปิดเกมบน GitHub Pages](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi)**
 - ⚔️ **[โหมดดวล 1 ต่อ 1](https://nustanakritwithai.github.io/RRT-Game-Lab/)**
