@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071225">
-<title>RRT ARENA 06.6 — Predictive Swarm Defense</title>
+<title>RRT ARENA 06.7 — Basic Ranged Enemy Lab</title>
 <style>
 :root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--panel2:#152640;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;--purple:#ac92fa}*{box-sizing:border-box}html,body{margin:0;min-height:100%;}body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42}button,input,select{font:inherit}button,select{cursor:pointer}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}main{max-width:1350px;margin:auto;padding:18px 13px 64px}header{padding:2px 3px 15px}.eyebrow{font-size:11px;font-weight:850;letter-spacing:1.8px;color:var(--cyan)}h1{margin:6px 0 7px;line-height:1.13;letter-spacing:-1.2px;font-size:clamp(29px,4.7vw,47px)}h1 span{color:var(--pink)}header p{color:var(--soft);font-size:14px;margin:0;max-width:800px}.tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3;background:#113657;border:1px solid #315479;color:#a7e5ff;vertical-align:middle;letter-spacing:0;margin-left:6px}
 .stats{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-bottom:12px}.fighter{min-width:0;padding:12px 14px;background:linear-gradient(135deg,#102844,#0d1b30);border:1px solid #264561;border-radius:15px}.fighter.red{background:linear-gradient(225deg,#3a1b34,#151c30);border-color:#66364f}.nameRow{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-size:15px;font-weight:850;white-space:nowrap}.name .symbol{font-size:19px;vertical-align:middle}.statnum{font-size:13px;white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}.bar{height:8px;background:#0a1423;border-radius:8px;overflow:hidden;margin:9px 0 6px;border:1px solid #253247}.fill{width:100%;height:100%;background:linear-gradient(90deg,#237cce,#50dbff);transition:width .16s}.red .fill{background:linear-gradient(90deg,#e6466b,#ff9a79)}.sublabel{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:7px;align-items:center;height:17px;min-height:17px;overflow:hidden;font-size:11px;color:var(--soft)}.sublabel span:first-child{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sublabel span:last-child{display:block;white-space:nowrap;flex-shrink:0}.nameRow .name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}.nameRow .statnum{flex-shrink:0}.fighter{min-height:105px;overflow:hidden}.sublabel strong{color:var(--ink);font-weight:650}.midstats{min-width:96px;text-align:center;display:flex;flex-direction:column;justify-content:center;background:#101b31;border:1px solid var(--line);border-radius:15px;padding:9px 13px}.midstats .round{font-size:10px;letter-spacing:1px;color:var(--soft);font-weight:850}.midstats .score{font-size:24px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}.midstats .clock{color:var(--gold);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -72,7 +72,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </style>
 </head>
 <body><main>
-<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.6 · PREDICTIVE SWARM DEFENSE</div>
+<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.7 · RANGED ENEMY LAB</div>
 <h1>RRT ARENA <span>AGENT LAB</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
 <p>บอตคำนวณมุมยิงและย้ายตำแหน่งเมื่อคาดว่าศัตรูรู้ที่อยู่ ตัดแนวยิง อ้อมเปลี่ยนมุม ไม่ยืนรอซ้ำจุดเดิม · Memory-Guided RRT · มือถือไม่ต้องมี LLM / API Key</p></header>
 <section class="modePanel" aria-label="เลือกสนามทดลอง">
@@ -81,19 +81,20 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  <div id="multiPanel" class="multiPanel" hidden>
   <div class="multiSummary"><span class="multiChip" id="multiVisible">เห็น 0</span><span class="multiChip" id="multiKnown">จำได้ 0</span><span class="multiChip" id="multiFocus">เป้าหมาย: —</span><span class="multiChip" id="multiEliminated">กำจัด 0</span></div>
   <div class="meleeSettings">
-   <label class="meleeSwitch"><input id="multiMelee" type="checkbox" checked> <b>⚔️ โหมดบอตโจมตีระยะประชิด</b></label>
+   <label class="meleeSwitch"><input id="multiMelee" type="checkbox" checked> <b>⚔️ เปิดการต่อสู้ (ปิด = ติดตาม)</b></label>
    <label>ความยาก<select id="multiDifficulty"><option value="training">ฝึกซ้อม · ประชิดช้า/เบา</option><option value="balanced" selected>สมดุล · เปรียบเทียบยุติธรรม</option><option value="hard">ยาก · ประชิดเร็ว/แรง</option></select></label>
    <label class="meleeSwitch"><input id="multiKite" type="checkbox" checked><b>🏃 เปิด Swarm-Aware Kiting (ทดลองเปิด/ปิด)</b></label>
    <label class="meleeSwitch"><input id="multiPredict" type="checkbox" checked><b>🔮 Predictive Anti-Encirclement (V0.6.6)</b></label>
+    <label for="multiEnemyMode">ประเภทศัตรู<select id="multiEnemyMode" aria-label="ประเภทศัตรู"><option value="melee">⚔️ ประชิด (เดิม)</option><option value="ranged">🔫 ยิงระยะไกล</option><option value="mixed">⚔️+🔫 ผสม</option></select></label>
    <div class="multiWaveStats" id="multiWaveStats" aria-live="polite">ยังไม่เริ่มการทดลอง · จำกัดเวลา 150 วินาที</div>
   </div>
   <div class="multiInputs"><label>จำนวนบอตพื้นฐาน<div class="multiCounts"><button id="multiMinus" type="button" aria-label="ลดจำนวนบอต">−</button><b id="multiCount">8 ตัว</b><button id="multiPlus" type="button" aria-label="เพิ่มจำนวนบอต">＋</button></div></label>
   <label for="multiPreset">จำนวนเป้าหมายทดลอง<select id="multiPreset"><option value="4">4 ตัว · เริ่มต้น</option><option value="8" selected>8 ตัว · ปานกลาง</option><option value="12">12 ตัว · ฝูงเล็ก</option><option value="16">16 ตัว · ฝูงใหญ่</option><option value="24">24 ตัว · หนักสุด</option></select></label>
   <label for="multiPriority">วิธีเลือกเป้าหมาย<select id="multiPriority"><option value="visible">เห็นชัดก่อน</option><option value="nearest">ใกล้ที่สุด</option><option value="runner">ตัวที่กำลังหนี</option><option value="memory">ร่องรอยในความจำ</option></select></label>
-  <label for="multiAllCommand">คำสั่งรวมบอตพื้นฐาน<select id="multiAllCommand"><option value="patrol">ลาดตระเวน</option><option value="wander">เดินสุ่ม</option><option value="flee">หนีเมื่อเห็น BLUE</option><option value="stay">หยุดนิ่ง</option><option value="approach">เดินเข้าหา BLUE</option><option value="hunt" selected>ไล่ล่า BLUE (ใช้ความจำ)</option></select></label>
+  <label for="multiAllCommand">คำสั่งรวมบอตพื้นฐาน<select id="multiAllCommand"><option value="patrol">ลาดตระเวน</option><option value="wander">เดินสุ่ม</option><option value="flee">หนีเมื่อเห็น BLUE</option><option value="stay">หยุดนิ่ง</option><option value="approach">เดินเข้าหา BLUE</option><option value="hunt" selected>ไล่ล่า BLUE (ใช้ความจำ)</option><option value="sentry">🔫 ป้อมยิง</option><option value="patrol-ranged">🔫 เดินยิง</option><option value="hunter">🔫 ไล่ยิง</option></select></label>
   <label for="multiApplyAll">จัดการคำสั่ง<button id="multiApplyAll" class="btn" style="display:block;width:100%;min-height:37px;margin-top:4px">ใช้กับทุกตัว</button></label>
   </div>
-  <p class="help">BLUE คือ Agent V0.6.3 ตัวเดิม (Memory + Tactical Positioning + Dynamic Defense + Memory-Guided RRT + ยิงจริง) เพิ่มเพียงการตรวจจับ/เลือกเป้าหมายหลายตัว บอต T01–T24 ไม่มีปืน แต่เข้าระยะแล้วโจมตีประชิดจริงได้ · BLUE ต้องยิงและย้ายตำแหน่งด้วย RRT เพื่อเอาชนะฝูง · ปิดโหมดประชิดเพื่อกลับไปทดลองไล่ติดตามแบบเดิม</p>
+  <p class="help">BLUE ตัวเดิมใช้ Memory + Tactical Positioning + Dynamic Defense + Predictive Swarm + RRT · เลือกศัตรูประชิด / ยิงระยะไกล / ผสม ศัตรูยิงใช้บอตกฎง่าย Sentry, Patrol, Hunter (ไม่มี RRT/LLM) · ปิดโหมดต่อสู้เพื่อกลับสู่การติดตามพื้นฐาน</p>
   <div id="multiBotsList" class="multiBotList" aria-label="รายการบอตเป้าหมาย"></div>
  </div>
 </section>
@@ -871,20 +872,215 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  return Object.freeze({LEVELS,perceive,timeToContact,threatMap,routeMargin,chooseCorridor,decide});
 });
 </script>
+<script id="rangedEnemyCore">
+/* RRT Arena V0.6.7 — BASIC ranged enemy bots, not a new BLUE agent.
+ * Designed to be inserted after BLUE V0.6.6 settles. Dependencies: none.
+ * Perception is the ONLY place permitted to inspect real BLUE coordinates.
+ * All other decisions receive the sanitized observation, never BLUE ground truth.
+ * Projectiles are world-physics objects, not instantaneous damage/raycast hits.
+ */
+(function(root,factory){'use strict';
+ const api=factory();
+ root.RRTArenaRanged=api;
+ if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const ROLES=Object.freeze(['sentry','patrol','hunter']);
+ const DIFFICULTIES=Object.freeze({
+  training:Object.freeze({walkSpeed:.080,bulletSpeed:1.06,damage:5.5,accuracy:.71,
+   fireInterval:1.75,reloadSeconds:2.30,magazine:5,rangeFraction:.46}),
+  balanced:Object.freeze({walkSpeed:.125,bulletSpeed:1.20,damage:7.5,accuracy:.79,
+   fireInterval:1.42,reloadSeconds:2.10,magazine:6,rangeFraction:.51}),
+  hard:Object.freeze({walkSpeed:.160,bulletSpeed:1.34,damage:9,accuracy:.86,
+   fireInterval:1.22,reloadSeconds:1.90,magazine:7,rangeFraction:.55})
+ });
+ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const valid=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+ const norm=(x,y)=>{const d=Math.hypot(x,y);return d>1e-9?{x:x/d,y:y/d}:{x:1,y:0};};
+ function statsFor(level){return DIFFICULTIES[level]||DIFFICULTIES.balanced;}
+ function createRangedBot(params={}){
+  const role=ROLES.includes(params.role)?params.role:'sentry',difficulty=DIFFICULTIES[params.difficulty]?params.difficulty:'balanced';
+  const stats=statsFor(difficulty);
+  // The explicit last spread permits test fixtures to override state fields.
+  return {id:params.id||'R01',team:'ranged',role,difficulty,
+   x:Number.isFinite(params.x)?params.x:0,y:Number.isFinite(params.y)?params.y:0,
+   hp:42,maxHp:42,active:true,ammo:stats.magazine,readyAt:0,reloadUntil:0,
+   heading:0,track:null,waypoints:[],waypointIndex:0,...params,role,difficulty,team:'ranged'};
+ }
+ function angleDelta(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b));}
+ /** Sensor updates are the sole world-truth ingress. Memory is copied verbatim
+  * from a previous visible observation; hidden positions are NOT estimated from truth.
+  */
+ function observeBlue(bot,blue,now,{range=350,fov=Math.PI*2,canSee,ttl=5}={}){
+  if(!valid(bot)||!Number.isFinite(now))return {status:'unknown'};
+  const living=blue&&valid(blue)&&blue.active!==false&&!(blue.hp<=0);
+  const d=living?distance(bot,blue):Infinity;
+  const aim=living?Math.atan2(blue.y-bot.y,blue.x-bot.x):0;
+  const inView=living&&d<=range&&
+   (fov>=Math.PI*2-.001||Math.abs(angleDelta(aim,bot.heading||0))<=Math.max(0,fov)/2);
+  if(inView&&typeof canSee==='function'&&canSee(bot,blue)){
+   return {status:'visible',x:blue.x,y:blue.y,lastSeen:now,confidence:1};
+  }
+  const old=bot.track,age=old&&Number.isFinite(old.lastSeen)?now-old.lastSeen:Infinity;
+  if(valid(old)&&age>=0&&age<ttl){
+   return {status:'memory',x:old.x,y:old.y,lastSeen:old.lastSeen,confidence:clamp(1-age/ttl,0,1)};
+  }
+  return {status:'unknown'};
+ }
+ function contactPoint(obs){return obs&&['visible','memory'].includes(obs.status)&&valid(obs)?{x:obs.x,y:obs.y}:null;}
+ function planBasicBot(bot,obs,now,world={}){
+  const o=contactPoint(obs),visible=obs?.status==='visible';
+  if(!bot?.active||bot.hp<=0)return {kind:'inactive',goal:null,fire:false};
+  const scale=Math.max(80,world.scale||400),range=statsFor(bot.difficulty).rangeFraction*scale;
+  const d=o?distance(bot,o):Infinity;
+  const canFire=visible&&d<=range;
+  // SENTRY: no position change, no memory pursuit, no tactical planning.
+  if(bot.role==='sentry')return {kind:canFire?'fire':'hold',goal:null,fire:canFire};
+  // PATROL: follows deterministic waypoints, stops to fire at visible targets.
+  if(bot.role==='patrol'&&canFire)return {kind:'fire',goal:null,fire:true};
+  if(bot.role==='hunter'){
+   if(o){
+    if(!visible)return {kind:'investigate',goal:o,fire:false};
+    if(d<scale*.105){
+     const away=norm(bot.x-o.x,bot.y-o.y);
+     return {kind:'backoff',goal:{x:bot.x+away.x*scale*.20,y:bot.y+away.y*scale*.20},fire:canFire};
+    }
+    if(d>range*.87)return {kind:'advance',goal:o,fire:canFire};
+    return {kind:'fire',goal:null,fire:canFire};
+   }
+  }
+  const waypoints=(Array.isArray(bot.waypoints)?bot.waypoints:[]).filter(valid);
+  if(waypoints.length){
+   let idx=clamp(Math.trunc(bot.waypointIndex||0),0,waypoints.length-1);
+   if(distance(bot,waypoints[idx])<Math.max(12,world.radius||10))idx=(idx+1)%waypoints.length;
+   return {kind:'patrol',goal:{x:waypoints[idx].x,y:waypoints[idx].y},waypointIndex:idx,fire:false};
+  }
+  return {kind:'hold',goal:null,fire:false};
+ }
+ /** Simple local steering. Refuse movement if swept collision queries aren't
+  * provided by the original game. Never bypass obstacles or teleport.
+  */
+ function moveBasicBot(bot,intent,dt,world={}){
+  if(!bot||!bot.active||bot.hp<=0||bot.role==='sentry'||!valid(intent?.goal)||!(dt>0))return bot;
+  if(typeof world.isFree!=='function'||typeof world.pathClear!=='function')return bot;
+  const width=world.width||960,height=world.height||600,radius=world.radius||10,scale=world.scale||400;
+  const speed=statsFor(bot.difficulty).walkSpeed*scale;
+  const goal=intent.goal,delta={x:goal.x-bot.x,y:goal.y-bot.y},dist=distance(bot,goal);
+  if(dist<.001)return bot;
+  const step=Math.min(speed*Math.min(dt,.15),dist),base=Math.atan2(delta.y,delta.x);
+  const rotations=[0,.38,-.38,.78,-.78,1.16,-1.16,1.65,-1.65,Math.PI];
+  for(const angle of rotations){
+   const direction=base+angle,travel=angle===0?step:step*.83;
+   const next={x:bot.x+Math.cos(direction)*travel,y:bot.y+Math.sin(direction)*travel};
+   if(next.x<radius||next.x>width-radius||next.y<radius||next.y>height-radius)continue;
+   if(!world.isFree(next)||!world.pathClear(bot,next))continue;
+   return {...bot,x:next.x,y:next.y,heading:direction,waypointIndex:intent.waypointIndex??bot.waypointIndex};
+  }
+  return bot;
+ }
+ /** Fire requires fresh visible observation AND world LOS recheck.
+  * The bullet is only spawned here: damage must be applied by world physics.
+  */
+ function tryFire(bot,obs,now,world={}){
+  const none={bot,shot:null};
+  if(!bot||!bot.active||bot.hp<=0||!Number.isFinite(now))return none;
+  const spec=statsFor(bot.difficulty),scale=world.scale||400;
+  if(bot.reloadUntil>now)return none;
+  let current=bot;
+  if(bot.reloadUntil>0&&bot.reloadUntil<=now)current={...current,ammo:spec.magazine,reloadUntil:0};
+  if(current.ammo<=0){
+   return {bot:{...current,reloadUntil:now+spec.reloadSeconds},shot:null};
+  }
+  if(obs?.status!=='visible'||!valid(obs)||typeof world.canSee!=='function')
+   return {bot:current,shot:null};
+  if(now<(current.readyAt||0)||distance(current,obs)>spec.rangeFraction*scale)
+   return {bot:current,shot:null};
+  if(!world.canSee(current,obs))return {bot:current,shot:null};
+  const random=typeof world.rng==='function'?world.rng():.5;
+  const theta=Math.atan2(obs.y-current.y,obs.x-current.x)+(clamp(random,0,1)*2-1)*(1-spec.accuracy)*.47;
+  const muzzle=(world.radius||10)*1.1;
+  const bulletSpeed=spec.bulletSpeed*scale;
+  return {
+   bot:{...current,ammo:current.ammo-1,readyAt:now+spec.fireInterval},
+   shot:{ownerId:current.id,team:'ranged',
+    x:current.x+Math.cos(theta)*muzzle,y:current.y+Math.sin(theta)*muzzle,
+    vx:Math.cos(theta)*bulletSpeed,vy:Math.sin(theta)*bulletSpeed,
+    radius:2,damage:spec.damage,ttl:1.8}
+  };
+ }
+ function segmentRectTime(a,b,r){
+  const minX=r.x,maxX=r.x+r.w,minY=r.y,maxY=r.y+r.h;
+  const dx=b.x-a.x,dy=b.y-a.y;
+  let low=0,high=1;
+  for(const [s,v,lo,hi] of [[a.x,dx,minX,maxX],[a.y,dy,minY,maxY]]){
+   if(Math.abs(v)<1e-12){if(s<lo||s>hi)return Infinity;continue;}
+   const enter=(lo-s)/v,exit=(hi-s)/v;
+   low=Math.max(low,Math.min(enter,exit));high=Math.min(high,Math.max(enter,exit));
+   if(low>high)return Infinity;
+  }
+  return low<=1&&high>=0?Math.max(0,low):Infinity;
+ }
+ function segmentCircleTime(a,b,c,r){
+  const dx=b.x-a.x,dy=b.y-a.y,fx=a.x-c.x,fy=a.y-c.y;
+  const A=dx*dx+dy*dy,C=fx*fx+fy*fy-r*r;
+  if(C<=0)return 0;
+  if(A<1e-12)return Infinity;
+  const B=2*(fx*dx+fy*dy),disc=B*B-4*A*C;
+  if(disc<0)return Infinity;
+  const hit=(-B-Math.sqrt(disc))/(2*A);
+  return hit>=0&&hit<=1?hit:Infinity;
+ }
+ /** Only the world engine calls this, with real obstacles and fighters.
+  * For tie times, wall wins; no projectile passes through a wall or a fighter.
+  */
+ function advanceProjectile(shot,dt,world={}){
+  const none={projectile:shot,impact:null};
+  if(!shot||!(dt>0))return none;
+  if(!(shot.ttl>0))return {projectile:null,impact:null};
+  const seconds=Math.min(dt,shot.ttl),from={x:shot.x,y:shot.y};
+  const to={x:from.x+(shot.vx||0)*seconds,y:from.y+(shot.vy||0)*seconds};
+  const rad=shot.radius||2;
+  let first=Infinity,hit=null;
+  for(const w of world.walls||[]){
+   const r={x:w.x-rad,y:w.y-rad,w:w.w+rad*2,h:w.h+rad*2};
+   const t=segmentRectTime(from,to,r);
+   if(t<first){first=t;hit={type:'wall',point:{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t}};}
+  }
+  for(const target of world.targets||[]){
+   if(target.active===false||target.id===shot.ownerId||!valid(target))continue;
+   const t=segmentCircleTime(from,to,target,(target.radius||10)+rad);
+   if(t<first-1e-9){
+    first=t;hit={type:'target',targetId:target.id,damage:shot.damage,point:{x:from.x+(to.x-from.x)*t,y:from.y+(to.y-from.y)*t}};
+   }
+  }
+  if(hit)return {projectile:null,impact:hit};
+  if(to.x<0||to.y<0||to.x>(world.width||960)||to.y>(world.height||600)||dt>=shot.ttl)
+   return {projectile:null,impact:null};
+  return {projectile:{...shot,x:to.x,y:to.y,ttl:shot.ttl-dt},impact:null};
+ }
+ return Object.freeze({ROLES,DIFFICULTIES,statsFor,distance,createRangedBot,
+  observeBlue,planBasicBot,moveBasicBot,tryFire,advanceProjectile,
+  segmentRectTime,segmentCircleTime});
+});
+</script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 // Optional ?seed=N for reproducible experiments; without it the game stays truly random.
 const benchmarkSeed=(()=>{const v=new URLSearchParams(location.search).get('seed');if(v===null||!/^\d{1,9}$/.test(v))return null;let a=Number(v)>>>0;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};return Number(v);})();
-const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm;
+const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged;
 const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),activeDefense:$('activeDefense'),defenseStat:$('defenseStat'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
 let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
 const colors={blue:'#4dcfff',red:'#ff638d'};
-const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict')};
+const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict'),enemyMode:$('multiEnemyMode')};
 const multiModes={patrol:'ลาดตระเวน',wander:'เดินสุ่ม',flee:'หนี',stay:'หยุดนิ่ง',approach:'เข้าหา BLUE',hunt:'ไล่ล่าจากที่เคยเห็น'};
+const rangedModes={sentry:'🔫 ป้อมยิง',patrol:'🔫 ลาดตระเวนยิง',hunter:'🔫 ไล่ล่าแล้วยิง'};
+const incomingEnemyMode=new URLSearchParams(location.search).get('enemy');
+multiUI.enemyMode.value=['melee','ranged','mixed'].includes(incomingEnemyMode)?incomingEnemyMode:'melee';
 let scenario=new URLSearchParams(location.search).get('mode')==='multi'?'multi':'duel';
-let multi={count:8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,seed:0,sharedBrain:null,melee:true,difficulty:'balanced',meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,waveHistory:[],matchId:0,kiteEnabled:true,predictive:true,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0};
+let multi={count:8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,seed:0,sharedBrain:null,melee:true,difficulty:'balanced',meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,waveHistory:[],matchId:0,kiteEnabled:true,predictive:true,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,enemyMode:'melee',rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0};
 const multiActive=()=>scenario==='multi';
 
 const layouts={
@@ -947,9 +1143,9 @@ function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encount
 // existing currentIntent, chooseGoal, beginPlan, runPlanner, dodgeMove, moveBot, shoot.
 function setupMultiTargets(){
  const blue=bots[0],shared=blue.brain;
- multi={...multi,count:multi.count||8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,sharedBrain:shared,melee:multiUI.melee.checked,difficulty:multiUI.difficulty.value,kiteEnabled:multiUI.kite.checked,predictive:multiUI.predict.checked,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,matchId:(multi.matchId||0)+1};
+ multi={...multi,count:multi.count||8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,sharedBrain:shared,melee:multiUI.melee.checked,enemyMode:multiUI.enemyMode.value,difficulty:multiUI.difficulty.value,kiteEnabled:multiUI.kite.checked,predictive:multiUI.predict.checked,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,meleeHits:0,damageTaken:0,rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0,microMoves:0,lastKiteAt:-20,kites:0,matchId:(multi.matchId||0)+1};
  if(multi.melee){multiUI.priority.value='nearest';blue.moveSpeed=.385;blue.baseFire=.36;blue.range=.54*S;blue.preferred=.37*S;blue.maxAmmo=10;blue.ammo=10;blue.reload=0;}
- multiUI.wave.textContent=multi.melee?'⚔️ เอาตัวรอด 150 วินาที · ต้องกำจัดบอตให้ครบก่อนเวลา':'🎯 โหมดติดตาม · ไม่มีการโจมตีประชิด';
+ multiUI.wave.textContent=multi.melee?'⚔️/🔫 เอาตัวรอด 150 วินาที · ต้องกำจัดศัตรูให้ครบก่อนเวลา':'🎯 โหมดติดตาม · ศัตรูไม่โจมตี';
  for(let i=0;i<multi.count;i++)addSimpleTarget(i);
  ui.redStyle.closest('.strategy-grid').style.display='none';
  ui.auto.closest('label').style.display=multi.melee?'':'none';
