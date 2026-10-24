@@ -50,3 +50,31 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run duel, tracking, melee, ranged, and mixed browser tests
         run: node tools/browser_regression.cjs
+
+  duel-benchmark:
+    name: BLUE vs RED 1v1 (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [default, balanced]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install headless Playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run 300 full seeded duels over 3 maps
+        run: |
+          mkdir -p benchmarks/duel
+          node tools/benchmark_duel.cjs --seeds 1001-1100 --maps ruins,lanes,open --width 393 --height 852 --jobs 4 --profile "${{ matrix.profile }}" --out "benchmarks/duel/v0610_${{ matrix.profile }}.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duel-v0610-${{ matrix.profile }}
+          path: benchmarks/duel/v0610_${{ matrix.profile }}.json
+          retention-days: 30
