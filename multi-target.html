@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07101f">
+<meta name="description" content="RRT Game Lab Multi-Target: ทดลองตรวจจับ ติดตามหลายเป้าหมาย และใช้ RRT วางแผนไล่จับบอตพื้นฐานแบบ Interactive">
+<title>RRT Multi-Target Lab — หลายเป้าหมาย</title>
+<style>
+:root{color-scheme:dark;--bg:#07101f;--panel:#10223a;--panel2:#152943;--line:#2b4666;--text:#edf5ff;--sub:#a3b7d1;--cyan:#4be0fa;--green:#75efc4;--amber:#ffca7f;--red:#ff748b;--purple:#c39cfb}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 4% 4%,#173458 0%,transparent 40%),radial-gradient(circle at 92% 8%,#2c1a42,transparent 40%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.45}button,select,input{font:inherit}button,select{touch-action:manipulation}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}button{cursor:pointer}main{max-width:1340px;padding:16px 12px 60px;margin:auto}header{margin-bottom:13px}.eyebrow{font-size:11px;letter-spacing:1.5px;color:var(--cyan);font-weight:800}h1{font-size:clamp(26px,4vw,42px);line-height:1.12;margin:6px 0 8px;letter-spacing:-.7px}h1 span{color:var(--green)}header p{font-size:13px;color:var(--sub);margin:0;max-width:900px}.topnav{display:flex;gap:10px;margin:10px 0;align-items:center;flex-wrap:wrap}.topnav a{color:#a6ecff;text-decoration:none;background:#102e49;border:1px solid #2e6582;padding:6px 11px;border-radius:10px;font-size:12px}.topnav a:hover{background:#1d435d}.labtag{font-size:10px;color:#a8d5fd;border:1px solid #315b75;border-radius:22px;padding:3px 9px;letter-spacing:.2px;vertical-align:middle;margin-left:6px}.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 12px}.metric{min-width:0;background:linear-gradient(135deg,#142b46,#0c1a2d);border:1px solid #2c4765;border-radius:12px;padding:10px 12px}.metric label{display:block;font-size:11px;color:var(--sub);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric strong{display:block;color:var(--text);font-size:21px;white-space:nowrap;font-variant-numeric:tabular-nums}.metric strong.v{color:var(--green)}.metric strong.a{color:var(--amber)}.metric strong.b{color:var(--cyan)}.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start}.panel{border:1px solid var(--line);background:linear-gradient(148deg,rgba(20,38,62,.97),rgba(10,23,40,.98));border-radius:17px;overflow:hidden;box-shadow:0 8px 32px #020b1880}.head{padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:800}.head span.sub{font-weight:500;font-size:11px;color:var(--sub)}.stage{background:#051423;position:relative;border-block:1px solid #263b56;aspect-ratio:960 / 600;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:manipulation}.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(35deg,#041324b8,#0d1c30a3);pointer-events:none;padding:12px;text-align:center}.overlay.hidden{display:none}.overlay >div{max-width:320px;border:1px solid #3c6489;border-radius:16px;background:#0b2039ed;padding:20px 17px;box-shadow:0 12px 50px #0007}.overlay h2{font-size:20px;margin:5px 0 7px}.overlay p{font-size:12px;color:#bacce2;margin:0}.dot{height:9px;width:9px;border-radius:50%;display:inline-block;background:#8691a4;margin-right:5px}.dot.on{background:#70ecc5;box-shadow:0 0 12px #62ffc9}.ctrls{display:flex;gap:7px;flex-wrap:wrap;padding:12px 13px 8px}.btn{border-radius:10px;background:#1a3452;border:1px solid #3b5778;color:#edf6ff;font-size:12px;font-weight:750;min-height:40px;padding:9px 12px;white-space:nowrap}.btn.primary{background:linear-gradient(110deg,#007aa8,#1a62bd);border-color:#44c5f1}.btn.warning{background:#382b43;border-color:#7963a0}.btn:disabled{opacity:.45}.btn:active{transform:scale(.98)}.settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 13px 10px}label.control{display:block;font-size:11px;color:#bdd3ea;min-width:0}label.control select{width:100%;margin-top:5px}.settings .full{grid-column:1/-1}.input{width:100%;background:#112942;border:1px solid #355579;border-radius:9px;color:#edf5ff;min-height:36px;font-size:12px;padding:7px 9px}input[type=range]{accent-color:#57cbfa;width:100%;height:7px}.sliderRow{display:flex;align-items:center;gap:10px;min-width:0}.sliderRow span{flex:0 0 auto;color:#72e7ff;font-weight:750;font-size:12px}.sliderRow input{flex:1;min-width:0}.toggles{display:flex;flex-wrap:wrap;gap:12px;padding:0 13px 11px}.toggles label{display:flex;align-items:center;gap:7px;font-size:11px;color:#bad2e9;cursor:pointer}.toggles input{accent-color:#63d6fb;width:16px;height:16px}.notice{margin:0 13px 13px;padding:9px 10px;min-height:37px;border:1px solid #2d526c;border-radius:10px;font-size:11px;color:#b8e9ff;background:#0e2a40}.legend{font-size:11px;color:var(--sub);padding:0 13px 12px;display:flex;flex-wrap:wrap;gap:8px 13px}.mark{font-size:14px;vertical-align:middle}.aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:12px 13px}.title{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;font-size:14px;font-weight:850}.title small{color:var(--sub);font-size:10px;font-weight:600}.rowline{display:flex;align-items:center;justify-content:space-between;gap:7px;margin:9px 0;font-size:12px;color:var(--sub)}.rowline strong{color:#e6f7ff;font-size:12px;text-align:right}.mininote{font-size:11px;color:var(--sub);margin:9px 0 0}.botlist{display:flex;flex-direction:column;gap:6px;max-height:310px;overflow:auto}.botrow{display:grid;grid-template-columns:35px minmax(0,1fr) 108px;align-items:center;gap:6px;background:#10273c;border:1px solid #29425f;border-radius:9px;padding:7px}.botrow .id{font-size:11px;font-weight:900;color:#ffcd87}.botrow .track{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#aec2d7}.botrow select{background:#193450;border:1px solid #365779;color:#e6f4ff;border-radius:8px;height:32px;font-size:11px;width:100%;padding:3px 5px}.botrow.focus{border-color:#73ffcf;background:#123b3b}.events{font-size:11px;display:flex;flex-direction:column;gap:6px;max-height:145px;overflow-y:auto}.events div{background:#112b42;border-left:2px solid #478eab;border-radius:6px;padding:7px 8px;color:#bed8f0}.events div:first-child{color:#fff}.fullcontrol{display:flex;gap:7px;align-items:center}.fullcontrol select{flex:1}.fullcontrol button{min-height:35px}.footer{margin:13px 2px;color:var(--sub);font-size:11px}.text-good{color:var(--green)}.text-amber{color:var(--amber)}
+@media(max-width:920px){.layout{grid-template-columns:1fr}.aside{display:grid;grid-template-columns:1fr 1fr}.aside .wide{grid-column:1/-1}}
+@media(max-width:560px){main{padding:11px 9px 38px}.metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.metric{padding:8px 9px}.metric strong{font-size:18px}.metric label{font-size:10px}.head{padding:10px}.stage{aspect-ratio:1.45}.ctrls{padding:10px 10px 8px}.ctrls .btn{flex:1 1 26%;padding:8px 5px;font-size:11px}.settings{padding:0 10px 9px}.toggles{padding:0 10px 9px}.notice{margin:0 10px 9px}.legend{padding:0 10px 10px}.aside{grid-template-columns:1fr}.aside .wide{grid-column:1/-1}header p{font-size:12px}h1{font-size:28px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body><main>
+<header>
+  <div class="eyebrow">RRT GAME LAB · EXPERIMENT 07 · MULTI-TARGET TRACKING</div>
+  <h1>หลายเป้าหมาย <span>Multi-Target Lab</span><span class="labtag">ทดลองบนมือถือ</span></h1>
+  <p>บอตผู้ติดตาม 1 ตัวรับรู้และจดจำบอตเป้าหมายหลายตัวพร้อมกัน แต่เลือกไล่ทีละตัวผ่าน RRT · บอตเป้าหมายทำตามคำสั่งพื้นฐาน · ไม่มี LLM/API Key</p>
+  <nav class="topnav"><a href="./index.html">← สนามดวล 2 บอต</a><a href="#botsTitle">ตั้งคำสั่งบอตรายตัว ↓</a></nav>
+</header>
+<section class="metrics" aria-label="สถิติเป้าหมาย">
+  <div class="metric"><label>จำนวนเป้าหมาย</label><strong id="totalCount">12</strong></div>
+  <div class="metric"><label>เห็นตอนนี้</label><strong class="v" id="visibleCount">0</strong></div>
+  <div class="metric"><label>จำได้ทั้งหมด</label><strong class="a" id="trackedCount">0</strong></div>
+  <div class="metric"><label>ไล่ติดตาม</label><strong class="b" id="focusName">—</strong></div>
+  <div class="metric"><label>แตะจับสำเร็จ</label><strong id="captureCount">0</strong></div>
+</section>
+<div class="layout">
+  <section class="panel">
+    <div class="head"><div>◈ แผนที่ตรวจจับและ RRT <span class="sub">สีเขียว = เห็น · สีเหลือง = จำได้</span></div><span class="sub" id="phaseText"><span class="dot"></span>พร้อมทดลอง</span></div>
+    <div class="stage"><canvas id="map" width="960" height="600" aria-label="สนามจำลองบอตหลายตัว มีผู้ติดตามและเส้นทาง RRT"></canvas>
+      <div class="overlay" id="overlay"><div><div style="font-size:36px">🎯</div><h2>ทดลองตรวจจับหลายเป้าหมาย</h2><p>กดเริ่มเพื่อดูผู้ติดตามค้นหาบอตหลายตัว เลือกเป้าหมายจากข้อมูลที่เห็นหรือจำได้ แล้วเรียก RRT วางทางเดิน</p></div></div>
+    </div>
+    <div class="ctrls">
+      <button id="start" class="btn primary">▶ เริ่มจำลอง</button>
+      <button id="step" class="btn">⏭ เดินเวลา 1 วิ</button>
+      <button id="reset" class="btn">↻ รีเซ็ต</button>
+      <button id="plus" class="btn">＋ เพิ่มบอต</button>
+      <button id="minus" class="btn">－ ลดบอต</button>
+    </div>
+    <div class="settings">
+      <label class="control">สนามทดลอง<select id="mapSelect" class="input"><option value="warehouse">🏗 โกดังมีกำแพง</option><option value="lanes">🧱 ทางเดินแคบ</option><option value="open">🌿 ลานโล่ง</option></select></label>
+      <label class="control">เลือกเป้าหมายตาม<select id="priority" class="input"><option value="visible">เห็นชัดก่อน</option><option value="nearest">ใกล้ที่สุด</option><option value="runner">บอตที่หนี</option><option value="memory">เป้าหมายจากความจำ</option></select></label>
+      <label class="control">รัศมีเซนเซอร์ <div class="sliderRow"><input id="sensorRange" type="range" min="130" max="650" step="10" value="430"><span id="sensorOut">430</span></div></label>
+      <label class="control">ความจำ (วินาที) <div class="sliderRow"><input id="memoryTTL" type="range" min="2" max="20" step="1" value="9"><span id="ttlOut">9s</span></div></label>
+      <label class="control">Goal Bias ของ RRT <div class="sliderRow"><input id="goalBias" type="range" min="0" max="45" step="5" value="15"><span id="biasOut">15%</span></div></label>
+      <label class="control">จำนวนบอตเมื่อรีเซ็ต <div class="sliderRow"><input id="number" type="range" min="4" max="24" step="1" value="12"><span id="numberOut">12</span></div></label>
+      <label class="control full">มุมรับรู้ของผู้ติดตาม<select id="fov" class="input"><option value="360">มองรอบตัว 360°</option><option value="150">มองด้านหน้า 150°</option><option value="90">มองด้านหน้า 90°</option></select></label>
+    </div>
+    <div class="toggles"><label><input type="checkbox" id="showTree" checked>แสดงกิ่ง RRT</label><label><input type="checkbox" id="showTruth" checked>แสดงเป้าหมายจริงเพื่อเรียนรู้</label><label><input type="checkbox" id="showSight" checked>แสดงเซนเซอร์</label></div>
+    <div id="notice" class="notice" role="status">เริ่มเล่นแล้วสังเกตว่า “เห็นหลายตัว” ไม่เท่ากับ “ไล่ทุกตัวพร้อมกัน”</div>
+    <div class="legend"><span><b class="mark">🔷</b> ผู้ติดตาม</span><span><b class="mark">🟠</b> บอตคำสั่งพื้นฐาน</span><span><b class="mark">🟢</b> มองเห็น</span><span><b class="mark">🟡</b> เป้าหมายในความจำ</span><span><b class="mark">━</b> เส้นทาง RRT</span></div>
+  </section>
+  <aside class="aside">
+    <section class="panel sidepad">
+      <div class="title">🧠 สถานะผู้ติดตาม <small>TRACKING AGENT</small></div>
+      <div class="rowline"><span>นโยบายเลือกเป้าหมาย</span><strong id="policyState">เห็นชัดก่อน</strong></div>
+      <div class="rowline"><span>คำสั่งปัจจุบัน</span><strong id="intentState">สำรวจหาตัวเป้าหมาย</strong></div>
+      <div class="rowline"><span>เป้าหมายหลัก</span><strong id="focusState">—</strong></div>
+      <div class="rowline"><span>วางแผน RRT</span><strong id="planState">0 ครั้ง</strong></div>
+      <div class="rowline"><span>พบเส้นทาง / ล้มเหลว</span><strong id="pathState">0 / 0</strong></div>
+      <div class="rowline"><span>เวลาจำลอง</span><strong id="timeState">00:00</strong></div>
+      <p class="mininote">ข้อมูลตำแหน่งที่ไม่เคยมองเห็นจะไม่ถูกส่งให้ระบบเลือกเป้าหมาย การแสดงตำแหน่งจริงบนแผนที่เป็นโหมดผู้สังเกตเท่านั้น</p>
+    </section>
+    <section class="panel sidepad wide">
+      <div class="title" id="botsTitle">🤖 บอตเป้าหมาย <small>ปรับคำสั่งรายตัว</small></div>
+      <div class="fullcontrol"><select id="allCommand" class="input"><option value="patrol">ลาดตระเวน</option><option value="wander">เดินสุ่ม</option><option value="flee">หนีเมื่อเห็นผู้ตาม</option><option value="stay">หยุดนิ่ง</option><option value="approach">เดินเข้าหาผู้ตาม</option></select><button id="applyAll" class="btn">ใช้กับทุกตัว</button></div>
+      <p class="mininote" style="margin:8px 0">เปลี่ยนคำสั่งจากช่องรายตัว หรือแตะที่บอตบนสนามเพื่อเลือก (การล็อกไล่ทำได้เฉพาะตัวที่เห็นหรือจำได้)</p>
+      <div id="botsList" class="botlist"></div>
+    </section>
+    <section class="panel sidepad wide">
+      <div class="title">📡 รายงานเหตุการณ์ <small>สด</small></div>
+      <div class="events" id="events" aria-live="off"></div>
+      <p class="mininote">ทดลอง: ตั้ง T01 เป็นหยุดนิ่ง, T02 เดินสุ่ม, T03 หนี จากนั้นลองเปลี่ยนลำดับความสำคัญและลดรัศมีเซนเซอร์</p>
+    </section>
+  </aside>
+</div>
+<p class="footer">RRT Game Lab · Multi-Target Tracking Prototype · แยกโหมดจาก Arena หลัก · JavaScript แบบออฟไลน์ · ผลทุกอย่างเป็นการจำลอง ไม่ใช่เซนเซอร์/หุ่นยนต์จริง</p>
+</main>
+<script src="./multi_target_core.js"></script>
+<script>
+(function(){'use strict';
+const C=window.MultiTargetCore; if(!C)throw Error('multi_target_core.js did not load');
+const $=id=>document.getElementById(id),canvas=$('map'),ctx=canvas.getContext('2d');
+const names={patrol:'ลาดตระเวน',wander:'เดินสุ่ม',flee:'หนี',stay:'หยุดนิ่ง',approach:'เข้าหาผู้ตาม'};
+const mapDefs={
+ warehouse:[{x:215,y:75,w:53,h:245},{x:400,y:270,w:157,h:60},{x:658,y:74,w:55,h:220},{x:715,y:390,w:145,h:46},{x:178,y:430,w:90,h:58}],
+ lanes:[{x:185,y:0,w:35,h:360},{x:185,y:470,w:35,h:130},{x:385,y:140,w:35,h:460},{x:590,y:0,w:35,h:380},{x:770,y:210,w:35,h:390}],
+ open:[]
+};
+const config={count:12,range:430,ttl:9,bias:.15,map:'warehouse',fov:360,priority:'visible',tree:true,truth:true,sight:true};
+let game, rng,log=[],uiTick=0,planningSeed=555,lastTime=0,animId=0,renderCount=0;
+const scanPoints=[{x:110,y:105},{x:495,y:115},{x:870,y:105},{x:865,y:510},{x:470,y:505},{x:115,y:485}];
+function record(msg){log.unshift({at:game?.time??0,msg});log=log.slice(0,10);const box=$('events');box.replaceChildren();for(const ev of log){const el=document.createElement('div');el.textContent=`${timeFmt(ev.at)}  ${ev.msg}`;box.append(el);}}
+function timeFmt(t){const z=Math.max(0,Math.floor(t));return String(Math.floor(z/60)).padStart(2,'0')+':'+String(z%60).padStart(2,'0');}
+function obstacles(){return mapDefs[config.map]||[];}
+function findSpawn(existing=[],near=null){for(let n=0;n<800;n++){const x=near?C.clamp(near.x+(rng()-.5)*400,25,935):35+rng()*890,y=near?C.clamp(near.y+(rng()-.5)*280,25,575):30+rng()*540;
+  const p={x,y};if(!C.freePoint(p,obstacles(),14))continue;if(C.dist(p,game.hunter)<75)continue;if(existing.some(t=>t.active&&C.dist(p,t)<28))continue;return p;}
+ return {x:880,y:560};}
+function botId(i){return 'T'+String(i).padStart(2,'0');}
+function createBot(i){const p=findSpawn(game.bots,i<3?{x:190,y:260+i*75}:null); const types=['patrol','wander','flee','stay','approach'];
+ const mode=types[i%types.length];const b={id:botId(i+1),x:p.x,y:p.y,start:{...p},heading:rng()*Math.PI*2,r:10,kind:mode,baseSpeed:40+i%4*5,waypoint:null,wpIndex:0,wpTimer:0,stuck:0,active:true,respawnAt:0};game.bots.push(b);return b;}
+function setup(){rng=C.random(Number($('seed')?.value)||8441);planningSeed=32942;game={time:0,phase:'paused',bots:[],hunter:{x:65,y:298,r:12,speed:108,heading:0,goal:null,path:[],nodes:[],focus:null,manual:null,planAt:-20,planCount:0,planOkay:0,planFail:0,waypointIndex:0,goalReason:''},tracks:{},visible:[],capture:0,selectedId:null,stats:{distance:0,replans:0}};log=[];for(let i=0;i<config.count;i++)createBot(i);refreshList();record('พร้อมทดสอบ: บอตหลายตัวและเซนเซอร์ 1 ตัว');$('overlay').classList.remove('hidden');$('start').textContent='▶ เริ่มจำลอง';updateAll();paint();}
+function setCommand(id,command){const b=game.bots.find(x=>x.id===id);if(!b||!names[command])return false;b.kind=command;b.waypoint=null;b.wpTimer=0;b.wpIndex=0;record(`${id} เปลี่ยนคำสั่ง → ${names[command]}`);refreshList();return true;}
+function refreshList(){const holder=$('botsList');holder.replaceChildren();for(const b of game.bots){let div=document.createElement('div');div.className='botrow';div.dataset.id=b.id;let id=document.createElement('div');id.className='id';id.textContent=b.id;let status=document.createElement('div');status.className='track';status.dataset.track=b.id;status.textContent='ยังไม่เคยพบ';const select=document.createElement('select');select.setAttribute('aria-label',`คำสั่งของ ${b.id}`);select.dataset.command=b.id;
+  for(const [key,label] of Object.entries(names)){let o=document.createElement('option');o.value=key;o.textContent=label;select.append(o);}select.value=b.kind;select.onchange=()=>setCommand(b.id,select.value);div.append(id,status,select);div.onclick=ev=>{if(ev.target===select)return;game.selectedId=b.id;const t=game.tracks[b.id];if(t){game.hunter.manual=b.id;record(`ล็อกเป้าหมาย ${b.id} จากข้อมูล ${t.status==='visible'?'มองเห็น':'ความจำ'}`);}else record(`ยังล็อก ${b.id} ไม่ได้: ผู้ติดตามยังไม่รู้ตำแหน่ง`);updateAll();};holder.append(div);}}
+function pointAround(base,spread){for(let k=0;k<35;k++){let p=C.sampleDisk(rng,base,spread);p.x=C.clamp(p.x,18,942);p.y=C.clamp(p.y,18,582);if(C.freePoint(p,obstacles(),14))return p;}return {...base};}
+function randomFreeTarget(){for(let k=0;k<60;k++){let p={x:25+rng()*910,y:25+rng()*550};if(C.freePoint(p,obstacles(),13))return p;}return {x:800,y:100};}
+function moveBots(dt){for(const b of game.bots){if(!b.active){if(game.time>=b.respawnAt){const p=findSpawn(game.bots);b.x=p.x;b.y=p.y;b.active=true;b.waypoint=null;delete game.tracks[b.id];record(`${b.id} กลับเข้ามาใหม่ (ยังไม่ถูกตรวจพบ)`);}continue;}
+    if(b.kind==='stay')continue;
+    if(b.kind==='patrol'){
+      const anchors=[{x:b.start.x-82,y:b.start.y-50},{x:b.start.x+82,y:b.start.y-50},{x:b.start.x+80,y:b.start.y+60},{x:b.start.x-80,y:b.start.y+60}];
+      let dest=anchors[b.wpIndex%anchors.length];if(!C.freePoint(dest,obstacles(),12))dest=pointAround(b.start,110);
+      b.waypoint=dest;if(C.dist(b,dest)<21)b.wpIndex++;
+    }else if(b.kind==='wander'){
+      b.wpTimer-=dt;if(!b.waypoint||b.wpTimer<=0||C.dist(b,b.waypoint)<18){b.waypoint=randomFreeTarget();b.wpTimer=3+rng()*5;}
+    }else if(b.kind==='flee'){
+      const threatened=C.dist(b,game.hunter)<300&&C.visible(b,game.hunter,obstacles(),{range:330});
+      if(threatened){let dx=b.x-game.hunter.x,dy=b.y-game.hunter.y,mag=Math.max(1,Math.hypot(dx,dy));let px=b.x+dx/mag*210,py=b.y+dy/mag*210;b.waypoint=pointAround({x:C.clamp(px,23,937),y:C.clamp(py,23,577)},90);b.wpTimer=2;}
+      else if(!b.waypoint||C.dist(b,b.waypoint)<18){b.waypoint=randomFreeTarget();}
+    }else if(b.kind==='approach')b.waypoint={x:game.hunter.x,y:game.hunter.y};
+    const before={x:b.x,y:b.y},to=C.moveToward(b,b.waypoint||b,obstacles(),(b.kind==='flee'?67:b.baseSpeed)*dt,11);
+    b.x=to.x;b.y=to.y;const travel=C.dist(before,b);
+    if(travel>.15){b.heading=Math.atan2(b.y-before.y,b.x-before.x);b.stuck=0;}else if(b.waypoint){b.stuck+=dt;if(b.stuck>1.2){b.waypoint=randomFreeTarget();b.stuck=0;}}
+  }}
+function sensorRead(){const prior=game.tracks;const o=C.observe(game.hunter,game.bots,obstacles(),prior,game.time,{range:config.range,fov:config.fov/180*Math.PI,ttl:config.ttl});
+  for(const id of o.visibleIds){if(prior[id]?.status!=='visible')record(`${id} ตรวจพบจากเซนเซอร์`);}
+  for(const id of Object.keys(prior)){if(prior[id]?.status==='visible'&&o.tracks[id]?.status==='memory')record(`${id} หลุดสายตา → จำตำแหน่งเดิม`);if(!o.tracks[id]&&prior[id]?.status==='memory')record(`${id} ข้อมูลเก่าหมดอายุ`);}
+  game.tracks=o.tracks;game.visible=o.visibleIds;
+  if(game.hunter.manual&&!game.tracks[game.hunter.manual])game.hunter.manual=null;
+}
+function chooseTarget(){const h=game.hunter;return (h.manual&&game.tracks[h.manual])?game.tracks[h.manual]:C.rankTarget(game.tracks,h,config.priority,h.focus);}
+function validGoal(p){if(C.freePoint(p,obstacles(),14))return {x:p.x,y:p.y};for(let rad=20;rad<=85;rad+=15)for(let a=0;a<10;a++){let q={x:C.clamp(p.x+Math.cos(a*Math.PI/5)*rad,16,944),y:C.clamp(p.y+Math.sin(a*Math.PI/5)*rad,16,584)};if(C.freePoint(q,obstacles(),14))return q;}return null;}
+function chooseHuntGoal(){const h=game.hunter,target=chooseTarget();
+  if(target){const pos=target.status==='memory'?(target.predicted||C.predict(target,game.time)):target;
+    if(target.id!==h.focus){record(`กำหนดเป้าหมายหลัก ${target.id} (${target.status==='visible'?'เห็นชัด':'ความจำ'})`);h.focus=target.id;h.planAt=-100;}
+    h.goalReason=target.status==='visible'?'กำลังไล่เป้าหมายที่มองเห็น':'ตรวจสอบบริเวณเป้าหมายล่าสุด';return validGoal(pos);
+  }
+  if(h.focus){record('ไม่มีข้อมูลเป้าหมายเหลือ → กลับไปลาดตระเวน');h.focus=null;h.planAt=-100;}
+  h.goalReason='ลาดตระเวนหาบอตที่ยังไม่เห็น';let pt=scanPoints[h.waypointIndex%scanPoints.length];if(C.dist(h,pt)<32)h.waypointIndex++;
+  return validGoal(scanPoints[h.waypointIndex%scanPoints.length]);
+}
+function requestPlan(force=false){const h=game.hunter,goal=chooseHuntGoal();if(!goal)return false;
+ const stale=game.time-h.planAt>1.15;const far=!h.goal||C.dist(goal,h.goal)>38;
+ if(!force&&!stale&&h.path.length&&!far)return true;
+ if(!force&&!stale&&!far)return false;
+ h.planAt=game.time;h.goal=goal;h.planCount++;
+ const a=C.rrt({x:h.x,y:h.y},goal,obstacles(),{seed:++planningSeed,iterations:660,step:35,goalBias:config.bias,guided:.48,radius:13});
+ h.nodes=a.nodes;h.path=a.path.slice(1);
+ if(a.stats.found){h.planOkay++;return true;}
+ h.planFail++;h.path=[];if(h.planFail===1||h.planFail%5===0)record(`ยังหาเส้นทางไม่ได้ (ครั้งที่ ${h.planFail})`);return false;
+}
+function moveHunter(dt){const h=game.hunter;requestPlan();if(!h.path.length)return;
+ while(h.path.length&&C.dist(h,h.path[0])<11)h.path.shift();if(!h.path.length)return;
+ const previous={x:h.x,y:h.y},n=h.path[0];const p=C.moveToward(h,n,obstacles(),h.speed*dt,13);
+ if(!C.segmentClear(previous,p,obstacles(),13)){h.path=[];h.planAt=-100;return;}
+ h.x=p.x;h.y=p.y;game.stats.distance+=C.dist(previous,h);
+ if(C.dist(previous,h)>.05)h.heading=Math.atan2(h.y-previous.y,h.x-previous.x);
+}
+function tagTargets(){for(const b of game.bots){if(!b.active)continue;
+ if(C.dist(game.hunter,b)<game.hunter.r+b.r+5&&C.visible(game.hunter,b,obstacles(),{range:40,margin:1})){
+   b.active=false;b.respawnAt=game.time+4;game.capture++;
+   record(`🎯 แตะจับ ${b.id} สำเร็จ (${game.capture})`);delete game.tracks[b.id];
+   if(game.hunter.focus===b.id){game.hunter.focus=null;game.hunter.manual=null;game.hunter.path=[];game.hunter.planAt=-100;}
+ }} }
+function advance(dt){if(game.phase!=='running')return;dt=C.clamp(dt,0,0.08);game.time+=dt;moveBots(dt);sensorRead();moveHunter(dt);tagTargets();}
+function advanceSeconds(s){const steps=Math.ceil(s/.04);for(let i=0;i<steps;i++)advance(s/steps);updateAll();paint();}
+function setPhase(x){game.phase=x;$('overlay').classList.toggle('hidden',x==='running'||game.time>0);$('start').textContent=x==='running'?'⏸ หยุด':'▶ '+(game.time>0?'เล่นต่อ':'เริ่มจำลอง');updateAll();}
+function updateAll(){let active=game.bots.filter(b=>b.active).length;
+ $('totalCount').textContent=active+' / '+game.bots.length;$('visibleCount').textContent=game.visible.length;$('trackedCount').textContent=Object.keys(game.tracks).length;
+ $('focusName').textContent=game.hunter.focus??'—';$('focusState').textContent=game.hunter.focus??'—';$('captureCount').textContent=game.capture;
+ $('intentState').textContent=game.hunter.goalReason||'เริ่มค้นหา';$('planState').textContent=game.hunter.planCount+' ครั้ง';$('pathState').textContent=game.hunter.planOkay+' / '+game.hunter.planFail;
+ $('policyState').textContent=$('priority').selectedOptions[0].textContent;$('timeState').textContent=timeFmt(game.time);
+ $('phaseText').innerHTML=`<span class="dot ${game.phase==='running'?'on':''}"></span>${game.phase==='running'?'กำลังจำลอง':'หยุดชั่วคราว'}`;
+ $('notice').textContent=`เป้าหมายที่เห็น ${game.visible.length} ตัว • จำได้ ${Object.keys(game.tracks).length} ตัว • กำลังไล่ ${game.hunter.focus||'ค้นหาตัวใหม่'} • RRT ${game.hunter.planCount} ครั้ง`;
+ for(const b of game.bots){const row=$('botsList').querySelector(`[data-id="${b.id}"]`);if(!row)continue;const s=row.querySelector('.track');const t=game.tracks[b.id];s.textContent=!b.active?'ถูกแตะจับ (รอกลับมา)':!t?'ยังไม่รู้ตำแหน่ง':t.status==='visible'?'🟢 มองเห็น':`🟡 จำได้ ${Math.round(t.confidence*100)}%`;row.classList.toggle('focus',game.hunter.focus===b.id);}
+}
+function line(a,b,color,width=1,dash=[]){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);}
+function circle(x,y,r,fill,stroke=null,w=1){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.stroke();}}
+function paint(){ctx.clearRect(0,0,960,600);ctx.fillStyle='#061728';ctx.fillRect(0,0,960,600);
+ ctx.strokeStyle='#173046';ctx.lineWidth=1;for(let x=0;x<=960;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,600);ctx.stroke();}for(let y=0;y<=600;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(960,y);ctx.stroke();}
+ for(const o of obstacles()){ctx.fillStyle='#4a3147';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.strokeStyle='#ed698f';ctx.lineWidth=2;ctx.strokeRect(o.x+1,o.y+1,o.w-2,o.h-2);ctx.strokeStyle='#774c69';for(let x=o.x+13;x<o.x+o.w-7;x+=16)line({x,y:o.y+4},{x:x+12,y:o.y+o.h-5},'#755066',1);}
+ const h=game.hunter;
+ if(config.sight){circle(h.x,h.y,config.range,'#46dafe08','#4de3fa26',1);if(config.fov<360){ctx.beginPath();ctx.moveTo(h.x,h.y);ctx.arc(h.x,h.y,config.range,h.heading-config.fov*Math.PI/360,h.heading+config.fov*Math.PI/360);ctx.closePath();ctx.fillStyle='#4ddfea15';ctx.fill();}}
+ if(config.tree&&h.nodes.length>1){for(let i=1;i<h.nodes.length;i++){const n=h.nodes[i],p=h.nodes[n.parent];if(p)line(n,p,'#44b7f74a',.9);}}
+ if(h.path.length){let last=h;for(const p of h.path){line(last,p,'#76f5c6',3.2);last=p;}}
+ for(const track of Object.values(game.tracks)){
+   if(track.status==='visible'){line(h,track,'#56efab55',1.15);circle(track.x,track.y,20,null,'#50edab',2);}
+   else{const pos=track.predicted||C.predict(track,game.time);circle(pos.x,pos.y,track.uncertainty,'#ffce6312','#ffd78385',1.3);circle(pos.x,pos.y,14,'#ffc36c1c','#ffd48a',2);ctx.font='bold 12px system-ui';ctx.fillStyle='#ffe3a8';ctx.textAlign='center';ctx.fillText(`${track.id}?`,pos.x,pos.y-23);}
+ }
+ for(const b of game.bots){if(!b.active)continue;const tr=game.tracks[b.id],known=!!tr;
+    if(!config.truth&&!known)continue;
+    const detected=tr?.status==='visible'; const fill=detected?'#ffbe73':known?'#bc865e':'#ad6d6d';
+    circle(b.x,b.y,12,fill,detected?'#93ffbb':'#3d2834',detected?3:1);circle(b.x+Math.cos(b.heading)*5,b.y+Math.sin(b.heading)*5,2.5,'#132331');
+    ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.fillStyle=detected?'#c5ffe4':'#d4c0b8';ctx.fillText(b.id,b.x,b.y-20);
+    if(b.id===game.hunter.focus)circle(b.x,b.y,24,null,'#61efbc',2.4);
+ }
+ circle(h.x,h.y,16,'#133f5a','#55defb',3);circle(h.x+Math.cos(h.heading)*10,h.y+Math.sin(h.heading)*10,4,'#b7ffff');
+ ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.fillStyle='#b5f3ff';ctx.fillText('TRACKER',h.x,h.y-23);
+ ctx.font='bold 11px system-ui';ctx.textAlign='left';ctx.fillStyle='#bbd1e9';ctx.fillText('พื้นที่จำลอง 960×600',12,590);
+}
+function frame(now){if(!lastTime)lastTime=now;const elapsed=Math.min((now-lastTime)/1000,.06);lastTime=now;if(game.phase==='running')advance(elapsed);
+ uiTick+=elapsed;if(uiTick>.14){uiTick=0;updateAll();}paint();animId=requestAnimationFrame(frame);}
+function applyInputs(){config.map=$('mapSelect').value;config.priority=$('priority').value;config.range=+$('sensorRange').value;config.ttl=+$('memoryTTL').value;config.bias=+$('goalBias').value/100;config.fov=+$('fov').value;config.count=+$('number').value;config.tree=$('showTree').checked;config.truth=$('showTruth').checked;config.sight=$('showSight').checked;
+ $('sensorOut').textContent=config.range;$('ttlOut').textContent=config.ttl+'s';$('biasOut').textContent=Math.round(config.bias*100)+'%';$('numberOut').textContent=config.count;
+}
+function changeCount(delta){let target=C.clamp(game.bots.length+delta,4,24);if(target===game.bots.length)return;
+ if(delta>0)createBot(game.bots.length);else{const removed=game.bots.pop();delete game.tracks[removed.id];if(game.hunter.focus===removed.id){game.hunter.focus=null;game.hunter.manual=null;}}
+ $('number').value=game.bots.length;config.count=game.bots.length;applyInputs();refreshList();updateAll();}
+function findBotFromTap(e){const r=canvas.getBoundingClientRect(),pos={x:(e.clientX-r.left)*960/r.width,y:(e.clientY-r.top)*600/r.height};let nearest=null,short=26;
+ for(const b of game.bots){if(!b.active)continue;const d=C.dist(pos,b);if(d<short){short=d;nearest=b;}}
+ if(!nearest)return;game.selectedId=nearest.id;const seen=game.tracks[nearest.id];if(seen){game.hunter.manual=nearest.id;game.hunter.planAt=-100;record(`ล็อกไล่ ${nearest.id} (${seen.status==='visible'?'มองเห็น':'ความจำ'})`);}else record(`ไม่สามารถล็อก ${nearest.id} ได้: ยังตรวจไม่พบจากเซนเซอร์`);updateAll();}
+$('start').onclick=()=>setPhase(game.phase==='running'?'paused':'running');$('reset').onclick=()=>{applyInputs();setup();};$('step').onclick=()=>{if(game.phase==='running')setPhase('paused');game.phase='running';advanceSeconds(1);game.phase='paused';$('overlay').classList.add('hidden');updateAll();};
+$('plus').onclick=()=>changeCount(1);$('minus').onclick=()=>changeCount(-1);$('applyAll').onclick=()=>{for(const b of game.bots){b.kind=$('allCommand').value;b.waypoint=null;b.wpTimer=0;}refreshList();record(`ส่งคำสั่ง “${names[$('allCommand').value]}” ให้บอตทั้งหมด`);};
+for(const id of ['priority','sensorRange','memoryTTL','goalBias','fov','showTree','showTruth','showSight'])$(id).oninput=()=>{applyInputs();game.hunter.planAt=-100;updateAll();};
+$('number').oninput=()=>{$('numberOut').textContent=$('number').value;};$('mapSelect').onchange=()=>{applyInputs();setup();};canvas.addEventListener('pointerdown',findBotFromTap);
+window.__multiTargetDebug={getState:()=>({time:game.time,phase:game.phase,hunter:{...game.hunter,nodes:undefined},bots:game.bots.map(b=>({...b})),tracks:JSON.parse(JSON.stringify(game.tracks)),visible:game.visible.slice(),capture:game.capture,config:{...config}}),advance:(seconds)=>{const previous=game.phase;game.phase='running';advanceSeconds(seconds);game.phase=previous;updateAll();},forceHunter:(p)=>{if(C.freePoint(p,obstacles(),14)){Object.assign(game.hunter,p);game.hunter.path=[];game.hunter.planAt=-100;return true;}return false;},forceBot:(id,p)=>{const b=game.bots.find(x=>x.id===id);if(b&&C.freePoint(p,obstacles(),13)){b.x=p.x;b.y=p.y;return true;}return false;},observe:sensorRead,setCommand,add:()=>changeCount(1),remove:()=>changeCount(-1),reset:setup,validate:()=>({hunter:C.freePoint(game.hunter,obstacles(),13),bots:game.bots.filter(b=>b.active).every(b=>C.freePoint(b,obstacles(),10)),path:(()=>{let p=game.hunter;return game.hunter.path.every(n=>{let okay=C.segmentClear(p,n,obstacles(),13);p=n;return okay;});})()})};
+applyInputs();setup();animId=requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
