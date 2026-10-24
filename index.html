@@ -1102,7 +1102,7 @@ function log(message,team){events.push({t:Number(elapsed.toFixed(2)),team:team||
 function snapshot(){
  if(phase!=='running'&&phase!=='ended')return;
  const stamp=Number(elapsed.toFixed(2));if(timeline.length&&Math.abs(timeline[timeline.length-1].t-stamp)<.045)return;
- timeline.push({t:stamp,targets:multiActive()?multi.targets.filter(b=>b.active).map(b=>({id:b.id,x:b.x/W,y:b.y/H,hp:b.hp})):[],bots:(multiActive()?[bots[0]]:bots).map(b=>({team:b.team,x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),hp:Number(b.hp.toFixed(1)),ammo:b.ammo,intent:b.intent,tactic:b.tactic,knowledge:mem.knowledge(b.brain,elapsed).status})),bullets:bullets.map(b=>({x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),team:b.team})).slice(0,55)});
+ timeline.push({t:stamp,targets:multiActive()?multi.targets.filter(b=>b.active).map(b=>({id:b.id,x:b.x/W,y:b.y/H,hp:b.hp,kind:b.kind,role:b.team==='ranged'?b.role:null})):[],bots:(multiActive()?[bots[0]]:bots).map(b=>({team:b.team,x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),hp:Number(b.hp.toFixed(1)),ammo:b.ammo,intent:b.intent,tactic:b.tactic,knowledge:mem.knowledge(b.brain,elapsed).status})),bullets:bullets.concat(multiActive()?multi.rangedShots:[]).map(b=>({x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),team:b.team})).slice(0,65)});
  if(timeline.length>660)timeline.shift();
  updateReplayUI();
 }
@@ -1126,9 +1126,9 @@ function toggleReplay(force){
  updateReplayUI();draw();
 }
 function exportReplay(){if(!timeline.length)return;
- const data={format:'RRT-Arena-sampled-state',version:'0.6.6',seed:benchmarkSeed,activeTactics:ui.activeTactics.checked,activeDefense:ui.activeDefense.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,multiWave:multiActive()?{enabled:multi.melee,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictiveEnabled:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,count:multi.targets.length,eliminated:multi.eliminated,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,winHistory:multi.waveHistory.slice()}:null,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
+ const data={format:'RRT-Arena-sampled-state',version:'0.6.7',seed:benchmarkSeed,activeTactics:ui.activeTactics.checked,activeDefense:ui.activeDefense.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,multiWave:multiActive()?{enabled:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictiveEnabled:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,count:multi.targets.length,eliminated:multi.eliminated,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,winHistory:multi.waveHistory.slice()}:null,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='rrt-arena-v066-round-'+round+'-replay.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;a.download='rrt-arena-v067-round-'+round+'-replay.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  showNotice('บันทึก Replay JSON แล้ว (ภาพสถานะ ไม่ใช่วิดีโอ)');
 }
 function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
@@ -1940,7 +1940,7 @@ function drawReplay(){if(!timeline.length)return;
  ctx.save();ctx.textAlign='center';ctx.font='900 11px system-ui';ctx.fillStyle='#c6e5ff';ctx.fillText('⏪ REPLAY · '+formatTime(frame.t),W/2,22);
  for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText(b.team.toUpperCase()+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
  if(multiActive())for(const t of (frame.targets||[])){ctx.fillStyle='#ffd28c';ctx.beginPath();ctx.arc(t.x*W,t.y*H,R*.65,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(t.id,t.x*W,t.y*H-R);}
- for(const shot of frame.bullets){ctx.fillStyle=shot.team==='blue'?'#88e7ff':'#ffb3ba';ctx.beginPath();ctx.arc(shot.x*W,shot.y*H,2.6,0,Math.PI*2);ctx.fill();}
+ for(const shot of frame.bullets){ctx.fillStyle=shot.team==='blue'?'#88e7ff':shot.team==='ranged'?'#ffbf70':'#ffb3ba';ctx.beginPath();ctx.arc(shot.x*W,shot.y*H,2.6,0,Math.PI*2);ctx.fill();}
  ctx.restore();
 }
 function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(w);
@@ -2017,28 +2017,47 @@ multiUI.scenario.value=scenario;multiUI.panel.hidden=!multiActive();
 multiUI.scenario.addEventListener('change',()=>{
  scenario=multiUI.scenario.value;multiUI.panel.hidden=!multiActive();
  if(!multiActive()){document.getElementById('redFighterName').textContent='🔺 RED · สายบุก';document.getElementById('arenaHead').textContent='◈ Combat Maneuvers · Memory-Guided RRT';ui.redStyle.closest('.strategy-grid').style.display='';ui.auto.closest('label').style.display='';ui.activeDefense.checked=true;}
- if(/^https?:$/.test(location.protocol))history.replaceState(null,'',location.pathname+(multiActive()?'?mode=multi':''));
+ if(/^https?:$/.test(location.protocol)){const query=new URLSearchParams(location.search);if(multiActive()){query.set('mode','multi');if(multiUI.enemyMode.value!=='melee')query.set('enemy',multiUI.enemyMode.value);}else{query.delete('mode');query.delete('enemy');}history.replaceState(null,'',location.pathname+(query.toString()?'?'+query.toString():''));}
  resetGame();showNotice(multiActive()?'โหมด BLUE ตัวเดิมปะทะหลายเป้าหมาย':'กลับสนามดวลเดิม');
 });
-multiUI.preset.addEventListener('change',()=>{if(phase==='running'){showNotice('หยุดหรือจบรอบก่อนเปลี่ยนจำนวน');return;}multi.count=Number(multiUI.preset.value);resetGame();showNotice('เตรียมฝูงประชิด '+multi.count+' ตัวแล้ว');});
+multiUI.preset.addEventListener('change',()=>{if(phase==='running'){showNotice('หยุดหรือจบรอบก่อนเปลี่ยนจำนวน');return;}multi.count=Number(multiUI.preset.value);resetGame();showNotice('เตรียมศัตรู '+multi.count+' ตัวแล้ว');});
  multiUI.kite.addEventListener('change',()=>{multi.kiteEnabled=multiUI.kite.checked;resetGame();showNotice('Swarm-Aware Kiting '+(multi.kiteEnabled?'เปิด':'ปิด')+' แล้ว');});
  multiUI.predict.addEventListener('change',()=>{multi.predictive=multiUI.predict.checked;resetGame();showNotice('Predictive Anti-Encirclement '+(multi.predictive?'เปิด':'ปิด (พฤติกรรม V0.6.5)')+' แล้ว');});
  multiUI.plus.addEventListener('click',()=>{if(multi.melee&&phase==='running')return;if(multi.targets.length>=24)return;multi.count=multi.targets.length+1;addSimpleTarget(multi.targets.length);renderMultiTargetRows();});
 multiUI.minus.addEventListener('click',()=>{if(multi.melee&&phase==='running')return;if(multi.targets.length<=4)return;const t=multi.targets.pop();delete multi.tracks[t.id];delete multi.brains[t.id];if(multi.manualFocus===t.id)multi.manualFocus=null;if(multi.focus===t.id){multi.focus=null;multi.sensorAt=-1;}multi.count=multi.targets.length;renderMultiTargetRows();});
-multiUI.applyAll.addEventListener('click',()=>{for(const t of multi.targets){t.kind=multiUI.allCommand.value;t.wp=null;t.timer=0;}renderMultiTargetRows();showNotice('เปลี่ยนคำสั่งบอตทั้ง '+multi.targets.length+' ตัวแล้ว');});
+multiUI.applyAll.addEventListener('click',()=>{
+ const command=multiUI.allCommand.value==='patrol-ranged'?'patrol':multiUI.allCommand.value;
+ let changed=0;
+ for(const t of multi.targets){
+  if(t.team==='ranged'){
+   if(!rangedModes[command])continue;
+   t.kind=command;t.role=command;t.track=null;t.waypointIndex=0;changed++;
+  }else if(multiModes[command]){t.kind=command;t.wp=null;t.timer=0;changed++;}
+ }
+ renderMultiTargetRows();showNotice('เปลี่ยนคำสั่งที่รองรับ '+changed+' ตัวแล้ว');
+});
+multiUI.enemyMode.addEventListener('change',()=>{
+ if(/^https?:$/.test(location.protocol)){
+  const query=new URLSearchParams(location.search);query.set('mode','multi');
+  if(multiUI.enemyMode.value==='melee')query.delete('enemy');else query.set('enemy',multiUI.enemyMode.value);
+  history.replaceState(null,'',location.pathname+'?'+query.toString());
+ }
+ resetGame();showNotice('เลือกศัตรู '+({melee:'ประชิด',ranged:'ยิงระยะไกล',mixed:'ประชิดและระยะไกล'}[multiUI.enemyMode.value]));
+});
 multiUI.priority.addEventListener('change',()=>{multi.manualFocus=null;multi.focus=null;multi.sensorAt=-1;showNotice('เปลี่ยนวิธีเลือกเป้าหมายแล้ว');});
- multiUI.melee.addEventListener('change',()=>{multi.melee=multiUI.melee.checked;resetGame();showNotice(multi.melee?'เปิด Wave Combat: บอตพื้นฐานโจมตีประชิด':'โหมดติดตามหลายเป้าหมายแบบเดิม');});
- multiUI.difficulty.addEventListener('change',()=>{multi.difficulty=multiUI.difficulty.value;resetGame();showNotice('เปลี่ยนระดับฝูงประชิด: '+multi.difficulty);});
+ multiUI.melee.addEventListener('change',()=>{multi.melee=multiUI.melee.checked;resetGame();showNotice(multi.melee?'เปิด Wave Combat กับ '+multiUI.enemyMode.value:'โหมดติดตามหลายเป้าหมายแบบเดิม');});
+ multiUI.difficulty.addEventListener('change',()=>{multi.difficulty=multiUI.difficulty.value;resetGame();showNotice('เปลี่ยนระดับความยากศัตรู: '+multi.difficulty);});
 canvas.addEventListener('pointerdown',handleTap);
 window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();phase==='running'||phase==='paused'?pauseGame():startGame();}if(e.key==='r'||e.key==='R')resetGame();});
 window.addEventListener('resize',()=>resize());
 // Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
 window.__rrtMultiDebug={
- getState:()=>({scenario,time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
+ getState:()=>({scenario,time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
  advance:(secs)=>{const prev=phase;phase='running';for(let i=0;i<secs*60;i++)loopStep(1/60);phase=prev;updateHUD();draw();},
  forceTarget:(id,coords)=>{const t=multi.targets.find(t=>t.id===id);if(!t||!freePoint(coords,R+1))return false;t.x=coords.x;t.y=coords.y;t.wp=null;multi.sensorAt=-1;return true;},
  forceBlue:(coords)=>{const b=bots[0];if(!freePoint(coords,R+1))return false;b.x=coords.x;b.y=coords.y;b.planner=null;b.goal=null;b.path=[];multi.sensorAt=-1;return true;},
  setTargetCommand:setSimpleCommand,
+ setEnemyMode:(mode)=>{if(!['melee','ranged','mixed'].includes(mode))return false;multiUI.enemyMode.value=mode;resetGame();return true;},
  sense:()=>{multi.sensorAt=-1;senseMultiWorld();updateHUD();},
  clearTrack:(id)=>{delete multi.tracks[id];multi.sensorAt=-1;},
  getSourceTag:()=>document.querySelector('title')?.textContent,
