@@ -2415,7 +2415,9 @@ function shoot(bot){const foe=opponent(bot),d=dist(bot,foe);if(multiActive()&&(!
  if(bot.ammo<=0){bot.reload=1.3;bot.mode='บรรจุกระสุน';return;}
  const lane=teamLaneBlocker(bot);
  if(lane){
-  team.heldFire++;bot.mode='เว้นแนวยิงให้เพื่อน';
+  // Count held-fire decisions at most once per .35 s, not once per animation frame.
+  if(elapsed-(bot.lastTeamHoldAt??-Infinity)>.35){team.heldFire++;bot.lastTeamHoldAt=elapsed;}
+  bot.mode='เว้นแนวยิงให้เพื่อน';
   bot.reason='แนวยิงมี '+lane.blockerId+' อยู่ด้านหน้า → หาแนวยิงข้าง';
   bot.thinkCooldown=Math.min(bot.thinkCooldown,.13);
   return;
