@@ -1916,14 +1916,28 @@ function loopMultiStep(dt){
  for(let k=particles.length-1;k>=0;k--){const p=particles[k];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.life<=0)particles.splice(k,1);}
  sampleAcc+=dt;if(sampleAcc>=.25){sampleAcc=0;snapshot();}
 }
-function drawSwarmForecast(){
- if(!ui.showThreat.checked||!predictiveActive()||!multi.forecast||phase==='ready')return;
- const m=multi.forecast.map,b=bots[0];if(!m.inbound)return;
- const r=R*2.6,n=m.sectors.length,peak=Math.max(.001,...m.sectors);
- ctx.save();ctx.lineWidth=Math.max(2,R*.32);
- for(let i=0;i<n;i++){const a=i*2*Math.PI/n;ctx.strokeStyle='rgba(255,99,120,'+(.08+.55*m.sectors[i]/peak).toFixed(2)+')';ctx.beginPath();ctx.arc(b.x,b.y,r,a-Math.PI/n,a+Math.PI/n);ctx.stroke();}
- if(m.gap.width>0){ctx.strokeStyle='#86ffc5';ctx.lineWidth=Math.max(2.5,R*.38);ctx.beginPath();ctx.arc(b.x,b.y,r+R*.5,m.gap.angle-m.gap.width/2,m.gap.angle+m.gap.width/2);ctx.stroke();}
+// GREEN ring identifies unified BLUE in all modes. It does not imply hidden threat knowledge.
+function drawBlueCapabilityRing(bot){
+ if(!bot||bot.team!=='blue'||bot.hp<=0)return;
+ ctx.save();
+ ctx.strokeStyle='#86ffc5';ctx.globalAlpha=.86;
+ ctx.lineWidth=Math.max(2.7,R*.37);ctx.lineCap='round';
+ ctx.beginPath();ctx.arc(bot.x,bot.y,R*2.6,-Math.PI*.57,Math.PI*.87);ctx.stroke();
  ctx.restore();
+}
+function drawSwarmForecast(){
+ // B1 and B2 have distinct observation histories and must never share risk maps.
+ for(const b of team.blues)drawBlueCapabilityRing(b);
+ if(!ui.showThreat.checked||!predictiveActive()||phase==='ready')return;
+ for(const b of team.blues){
+  const f=b===team.blues[0]?multi.forecast:team.secondary?.forecast;
+  const m=f?.map;if(!m?.inbound)continue;
+  const r=R*2.6,n=m.sectors.length,peak=Math.max(.001,...m.sectors);
+  ctx.save();ctx.lineWidth=Math.max(2,R*.32);
+  for(let i=0;i<n;i++){const a=i*2*Math.PI/n;ctx.strokeStyle='rgba(255,99,120,'+(.08+.55*m.sectors[i]/peak).toFixed(2)+')';ctx.beginPath();ctx.arc(b.x,b.y,r,a-Math.PI/n,a+Math.PI/n);ctx.stroke();}
+  if(m.gap.width>0){ctx.strokeStyle='#86ffc5';ctx.lineWidth=Math.max(2.5,R*.38);ctx.beginPath();ctx.arc(b.x,b.y,r+R*.5,m.gap.angle-m.gap.width/2,m.gap.angle+m.gap.width/2);ctx.stroke();}
+  ctx.restore();
+ }
 }
 function drawMultiTargets(){
  ctx.save();ctx.textAlign='center';ctx.font=`800 ${clamp(S*.025,10,13)}px system-ui`;
@@ -2446,7 +2460,7 @@ function drawMemory(){if(!ui.showMemory.checked)return;
 function drawReplay(){if(!timeline.length)return;
  const frame=timeline[Math.min(timeline.length-1,replayIndex)];if(!frame)return;
  ctx.save();ctx.textAlign='center';ctx.font='900 11px system-ui';ctx.fillStyle='#c6e5ff';ctx.fillText('⏪ REPLAY · '+formatTime(frame.t),W/2,22);
- for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText((b.id||b.team.toUpperCase())+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
+ for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];if(b.team==='blue')drawBlueCapabilityRing({team:'blue',x,y,hp:b.hp});ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText((b.id||b.team.toUpperCase())+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
  if(multiActive())for(const t of (frame.targets||[])){ctx.fillStyle='#ffd28c';ctx.beginPath();ctx.arc(t.x*W,t.y*H,R*.65,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(t.id,t.x*W,t.y*H-R);}
  for(const shot of frame.bullets){ctx.fillStyle=shot.team==='blue'?'#88e7ff':shot.team==='ranged'?'#ffbf70':'#ffb3ba';ctx.beginPath();ctx.arc(shot.x*W,shot.y*H,2.6,0,Math.PI*2);ctx.fill();}
  ctx.restore();
@@ -2455,7 +2469,7 @@ function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(
  if(replayActive){drawReplay();return;}
  drawMemory();for(const b of (multiActive()?team.blues:bots))drawTree(b);for(const b of (multiActive()?team.blues:bots))drawPath(b);drawTactics();for(const s of bullets)drawShot(s);drawRangedShots();for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.total);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,S*.004),0,Math.PI*2);ctx.fill();ctx.restore();}
  if(tool==='order'&&bots[0]&&bots[0].manual){const p=bots[0].manual;ctx.save();ctx.strokeStyle='#ffdf8a';ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p.x,p.y,R*.9,0,Math.PI*2);ctx.stroke();ctx.restore();}
- if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else for(const b of bots)drawFighter(b);
+ if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else{drawBlueCapabilityRing(bots[0]);for(const b of bots)drawFighter(b);}
  ctx.fillStyle='#b6d4eb';ctx.font=`700 ${clamp(S*.026,10,13)}px system-ui`;ctx.textAlign='left';ctx.fillText('RRT TACTICAL · '+ui.map.selectedOptions[0].textContent.split('·').pop().trim(),12,H-14);
 }
 function updateHUD(){if(!bots.length)return;
