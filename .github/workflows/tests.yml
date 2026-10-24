@@ -21,8 +21,10 @@ jobs:
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.8' index.html
+          grep -q 'RRT ARENA 06.9' index.html
           grep -q 'RRTArenaRangedDefense' index.html
+          grep -q 'RRTArenaTeam' index.html
+          grep -q 'id="blueTeamMode"' index.html
           grep -q 'RRTArenaMulti' index.html
           grep -q 'RRTArenaMelee' index.html
           grep -q 'RRTArenaSwarm' index.html
