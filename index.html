@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071225">
-<title>RRT ARENA 06.10 — Unified BLUE Combat</title>
+<title>RRT ARENA 06.11 — Team Coordination V2</title>
 <style>
 :root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--panel2:#152640;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;--purple:#ac92fa}*{box-sizing:border-box}html,body{margin:0;min-height:100%;}body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42}button,input,select{font:inherit}button,select{cursor:pointer}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}main{max-width:1350px;margin:auto;padding:18px 13px 64px}header{padding:2px 3px 15px}.eyebrow{font-size:11px;font-weight:850;letter-spacing:1.8px;color:var(--cyan)}h1{margin:6px 0 7px;line-height:1.13;letter-spacing:-1.2px;font-size:clamp(29px,4.7vw,47px)}h1 span{color:var(--pink)}header p{color:var(--soft);font-size:14px;margin:0;max-width:800px}.tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3;background:#113657;border:1px solid #315479;color:#a7e5ff;vertical-align:middle;letter-spacing:0;margin-left:6px}
 .stats{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-bottom:12px}.fighter{min-width:0;padding:12px 14px;background:linear-gradient(135deg,#102844,#0d1b30);border:1px solid #264561;border-radius:15px}.fighter.red{background:linear-gradient(225deg,#3a1b34,#151c30);border-color:#66364f}.nameRow{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-size:15px;font-weight:850;white-space:nowrap}.name .symbol{font-size:19px;vertical-align:middle}.statnum{font-size:13px;white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}.bar{height:8px;background:#0a1423;border-radius:8px;overflow:hidden;margin:9px 0 6px;border:1px solid #253247}.fill{width:100%;height:100%;background:linear-gradient(90deg,#237cce,#50dbff);transition:width .16s}.red .fill{background:linear-gradient(90deg,#e6466b,#ff9a79)}.sublabel{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:7px;align-items:center;height:17px;min-height:17px;overflow:hidden;font-size:11px;color:var(--soft)}.sublabel span:first-child{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sublabel span:last-child{display:block;white-space:nowrap;flex-shrink:0}.nameRow .name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}.nameRow .statnum{flex-shrink:0}.fighter{min-height:105px;overflow:hidden}.sublabel strong{color:var(--ink);font-weight:650}.midstats{min-width:96px;text-align:center;display:flex;flex-direction:column;justify-content:center;background:#101b31;border:1px solid var(--line);border-radius:15px;padding:9px 13px}.midstats .round{font-size:10px;letter-spacing:1px;color:var(--soft);font-weight:850}.midstats .score{font-size:24px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}.midstats .clock{color:var(--gold);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -81,7 +81,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </style>
 </head>
 <body><main>
-<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.10 · UNIFIED BLUE</div>
+<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.11 · TEAM COORDINATION V2</div>
 <h1>RRT ARENA <span>AGENT LAB</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
 <p>บอตคำนวณมุมยิงและย้ายตำแหน่งเมื่อคาดว่าศัตรูรู้ที่อยู่ ตัดแนวยิง อ้อมเปลี่ยนมุม ไม่ยืนรอซ้ำจุดเดิม · Memory-Guided RRT · มือถือไม่ต้องมี LLM / API Key</p></header>
 <section class="modePanel" aria-label="เลือกสนามทดลอง">
@@ -1326,12 +1326,91 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  return Object.freeze({members,teamMetrics,outcome,newRadio,broadcast,receive,mergeTracks,chooseFocus,chooseVisibleEnemy,segmentCircleTime,distance});
 });
 </script>
+<script id="teamAdvisorCore">
+/* RRT Arena V0.6.11 — cooperative team tactical advisor (no replacement BLUE).
+ * Targets are bounded observation tracks, never hidden enemy world positions.
+ * Known teammate locations are only used for friendly-fire geometry.
+ * All output positions must be passed through original BLUE RRT/collision logic.
+ */
+(function(root,factory){'use strict';const api=factory();root.RRTArenaCoop=api;
+ if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const finite=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ function knownTrack(t,now,{ttl=3.5}={}){
+  if(!finite(t))return false;
+  if(t.status==='visible')return true;
+  return t.status==='memory'&&t.confidence>.20&&Number.isFinite(t.lastSeen)&&now>=t.lastSeen&&now-t.lastSeen<=ttl;
+ }
+ function deconflictFocus(self,tracks,chosenId,peerFocus,{now=0,scale=400,maxExtraDistance=.25,criticalDistance=null,ttl=3.5}={}){
+  const base=tracks?.[chosenId];
+  const initial={targetId:chosenId||null,changed:false,reason:'hold',evaluated:0};
+  if(!finite(self)||!chosenId||!peerFocus||chosenId!==peerFocus||!knownTrack(base,now,{ttl}))return initial;
+  const d0=distance(self,base);
+  if(d0<=(criticalDistance===null?scale*.10:criticalDistance))return {...initial,reason:'immediate_threat'};
+  const candidates=Object.values(tracks||[]).filter(t=>knownTrack(t,now,{ttl})&&t.id&&t.id!==chosenId)
+   .filter(t=>base.status!=='visible'||t.status==='visible')
+   .filter(t=>distance(self,t)<=d0+scale*maxExtraDistance);
+  if(!candidates.length)return {...initial,reason:'no_safe_alternative'};
+  candidates.sort((a,b)=>{
+   const byStatus=(b.status==='visible'?1:0)-(a.status==='visible'?1:0);
+   return byStatus||distance(self,a)-distance(self,b)||String(a.id).localeCompare(String(b.id));
+  });
+  return {targetId:candidates[0].id,changed:true,reason:'split_focus',evaluated:candidates.length};
+ }
+ function segmentCircleTime(a,b,c,r){
+  if(!finite(a)||!finite(b)||!finite(c))return Infinity;
+  const dx=b.x-a.x,dy=b.y-a.y,fx=a.x-c.x,fy=a.y-c.y,A=dx*dx+dy*dy,C=fx*fx+fy*fy-r*r;
+  if(C<=0)return 0;if(A<1e-12)return Infinity;
+  const B=2*(fx*dx+fy*dy),disc=B*B-4*A*C;if(disc<0)return Infinity;
+  const t=(-B-Math.sqrt(disc))/(2*A);
+  return t>=0&&t<=1?t:Infinity;
+ }
+ function safeFireLine(self,aim,teammates,{radius=12,aim:accuracy=.96}={}){
+  if(!finite(self)||!finite(aim)||distance(self,aim)<1e-8)
+   return {clear:false,blockerId:null,hitFraction:null,reason:'no_visible_aim'};
+  let nearest=Infinity,blocker=null;
+  for(const mate of teammates||[]){
+   if(!finite(mate)||mate.hp<=0||mate.active===false||mate.id===self.id)continue;
+   const error=clamp((1-clamp(accuracy,0,1))*.35,0,.30),cone=Math.tan(error)*distance(self,mate);
+   const t=segmentCircleTime(self,aim,mate,Math.max(0,radius)+cone);
+   if(t<nearest){nearest=t;blocker=mate.id||'ally';}
+  }
+  return {clear:nearest===Infinity,blockerId:blocker,hitFraction:nearest===Infinity?null:nearest,reason:nearest===Infinity?'clear':'ally_in_line'};
+ }
+ function findClearLane(self,aim,teammates,{
+  width=800,height=550,scale=400,radius=10,ownRange=220,
+  free=null,direct=null,canSee=null,dangerAt=null
+ }={}){
+  if(!finite(self)||!finite(aim)||typeof free!=='function'||typeof direct!=='function'||typeof canSee!=='function')return null;
+  if(safeFireLine(self,aim,teammates,{radius:radius*.95,aim:self.aim}).clear)return null;
+  const bearing=Math.atan2(aim.y-self.y,aim.x-self.x);
+  let best=null,evaluated=0,bestCost=Infinity;
+  for(const f of [.12,.19,.28])for(const offset of [.55,-.55,.95,-.95,1.40,-1.40,1.9,-1.9,2.4,-2.4]){
+   const a=bearing+offset,step=scale*f;
+   const q={x:self.x+Math.cos(a)*step,y:self.y+Math.sin(a)*step};
+   if(q.x<radius+2||q.y<radius+2||q.x>width-radius-2||q.y>height-radius-2)continue;
+   if(distance(self,q)<radius*1.4||!free(q)||!direct(self,q)||!canSee(q,aim))continue;
+   if(distance(q,aim)>ownRange|| (teammates||[]).some(t=>t.hp>0&&t.id!==self.id&&finite(t)&&distance(t,q)<radius*2.25))continue;
+   if(!safeFireLine(q,aim,teammates,{radius:radius*.95,aim:self.aim}).clear)continue;
+   evaluated++;
+   const cost=distance(self,q)+Math.abs(distance(q,aim)-ownRange*.80)*.16+
+    (typeof dangerAt==='function'?Math.max(0,dangerAt(q))*scale*.38:0);
+   if(cost<bestCost){bestCost=cost;best=q;}
+  }
+  return best?{goal:best,cost:bestCost,evaluated,reason:'clear_team_fire_lane'}:null;
+ }
+ return Object.freeze({distance,knownTrack,deconflictFocus,safeFireLine,findClearLane,segmentCircleTime});
+});
+</script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 // Optional ?seed=N for reproducible experiments; without it the game stays truly random.
 const benchmarkSeed=(()=>{const v=new URLSearchParams(location.search).get('seed');if(v===null||!/^\d{1,9}$/.test(v))return null;let a=Number(v)>>>0;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};return Number(v);})();
-const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense,teamCore=globalThis.RRTArenaTeam;
+const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense,teamCore=globalThis.RRTArenaTeam,coopCore=globalThis.RRTArenaCoop;
 const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),activeDefense:$('activeDefense'),defenseStat:$('defenseStat'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
 let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
@@ -1345,7 +1424,7 @@ const teamParams=new URLSearchParams(location.search);
 multiUI.teamMode.value=teamParams.get('blue')==='2'?(teamParams.get('team')==='coop'?'cooperative':'independent'):'solo';
 let scenario=new URLSearchParams(location.search).get('mode')==='multi'?'multi':'duel';
 let multi={count:8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,seed:0,sharedBrain:null,melee:true,difficulty:'balanced',meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,waveHistory:[],matchId:0,kiteEnabled:true,predictive:true,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,enemyMode:'melee',rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0,rangedDefense:true,mobile:true,bridgeSteps:0,jinks:0,cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,coverMoves:0,coverReroutes:0,standoffs:0};
-let team={mode:'solo',blues:[],secondary:null,radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0,radioSent:0,radioDelivered:0};
+let team={mode:'solo',blues:[],secondary:null,radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0,radioSent:0,radioDelivered:0,heldFire:0,laneMoves:0,focusSplits:0,focusSamples:0,focusOverlap:0,shotsFired:{B1:0,B2:0}};
 const multiActive=()=>scenario==='multi';
 const teamDuo=()=>multiActive()&&team.blues.length===2;
 const livingBlues=()=>team.blues.filter(b=>b.hp>0);
@@ -1414,7 +1493,7 @@ function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encount
 function setupBlueTeam(){
  const primary=bots[0];primary.id='B1';
  team={mode:multiUI.teamMode.value,blues:[primary],secondary:null,
-  radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0,radioSent:0,radioDelivered:0};
+  radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0,radioSent:0,radioDelivered:0,heldFire:0,laneMoves:0,focusSplits:0,focusSamples:0,focusOverlap:0,shotsFired:{B1:0,B2:0}};
  if(team.mode==='solo')return;
  const candidates=[
   {x:primary.x+R*4.3,y:primary.y},{x:primary.x,y:primary.y-R*4.3},
