@@ -1,0 +1,212 @@
+{
+  "schemaVersion": "rrt-ranged-experiment-v0.6.7-draft",
+  "status": "planned_not_executed",
+  "basedOn": "v0.6.6",
+  "comparisonPolicy": "same initial seed, role loadout, viewport, map, BLUE stats, enemy stats, and time limit in each ON/OFF pair",
+  "matchLimitSeconds": 150,
+  "seedSets": {
+    "developmentSmoke": [
+      7,
+      19,
+      42,
+      73,
+      101,
+      137,
+      211,
+      307,
+      431,
+      509
+    ],
+    "baseline": {
+      "start": 101,
+      "end": 200,
+      "inclusive": true
+    },
+    "heldOut": {
+      "start": 1001,
+      "end": 1100,
+      "inclusive": true
+    }
+  },
+  "viewports": [
+    {
+      "width": 320,
+      "height": 694,
+      "label": "mobile-narrow"
+    },
+    {
+      "width": 393,
+      "height": 852,
+      "label": "mobile-standard"
+    },
+    {
+      "width": 1365,
+      "height": 768,
+      "label": "desktop"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "sentry-cover-4",
+      "map": "lanes",
+      "difficulty": "balanced",
+      "bots": {
+        "melee": 0,
+        "ranged": {
+          "sentry": 4,
+          "patrol": 0,
+          "hunter": 0
+        }
+      },
+      "aim": "cover awareness and wall-first projectile checks"
+    },
+    {
+      "id": "sentry-crossfire-8",
+      "map": "ruins",
+      "difficulty": "balanced",
+      "bots": {
+        "melee": 0,
+        "ranged": {
+          "sentry": 8,
+          "patrol": 0,
+          "hunter": 0
+        }
+      },
+      "aim": "multiple LOS angles and sheltered positions"
+    },
+    {
+      "id": "patrol-fire-8",
+      "map": "lanes",
+      "difficulty": "balanced",
+      "bots": {
+        "melee": 0,
+        "ranged": {
+          "sentry": 0,
+          "patrol": 8,
+          "hunter": 0
+        }
+      },
+      "aim": "shooting threats on moving waypoints"
+    },
+    {
+      "id": "hunter-wave-12",
+      "map": "open",
+      "difficulty": "balanced",
+      "bots": {
+        "melee": 0,
+        "ranged": {
+          "sentry": 0,
+          "patrol": 0,
+          "hunter": 12
+        }
+      },
+      "aim": "basic pursuit under ranged fire"
+    },
+    {
+      "id": "ranged-swarm-24",
+      "map": "ruins",
+      "difficulty": "balanced",
+      "bots": {
+        "melee": 0,
+        "ranged": {
+          "sentry": 6,
+          "patrol": 8,
+          "hunter": 10
+        }
+      },
+      "aim": "stress test; do not assume any target win rate"
+    },
+    {
+      "id": "mixed-8-plus-4",
+      "map": "ruins",
+      "difficulty": "balanced",
+      "bots": {
+        "melee": 8,
+        "ranged": {
+          "sentry": 2,
+          "patrol": 1,
+          "hunter": 1
+        }
+      },
+      "aim": "melee encirclement plus four ranged enemies"
+    },
+    {
+      "id": "mixed-12-plus-12",
+      "map": "open",
+      "difficulty": "hard",
+      "bots": {
+        "melee": 12,
+        "ranged": {
+          "sentry": 4,
+          "patrol": 4,
+          "hunter": 4
+        }
+      },
+      "aim": "advanced stress gate after earlier scenarios pass"
+    }
+  ],
+  "flags": {
+    "baseline": {
+      "existingMeleePrediction": true,
+      "existingKiting": true,
+      "newRangedThreatDefense": false
+    },
+    "candidate": {
+      "existingMeleePrediction": true,
+      "existingKiting": true,
+      "newRangedThreatDefense": true
+    }
+  },
+  "mandatoryPerMatchMetrics": [
+    "scenarioId",
+    "seed",
+    "viewport",
+    "map",
+    "difficulty",
+    "roleCounts",
+    "blueHP",
+    "winner",
+    "seconds",
+    "enemiesRemaining",
+    "rangedBulletsFired",
+    "rangedBulletsHit",
+    "blueDamageFromRanged",
+    "blueDamageFromMelee",
+    "blueAmmoUsed",
+    "blueHits",
+    "blueRRTPlanFailures",
+    "blueRRTReplans",
+    "collisionsRejected",
+    "bluePredictiveMoves",
+    "newRangedThreatAvoidanceMoves"
+  ],
+  "acceptance": {
+    "mustPreserve": [
+      "Duel",
+      "ClassicMultiTracking",
+      "MeleeSwarm",
+      "PredictiveAntiEncirclement",
+      "Replay",
+      "OfflineEntry",
+      "StableHUD"
+    ],
+    "mustNever": [
+      "hiddenWorldTruthInBlue",
+      "bulletThroughWall",
+      "characterThroughWall",
+      "silentDamageBuff",
+      "silentHPBuff",
+      "scriptedWinner"
+    ],
+    "mergeOnlyWhen": [
+      "CI_PASS",
+      "BROWSER_320_PASS",
+      "BROWSER_393_PASS",
+      "BROWSER_DESKTOP_PASS",
+      "SEEDED_BASELINE_RECORDED",
+      "PUBLIC_PAGES_READBACK"
+    ]
+  },
+  "results": null,
+  "notes": "Design fixture only. No ranged combat game integration or experimental result is claimed by this JSON."
+}
