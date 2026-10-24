@@ -26,16 +26,13 @@ jobs:
       - name: Validate entry point
         run: |
           test -s index.html
-          test -s multi-target.html
-          test -s multi_target_core.js
-          grep -q 'Dynamic Defense & Stable HUD' index.html
+          grep -q 'Advanced BLUE Agent' index.html
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Stage static game
         run: |
           mkdir -p dist
           cp index.html dist/index.html
-          cp multi-target.html multi_target_core.js dist/
           touch dist/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4

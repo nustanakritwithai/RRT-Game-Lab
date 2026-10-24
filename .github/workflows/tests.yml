@@ -1,15 +1,12 @@
 name: Unit tests
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -18,18 +15,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run pathfinding, memory, active combat and defense unit tests
+      - name: Test original tactical agent and multi-target sensor
         run: |
-          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs multi_target_core.test.cjs
-      - name: Check dynamic defense and browser entrypoint
+          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs
+      - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'Dynamic Defense & Stable HUD' index.html
-          grep -q 'RRTArenaTactics' index.html
+          grep -q 'Advanced BLUE Agent' index.html
+          grep -q 'RRTArenaMulti' index.html
           grep -q 'RRTArenaDefense' index.html
+          grep -q 'RRTArenaGuided' index.html
           grep -q 'Memory-Guided RRT' index.html
-      - name: Check multi-target page and core
-        run: |
-          test -s multi-target.html
-          test -s multi_target_core.js
-          grep -q 'Multi-Target Lab' multi-target.html
