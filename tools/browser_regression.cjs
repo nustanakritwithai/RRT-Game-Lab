@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.8/.test(duel.title),'title shows V0.6.8: '+duel.title);
+  check(/RRT ARENA 06\.9/.test(duel.title),'title shows V0.6.9: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -125,6 +125,64 @@ async function main(){
   check(rdef.valid,'ranged defense: fighters outside walls, collision-free routes');
   check(rdef.hasMobileSwitch&&rdef.mobile&&rdef.bridge+rdef.jinks>0,'keep moving: enabled by default, BLUE moved while planning/exposed ('+rdef.bridge+' bridge steps, '+rdef.jinks+' jinks)');
   check(!rdef.offEnabled&&rdef.offMoves===0&&!['ranged_cover','ranged_hold'].includes(rdef.offIntent),'ranged defense off: V0.6.7 policy restored');
+  // V0.6.9: the exact published BLUE v0.6.8 brain drives B1 and B2 independently.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2');
+  const duo=await page.evaluate(({layoutSrc})=>{
+   const layout=eval(layoutSrc),$=id=>document.getElementById(id),md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   $('multiDifficulty').value='training';$('multiDifficulty').dispatchEvent(new Event('change',{bubbles:true}));
+   const initial=md.getState(),shape=layout();
+   $('start').click();let stable=true,valid=true,aliveSamples=0;
+   for(let i=0;i<20&&d.getState().phase==='running';i++){
+    d.advance(.5);
+    const v=d.validate(),s=md.getState();
+    valid=valid&&v.fightersFree&&v.waypointsClear;
+    stable=stable&&JSON.stringify(layout())===JSON.stringify(shape);
+    aliveSamples+=s.team.blues.filter(b=>b.hp>0).length;
+   }
+   const state=md.getState();
+   return {mode:state.team.mode,count:state.team.count,alive:state.team.alive,blues:state.team.blues,
+    memories:state.team.memorySeparated,radioSent:state.team.radioSent,stable,valid,
+    allFinite:state.team.blues.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),
+    plans:state.team.blues.map(b=>b.planCount),scroll:layout().scroll,activeSamples:aliveSamples};
+  },{layoutSrc:'('+layout.toString()+')'});
+  check(duo.mode==='independent'&&duo.count===2&&duo.blues.map(b=>b.id).join('/')==='B1/B2',
+   'duo independent: two ORIGINAL BLUE agents with distinct IDs');
+  check(duo.memories&&duo.radioSent===0,'duo independent: isolated per-BLUE memories, no team radio');
+  check(duo.plans.every(n=>n>0)&&duo.allFinite&&duo.valid,
+   'duo independent: both used RRT and obeyed collisions ('+duo.plans.join('/')+' plans)');
+  check(duo.stable&&duo.scroll<=0,'duo independent: fixed mobile HUD and no horizontal scroll');
+
+  // Cooperative mode adds *only* bounded visible sightings; physics, weapons and BLUE unchanged.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop');
+  const coop=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();
+   for(let k=0;k<24&&d.getState().phase==='running';k++)d.advance(.5);
+   const state=md.getState(),v=d.validate();
+   return {mode:state.team.mode,count:state.team.count,memories:state.team.memorySeparated,
+    sent:state.team.radioSent,delivered:state.team.radioDelivered,valid:v.fightersFree&&v.waypointsClear,
+    bluePlans:state.team.blues.map(b=>b.planCount),scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};
+  });
+  check(coop.mode==='cooperative'&&coop.count===2&&coop.memories,
+   'duo cooperative: same two independent BLUE brains, explicitly enabled team radio');
+  check(coop.sent>0&&coop.delivered>0,
+   'duo cooperative: observed sightings really relayed with delay ('+coop.sent+' sent, '+coop.delivered+' delivered)');
+  check(coop.valid&&coop.scroll<=0,'duo cooperative: valid collisions and stable viewport');
+
+  // Killing B1 cannot end the match while B2 remains alive and enemies remain.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2');
+  const survivor=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   const $=id=>document.getElementById(id);
+   $('multiDifficulty').value='training';$('multiDifficulty').dispatchEvent(new Event('change',{bubbles:true}));
+   $('start').click();d.force('blue',{hp:0});
+   d.advance(.5);
+   const s=md.getState();
+   return {mode:s.team.mode,teamAlive:s.team.alive,phase:d.getState().phase,
+    survivors:s.team.blues.filter(b=>b.hp>0).map(b=>b.id),enemies:s.targets.filter(t=>t.active).length};
+  });
+  check(survivor.phase==='running'&&survivor.teamAlive===1&&survivor.survivors[0]==='B2'&&survivor.enemies>0,
+   'duo survival: B2 continues after B1 is eliminated');
   check(errors.length===0,'no page errors '+errors.join(' | '));
   await ctx.close();
  }
