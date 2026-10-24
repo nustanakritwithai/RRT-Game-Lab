@@ -1522,7 +1522,7 @@ function simpleMove(t,point,dt){
  for(const offset of [0,.45,-.45,.95,-.95,1.4,-1.4,Math.PI]){
   const step=offset===0?distanceStep:distanceStep*.83;
   const next={x:t.x+Math.cos(a+offset)*step,y:t.y+Math.sin(a+offset)*step};
-  if(!blocked(t,next,R+1)&&dist(next,bots[0])>(multi.melee?R*1.88:R*2)&&multi.targets.every(x=>x===t||!x.active||dist(x,next)>R*1.55)){
+  if(!blocked(t,next,R+1)&&livingBlues().every(b=>dist(next,b)>(multi.melee?R*1.88:R*2))&&multi.targets.every(x=>x===t||!x.active||dist(x,next)>R*1.55)){
    t.x=next.x;t.y=next.y;return;
   }
  }
@@ -1534,7 +1534,8 @@ function stepSimpleTargets(dt){
   if(t.kind==='stay')continue;
   t.hitFlash=Math.max(0,(t.hitFlash||0)-dt);
   t.timer-=dt;
-  const blue=bots[0],seesBlue=dist(t,blue)<S*.68&&clearSight(t,blue);
+  const observedBlue=teamCore.chooseVisibleEnemy(t,team.blues,{range:S*.68,canSee:clearSight});
+  const blue=observedBlue||bots[0],seesBlue=!!observedBlue;
   if(seesBlue){t.lastKnownBlue=copy(blue);t.lastSeenBlue=elapsed;}
   const canChase=t.kind==='hunt'&&t.lastKnownBlue&&elapsed-t.lastSeenBlue<5.5;
   if(t.kind==='flee'&&seesBlue){const dx=t.x-blue.x,dy=t.y-blue.y,d=Math.max(1,Math.hypot(dx,dy));
@@ -1556,17 +1557,17 @@ function stepSimpleTargets(dt){
 // World-only ranged controllers. Enemy sensors inspect BLUE only via bounded LOS.
 function stepRangedTargets(dt){
  if(!multi.melee||multi.enemyMode==='melee')return;
- const blue=bots[0];
  for(const t of multi.targets){
   if(t.team!=='ranged'||!t.active)continue;
   t.hitFlash=Math.max(0,(t.hitFlash||0)-dt);
+  const blue=teamCore.chooseVisibleEnemy(t,team.blues,{range:S*.84,canSee:clearSight});
   const obs=rangedCore.observeBlue(t,blue,elapsed,{range:S*.84,ttl:5,canSee:clearSight});
   if(obs.status==='visible')t.track={x:obs.x,y:obs.y,lastSeen:obs.lastSeen};
   if(obs.status==='unknown')t.track=null;
   const intent=rangedCore.planBasicBot(t,obs,elapsed,{scale:S,radius:R,width:W,height:H});
   const next=rangedCore.moveBasicBot(t,intent,dt,{
    scale:S,width:W,height:H,radius:R+1,
-   isFree:p=>freePoint(p,R+1)&&dist(p,blue)>R*1.65&&multi.targets.every(e=>e===t||!e.active||dist(p,e)>R*1.45),
+   isFree:p=>freePoint(p,R+1)&&livingBlues().every(b=>dist(p,b)>R*1.65)&&multi.targets.every(e=>e===t||!e.active||dist(p,e)>R*1.45),
    pathClear:(a,b)=>!blocked(a,b,R+1)
   });
   Object.assign(t,next);
@@ -1581,18 +1582,21 @@ function stepRangedTargets(dt){
 }
 function stepRangedProjectiles(dt){
  if(!multi.rangedShots.length)return;
- const blue=bots[0];
  for(let k=multi.rangedShots.length-1;k>=0;k--){
   const shot=multi.rangedShots[k];
+  // Physics sees the actual bodies, but the shooter AI never receives hidden positions.
   const r=rangedCore.advanceProjectile(shot,dt,{width:W,height:H,walls,
-   targets:[{id:'blue',x:blue.x,y:blue.y,radius:R,active:blue.hp>0}]});
-  if(r.impact?.type==='target'&&blue.hp>0){
-   const damage=r.impact.damage;
-   blue.hp=Math.max(0,blue.hp-damage);blue.hitFlash=.18;blue.lastDamageAt=elapsed;
-   multi.rangedHits++;multi.rangedDamage+=damage;multi.damageTaken+=damage;
-   mem.rememberDanger(blue.brain,{x:blue.x/W,y:blue.y/H},elapsed,Math.min(1,damage/10));
-   burst(r.impact.point.x,r.impact.point.y,'#ffbb76',6,2);
-   if(multi.rangedHits<=3||multi.rangedHits%6===0)log('🔫 BLUE ถูกยิง (-'+damage.toFixed(1)+' HP)','red');
+   targets:livingBlues().map(b=>({id:b.id,x:b.x,y:b.y,radius:R,active:true}))});
+  if(r.impact?.type==='target'){
+   const victim=team.blues.find(b=>b.id===r.impact.targetId);
+   if(victim&&victim.hp>0){
+    const damage=r.impact.damage;
+    victim.hp=Math.max(0,victim.hp-damage);victim.hitFlash=.18;victim.lastDamageAt=elapsed;
+    multi.rangedHits++;multi.rangedDamage+=damage;multi.damageTaken+=damage;
+    mem.rememberDanger(victim.brain,{x:victim.x/W,y:victim.y/H},elapsed,Math.min(1,damage/10));
+    burst(r.impact.point.x,r.impact.point.y,'#ffbb76',6,2);
+    if(multi.rangedHits<=3||multi.rangedHits%6===0)log('🔫 '+victim.id+' ถูกยิง (-'+damage.toFixed(1)+' HP)','red');
+   }
   }else if(r.impact?.type==='wall')burst(r.impact.point.x,r.impact.point.y,'#ffc880',2,1);
   if(r.projectile)multi.rangedShots[k]={...r.projectile,px:shot.x,py:shot.y};
   else multi.rangedShots.splice(k,1);
@@ -1672,22 +1676,22 @@ function multiProjectiles(dt){
  }
 }
 function meleeWaveAttacks(){
- if(!multi.melee)return;
- const blue=bots[0];if(blue.hp<=0)return;
+ if(!multi.melee||!livingBlues().length)return;
  let hitsThisStep=0;
  for(const attacker of multi.targets){
-  if(attacker.team==='ranged')continue;
-  const hit=meleeCore.strike(attacker,blue,elapsed,{radius:R,canSee:clearSight,difficulty:multi.difficulty});
+  if(attacker.team==='ranged'||!attacker.active)continue;
+  const candidates=livingBlues().filter(b=>meleeCore.inReach(attacker,b,{radius:R,canSee:clearSight}))
+   .sort((a,b)=>dist(attacker,a)-dist(attacker,b));
+  const victim=candidates[0];if(!victim)continue;
+  const hit=meleeCore.strike(attacker,victim,elapsed,{radius:R,canSee:clearSight,difficulty:multi.difficulty});
   if(!hit.hit)continue;
   attacker.nextAttackAt=hit.nextAttackAt;
-  // Distinct cooldown per enemy; no instant all-at-once one-frame lethal contact.
-  if(hitsThisStep>=3)continue;
-  hitsThisStep++;
-  blue.hp=Math.max(0,blue.hp-hit.damage);blue.hitFlash=.16;blue.lastDamageAt=elapsed;
+  if(hitsThisStep>=3)continue;hitsThisStep++;
+  victim.hp=Math.max(0,victim.hp-hit.damage);victim.hitFlash=.16;victim.lastDamageAt=elapsed;
   multi.meleeHits++;multi.damageTaken+=hit.damage;
-  mem.rememberDanger(blue.brain,{x:blue.x/W,y:blue.y/H},elapsed,Math.min(1,hit.damage/6));
-  burst(blue.x,blue.y,'#ff866e',5,2);
-  if(multi.meleeHits<=3||multi.meleeHits%7===0)log('⚔️ '+attacker.id+' โจมตีประชิด BLUE (-'+hit.damage.toFixed(1)+' HP)','red');
+  mem.rememberDanger(victim.brain,{x:victim.x/W,y:victim.y/H},elapsed,Math.min(1,hit.damage/6));
+  burst(victim.x,victim.y,'#ff866e',5,2);
+  if(multi.meleeHits<=3||multi.meleeHits%7===0)log('⚔️ '+attacker.id+' ตี '+victim.id+' (-'+hit.damage.toFixed(1)+' HP)','red');
  }
 }
 function finishMultiWave(outcome){
