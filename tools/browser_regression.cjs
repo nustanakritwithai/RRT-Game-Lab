@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.10/.test(duel.title),'title shows V0.6.10: '+duel.title);
+  check(/RRT ARENA 06\.11/.test(duel.title),'title shows V0.6.11: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -141,13 +141,13 @@ async function main(){
    }
    const state=md.getState();
    return {mode:state.team.mode,count:state.team.count,alive:state.team.alive,blues:state.team.blues,
-    memories:state.team.memorySeparated,radioSent:state.team.radioSent,stable,valid,
+    memories:state.team.memorySeparated,radioSent:state.team.radioSent,heldFire:state.team.heldFire,laneMoves:state.team.laneMoves,focusSplits:state.team.focusSplits,stable,valid,
     allFinite:state.team.blues.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),
     plans:state.team.blues.map(b=>b.planCount),scroll:layout().scroll,activeSamples:aliveSamples,initialLayout:shape,finalLayout:layout()};
   },{layoutSrc:'('+layout.toString()+')'});
   check(duo.mode==='independent'&&duo.count===2&&duo.blues.map(b=>b.id).join('/')==='B1/B2',
    'duo independent: two ORIGINAL BLUE agents with distinct IDs');
-  check(duo.memories&&duo.radioSent===0,'duo independent: isolated per-BLUE memories, no team radio');
+  check(duo.memories&&duo.radioSent===0&&duo.heldFire===0&&duo.laneMoves===0&&duo.focusSplits===0,'duo independent: isolated per-BLUE memories; cooperative advisor stays OFF');
   check(duo.plans.every(n=>n>0)&&duo.allFinite&&duo.valid,
    'duo independent: both used RRT and obeyed collisions ('+duo.plans.join('/')+' plans)');
   check(duo.stable&&duo.scroll<=0,'duo independent: fixed mobile HUD and no horizontal scroll, first='+JSON.stringify(duo.initialLayout)+' last='+JSON.stringify(duo.finalLayout));
@@ -160,7 +160,7 @@ async function main(){
    for(let k=0;k<24&&d.getState().phase==='running';k++)d.advance(.5);
    const state=md.getState(),v=d.validate();
    return {mode:state.team.mode,count:state.team.count,memories:state.team.memorySeparated,
-    sent:state.team.radioSent,delivered:state.team.radioDelivered,valid:v.fightersFree&&v.waypointsClear,
+    sent:state.team.radioSent,delivered:state.team.radioDelivered,heldFire:state.team.heldFire,laneMoves:state.team.laneMoves,focusSplits:state.team.focusSplits,overlap:state.team.focusOverlap,samples:state.team.focusSamples,shotsFired:state.team.shotsFired,advisor:typeof window.RRTArenaCoop?.findClearLane==='function'&&typeof window.RRTArenaCoop?.deconflictFocus==='function',valid:v.fightersFree&&v.waypointsClear,
     bluePlans:state.team.blues.map(b=>b.planCount),scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};
   });
   check(coop.mode==='cooperative'&&coop.count===2&&coop.memories,
@@ -168,6 +168,22 @@ async function main(){
   check(coop.sent>0&&coop.delivered>0,
    'duo cooperative: observed sightings really relayed with delay ('+coop.sent+' sent, '+coop.delivered+' delivered)');
   check(coop.valid&&coop.scroll<=0,'duo cooperative: valid collisions and stable viewport');
+  check(coop.advisor&&[coop.heldFire,coop.laneMoves,coop.focusSplits,coop.samples,coop.overlap,coop.shotsFired.B1,coop.shotsFired.B2].every(Number.isFinite),
+   'cooperative advisor runs alongside original B1/B2; finite lane, fire and overlap metrics');
+  check(coop.samples>=coop.overlap&&coop.focusSplits>=0&&coop.heldFire>=0,
+   'cooperative telemetry bounds are valid without secret enemy state');
+  const advisor=await page.evaluate(()=>{
+   const a=window.RRTArenaCoop;
+   const p={id:'B1',x:0,y:0,aim:.96},target={id:'T01',x:110,y:0},mate={id:'B2',x:35,y:0,hp:120};
+   return {blocked:a.safeFireLine(p,target,[mate],{radius:10}).blockerId,
+    clearWhenBehind:a.safeFireLine(p,target,[{...mate,x:140}],{radius:10}).clear,
+    split:a.deconflictFocus({id:'B2',x:0,y:0},{
+      T01:{id:'T01',x:80,y:0,status:'visible'},
+      T02:{id:'T02',x:88,y:10,status:'visible'}
+     },'T01','T01',{now:4,scale:300}).targetId};
+  });
+  check(advisor.blocked==='B2'&&advisor.clearWhenBehind&&advisor.split==='T02',
+   'cooperative lane safety and visible target split work inside LIVE browser');
 
   // Killing B1 cannot end the match while B2 remains alive and enemies remain.
   await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2');

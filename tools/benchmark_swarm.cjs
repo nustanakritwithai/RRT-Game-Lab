@@ -18,7 +18,7 @@ const fs=require('node:fs');
 const {chromium}=require('playwright');
 
 function args(argv){
-  const o={seeds:'1-10',enemy:'melee',count:24,difficulty:'balanced',kite:'on',predictive:'on',file:'index.html',jobs:4,out:null,width:1365,height:900,label:null};
+  const o={seeds:'1-10',enemy:'melee',count:24,difficulty:'balanced',kite:'on',predictive:'on',team:'solo',file:'index.html',jobs:4,out:null,width:1365,height:900,label:null};
   for(let i=2;i<argv.length;i++){const k=argv[i].replace(/^--/,'');o[k]=argv[++i];}
   o.count=Number(o.count);o.jobs=Number(o.jobs);o.width=Number(o.width);o.height=Number(o.height);
   return o;
@@ -44,6 +44,10 @@ async function runOne(page,url,opts,seed){
     if($('multiEnemyMode')){$('multiEnemyMode').value=opts.enemy;fire($('multiEnemyMode'));}else if(opts.enemy!=='melee')throw new Error('build has no enemy mode selector');
     $('multiDifficulty').value=opts.difficulty;fire($('multiDifficulty'));
     $('multiPreset').value=String(opts.count);fire($('multiPreset'));
+    if($('blueTeamMode')){
+      if(!['solo','independent','cooperative'].includes(opts.team))throw new Error('Invalid team mode '+opts.team);
+      $('blueTeamMode').value=opts.team;fire($('blueTeamMode'));
+    }else if(opts.team!=='solo')throw new Error('Build lacks team controller');
     setCheck('multiKite',opts.kite==='on');
     const hasPredictive=setCheck('multiPredict',opts.predictive==='on');
     if(opts.rangedDefense!==undefined)setCheck('multiRangedDefense',opts.rangedDefense==='on');
@@ -56,8 +60,8 @@ async function runOne(page,url,opts,seed){
     // Stillness: share of 0.1 s samples in which BLUE did not move at all while alive.
     let still=0,samples=0,px=null,py=null;
     for(let s=0;s<1600&&dbg.getState().phase==='running';s++){dbg.advance(.1);const b=md.getState().blue;if(px!==null){samples++;if(Math.hypot(b.x-px,b.y-py)<.5)still++;}px=b.x;py=b.y;}
-    const st=md.getState(),last=st.waveHistory[st.waveHistory.length-1]||null;
-    return {seed,winner:last?.winner??'unfinished',hp:Math.max(0,Math.round(st.blue.hp*10)/10),seconds:last?.seconds??st.time,
+    const st=md.getState(),last=st.waveHistory[st.waveHistory.length-1]||null,team=st.team;
+    return {seed,winner:last?.winner??'unfinished',hp:Math.max(0,Math.round(st.blue.hp*10)/10),teamMode:team.mode,teamHp:Math.round(team.blues.reduce((n,b)=>n+Math.max(0,b.hp),0)*10)/10,teamAlive:team.alive,radioDelivered:team.radioDelivered,heldFire:team.heldFire||0,focusSplits:team.focusSplits||0,focusSamples:team.focusSamples||0,focusOverlap:team.focusOverlap||0,laneMoves:team.laneMoves||0,blockedFriendlyShots:team.blockedFriendlyShots,blueShots:team.shotsFired,seconds:last?.seconds??st.time,
       kills:st.eliminated,alive:st.targets.filter(t=>t.active).length,meleeHits:st.meleeHits,damageTaken:Math.round(st.damageTaken*10)/10,
       kites:st.kites,microMoves:st.microMoves,rangedFired:st.rangedFired??0,rangedHits:st.rangedHits??0,rangedDamage:Math.round((st.rangedDamage??0)*10)/10,rangedDefense:st.rangedDefense??null,mobile:st.mobile??null,bridgeSteps:st.bridgeSteps??0,jinks:st.jinks??0,stillShare:samples?Math.round(1000*still/samples)/1000:0,planFailures:st.planFailures??null,predictive:st.predictive??null,
       hasPredictiveSwitch:hasPredictive,wallClockMs:Math.round(performance.now()-t0),title:document.title};
@@ -81,9 +85,9 @@ async function main(){
   // Wilson 95% interval for the win rate.
   const z=1.96,den=1+z*z/n,centre=(p+z*z/(2*n))/den,half=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den;
   const mean=k=>Math.round(10*results.reduce((s,r)=>s+(r[k]||0),0)/n)/10;
-  const summary={label:o.label,file:path.basename(file),viewport:`${o.width}x${o.height}`,enemy:o.enemy,rangedDefense:o.rangedDefense??null,mobile:o.mobile??null,count:o.count,difficulty:o.difficulty,kite:o.kite,predictive:o.predictive,
+  const summary={label:o.label,file:path.basename(file),viewport:`${o.width}x${o.height}`,enemy:o.enemy,team:o.team,rangedDefense:o.rangedDefense??null,mobile:o.mobile??null,count:o.count,difficulty:o.difficulty,kite:o.kite,predictive:o.predictive,
     seeds:o.seeds,matches:n,wins,winRate:Math.round(1000*p)/10,wilson95:[Math.round(1000*(centre-half))/10,Math.round(1000*(centre+half))/10],
-    meanHp:mean('hp'),meanSeconds:mean('seconds'),meanAlive:mean('alive'),meanMeleeHits:mean('meleeHits'),meanRangedHits:mean('rangedHits'),meanRangedFired:mean('rangedFired'),meanStillPct:Math.round(1000*results.reduce((s,r)=>s+(r.stillShare||0),0)/n)/10,meanPlanFailures:results[0]?.planFailures==null?null:mean('planFailures')};
+    meanHp:mean('hp'),meanTeamHp:mean('teamHp'),meanTeamAlive:mean('teamAlive'),meanTeamHeldFire:mean('heldFire'),meanTeamSplits:mean('focusSplits'),meanTeamLanes:mean('laneMoves'),meanBlockedFriendlyShots:mean('blockedFriendlyShots'),meanRadioDelivered:mean('radioDelivered'),meanFocusOverlapPct:Math.round(1000*results.reduce((sum,r)=>sum+(r.focusOverlap||0),0)/Math.max(1,results.reduce((sum,r)=>sum+(r.focusSamples||0),0)))/10,meanSeconds:mean('seconds'),meanAlive:mean('alive'),meanMeleeHits:mean('meleeHits'),meanRangedHits:mean('rangedHits'),meanRangedFired:mean('rangedFired'),meanStillPct:Math.round(1000*results.reduce((s,r)=>s+(r.stillShare||0),0)/n)/10,meanPlanFailures:results[0]?.planFailures==null?null:mean('planFailures')};
   const report={summary,results};
   console.log(JSON.stringify(summary));
   if(o.out)fs.writeFileSync(o.out,JSON.stringify(report,null,1));
