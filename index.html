@@ -1687,7 +1687,7 @@ function meleeWaveAttacks(){
  if(!multi.melee||!livingBlues().length)return;
  let hitsThisStep=0;
  for(const attacker of multi.targets){
-  if(attacker.team==='ranged'||!attacker.active)continue;
+  if(attacker.team==='ranged')continue;if(!attacker.active)continue;
   const candidates=livingBlues().filter(b=>meleeCore.inReach(attacker,b,{radius:R,canSee:clearSight}))
    .sort((a,b)=>dist(attacker,a)-dist(attacker,b));
   const victim=candidates[0];if(!victim)continue;
