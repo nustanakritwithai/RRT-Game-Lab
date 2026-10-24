@@ -1,6 +1,6 @@
 # RRT ARENA — RANGED ENEMY LAB V0.6.7 / INTEGRATION HANDOFF
 
-**Status:** STAGED / PURE MODULE + TESTS PASS / NOT YET PLAYABLE IN BROWSER / NOT DEPLOYED  
+**Status:** PLAYABLE ON PR BRANCH / NODE + CHROMIUM PASS / PENDING MAIN MERGE AND PAGES READBACK  
 **Updated:** 25 October 2026 (Asia/Bangkok)  
 **Repository:** https://github.com/nustanakritwithai/RRT-Game-Lab  
 **Draft PR:** https://github.com/nustanakritwithai/RRT-Game-Lab/pull/3  
@@ -27,7 +27,7 @@ Add **basic, rule-controlled ranged enemies** to the existing RRT Arena so the O
 | `.github/workflows/tests.yml` | Existing V0.6.6 unit tests **plus** the V0.6.7 pure ranged test suite. |
 | `RANGED_LAB_V067_MATRIX.json` | Proposed scenario and benchmark matrix (NOT experimental results). |
 
-The branch includes merged V0.6.6 source but **does not** change `index.html`. A passing CI job verifies module-level behavior, **not a playable ranged arena**.
+The branch now embeds the unchanged ranged module into `index.html` and wires the bot roles and incoming projectiles into the original BLUE loop. The PR CI verifies syntax, source sync, Node tests and Chromium gameplay across 320/393/1365px. This is playable in branch artifacts but not a published release until merge and Pages readback.
 
 ## 3. Ranged enemy roles
 
@@ -99,12 +99,12 @@ The adapter must iterate current projectiles at the *next* world simulation step
 
 ## 7. Research sequence / acceptance gates
 
-1. **Preparation — DONE:** three simple bot roles, observation-only FSM and bullet physics; 37 tests; CI green. No main changes.
-2. **Playable integration — PENDING:** hook enemies into the **existing** BLUE scene, not a duplicate test character. Add read-only debug state and browser test.
+1. **Preparation — DONE:** three simple bot roles, observation-only FSM and bullet physics; 37 pure unit cases plus runtime tests; CI green.
+2. **Playable integration — DONE ON BRANCH:** original BLUE scene, read-only debug snapshot, ranged and mixed URL controls, incoming bullets, HUD, replay and browser checks; main still unchanged.
 3. **Baseline — PENDING:** 4, 8, 12, 24 ranged enemies at 320/393/1365 px, same seeds across weapon types and flags; save win/loss, HP, time, kills, ammo, hit rate, incoming shot hits, cover uptime and RRT failures.
 4. **Future BLUE ranged defense — PENDING:** identify failure modes; add threat LOS/crossfire/cover goal scoring from BLUE observations only. Use RRT for full path, keep micro-reflex collision testing.
 5. **Mixed combat — PENDING:** enable melee + ranged enemy subsets while preserving V0.6.6 anti-encirclement behavior.
-6. **Quality gate — PENDING:** Node tests, browser regression, no scroll on 320/393, no projectile through walls, seeded A/B benchmark, GitHub Actions PASS, Pages deployment and live readback. Only then mark V0.6.7 published.
+6. **Quality gate — PARTIAL:** Node tests, browser regression at 320/393/1365px, fixed HUD, source-sync and CI PASS on branch; full paired 100-seed win-rate benchmark, Pages deployment and public readback remain separate release/research checks.
 
 ## 8. Test commands
 
@@ -115,4 +115,4 @@ node --test *.test.cjs
 node tools/browser_regression.cjs
 ```
 
-**Status truth:** the 37 new unit cases and CI validation test the pure module; no new ranged-match outcome is measured or claimed yet. Review GitHub Actions on PR #3 before integration, then merge through GitHub review only after browser/benchmark gates pass.
+**Status truth:** Browser smoke confirms actual ranged projectiles fired and no page errors across three viewports; no validated 100-seed ranged win rate is claimed yet. Publish only after PR CI PASS and direct public Pages readback. The dedicated benchmark matrix remains a research follow-up, not a fabricated release metric.
