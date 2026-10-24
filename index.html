@@ -1365,12 +1365,12 @@ function finishMultiWave(outcome){
  if(phase!=='running')return;scoreDelay=2.5;
  phase='ended';finalResult=outcome.winner;
  if(outcome.winner==='blue')scores.blue++;else scores.red++;
- multi.waveHistory.push({winner:outcome.winner,count:multi.targets.length,kills:multi.eliminated,damage:Math.round(multi.damageTaken),seconds:Number(elapsed.toFixed(1)),difficulty:multi.difficulty});
+ multi.waveHistory.push({winner:outcome.winner,enemyMode:multi.enemyMode,count:multi.targets.length,kills:multi.eliminated,damage:Math.round(multi.damageTaken),rangedShots:multi.rangedFired,rangedHits:multi.rangedHits,seconds:Number(elapsed.toFixed(1)),difficulty:multi.difficulty});
  snapshot();updateReplayUI();updateControls();
  const won=outcome.winner==='blue';
- log((won?'🏆 BLUE ชนะฝูงประชิด':'💥 BLUE แพ้ฝูงประชิด')+' · '+outcome.reason,won?'blue':'red');
+ log((won?'🏆 BLUE ชนะ':'💥 BLUE แพ้')+' '+({melee:'ฝูงประชิด',ranged:'ฝูงยิงระยะไกล',mixed:'ฝูงผสม'}[multi.enemyMode])+' · '+outcome.reason,won?'blue':'red');
  showNotice(outcome.reason+' — กดรอบต่อไปเพื่อทดสอบซ้ำ');
- showOverlay(won?'🏆':'💥',won?'BLUE ระยะไกลชนะ!':'บอตประชิดชนะ!',outcome.reason,'กำจัด '+multi.eliminated+'/'+multi.targets.length+' · BLUE เหลือ '+Math.ceil(bots[0].hp)+' HP · '+formatTime(elapsed));
+ showOverlay(won?'🏆':'💥',won?'BLUE ระยะไกลชนะ!':'ศัตรูชนะ!',outcome.reason,'กำจัด '+multi.eliminated+'/'+multi.targets.length+' · BLUE เหลือ '+Math.ceil(bots[0].hp)+' HP · '+formatTime(elapsed));
 }
 function meleeOnlyTracks(){return Object.fromEntries(Object.entries(multi.tracks).filter(([id,t])=>multi.targets.some(e=>e.id===id&&e.active&&e.team!=='ranged')));}
 function visibleMeleeTracks(){return Object.fromEntries(Object.entries(meleeOnlyTracks()).filter(([id,t])=>t.status==='visible'));}
@@ -1456,11 +1456,11 @@ function drawMultiTargets(){
  ctx.save();ctx.textAlign='center';ctx.font=`800 ${clamp(S*.025,10,13)}px system-ui`;
  for(const t of multi.targets){if(!t.active)continue;
   const track=multi.tracks[t.id],visible=track?.status==='visible';
-  const fill=({patrol:'#fac97e',wander:'#b4a5ff',flee:'#ff97c1',stay:'#9db5be',approach:'#9ce4a0',hunt:'#ff9a64'})[t.kind]||'#ffcd89';
+  const fill=({sentry:'#ffb16c',hunter:'#ffca6c',patrol:t.team==='ranged'?'#ff8b87':'#fac97e',wander:'#b4a5ff',flee:'#ff97c1',stay:'#9db5be',approach:'#9ce4a0',hunt:'#ff9a64'})[t.kind]||'#ffcd89';
   ctx.globalAlpha=visible?1:.69;
   ctx.fillStyle=t.hitFlash>0?'#fff1dc':'#352338';ctx.strokeStyle=fill;ctx.lineWidth=multi.focus===t.id?3:1.6;
   ctx.beginPath();ctx.arc(t.x,t.y,R*.78,0,Math.PI*2);ctx.fill();ctx.stroke();
-  ctx.fillStyle=fill;ctx.fillText((multi.melee?'⚔':'')+t.id,t.x,t.y-R-7);
+  ctx.fillStyle=fill;ctx.fillText((t.team==='ranged'?'🔫':multi.melee?'⚔':'')+t.id,t.x,t.y-R-7);
   ctx.fillStyle='#223149';ctx.fillRect(t.x-R,t.y+R,R*2,3);
   ctx.fillStyle=fill;ctx.fillRect(t.x-R,t.y+R,R*2*(t.hp/t.maxHp),3);
   if(multi.focus===t.id){ctx.strokeStyle='#ffe090';ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(t.x,t.y,R*1.45,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
@@ -1473,8 +1473,9 @@ function drawMultiTargets(){
  ctx.restore();
 }
 function updateMultiHUD(){
- document.getElementById('redFighterName').textContent=multi.melee?'⚔️ MELEE · ฝูงประชิด':'🎯 TARGETS · พื้นฐาน';
- document.getElementById('arenaHead').textContent=multi.melee?'◈ Ranged BLUE vs Melee Swarm · RRT':'◈ Original BLUE Agent · Multi-Target RRT';
+ const name=multi.melee?({melee:'⚔️ MELEE · ฝูงประชิด',ranged:'🔫 RANGED · ฝูงยิง',mixed:'⚔️🔫 MIXED · ฝูงผสม'}[multi.enemyMode]):'🎯 TARGETS · พื้นฐาน';
+ document.getElementById('redFighterName').textContent=name;
+ document.getElementById('arenaHead').textContent=multi.melee?'◈ Original BLUE vs '+multi.enemyMode.toUpperCase()+' bots · RRT':'◈ Original BLUE Agent · Multi-Target RRT';
  const active=multi.targets.filter(t=>t.active).length;
  multiUI.visible.textContent='👁 เห็น '+Object.values(multi.tracks).filter(t=>t.status==='visible').length;
  multiUI.known.textContent='🧠 จำได้ '+Object.keys(multi.tracks).length;
@@ -1483,15 +1484,25 @@ function updateMultiHUD(){
  ui.redHp.textContent=active+'/'+multi.targets.length;
  ui.redBar.style.width=(100*active/Math.max(1,multi.targets.length))+'%';
  ui.redMode.textContent=multi.focus?'เลือก '+multi.focus:'กำลังสำรวจ';
- ui.redAmmo.textContent=multi.melee?'⚔️ ไม่มีปืน · ระยะประชิด':'บอตพื้นฐาน';
- ui.redThink.textContent=multi.melee?'⚔️ Melee Swarm':'Target Registry';ui.redReason.textContent=multi.melee?'โจมตีเมื่อเข้าใกล้ · ไม่ยิงระยะไกล':'บอตคำสั่งง่าย ไม่ใช่ Agent ใหม่';
+ ui.redAmmo.textContent=multi.melee&&multi.enemyMode!=='melee'?'🔫 ยิง/รีโหลดตามกฎ':multi.melee?'⚔️ ไม่มีปืน':'บอตพื้นฐาน';
+ ui.redThink.textContent=multi.melee?(multi.enemyMode==='melee'?'⚔️ Melee Swarm':'🔫 Rule Bots'):'Target Registry';
+ ui.redReason.textContent=multi.melee?(multi.enemyMode==='melee'?'โจมตีประชิด · ไม่ยิงไกล':'Sentry / Patrol / Hunter · ไม่ใช้ RRT'):'บอตคำสั่งง่าย ไม่ใช่ Agent ใหม่';
  ui.redRisk.textContent='กำลังติดตาม '+Object.keys(multi.tracks).length+' เป้าหมาย';ui.redPlans.textContent='ยิงออก '+multi.eliminated;
- ui.redMemory.textContent=multi.melee?'ประชิด '+multi.meleeHits+' ครั้ง · เสีย '+Math.round(multi.damageTaken)+' HP':'สถานะของเป้าหมายแยกตาม ID';
- ui.round.textContent=multi.melee?'RANGED vs MELEE':'MULTI TARGET';ui.score.textContent=multi.eliminated+' / '+multi.targets.length;
- if(multi.melee){const waves=multi.waveHistory.filter(x=>x.difficulty===multi.difficulty),wins=waves.filter(x=>x.winner==='blue').length;multiUI.wave.textContent='⚔️ โจมตีโดน '+multi.meleeHits+' ครั้ง · BLUE เสีย '+Math.round(multi.damageTaken)+' HP · ถอย '+multi.kites+' แผน ('+(multi.kiteEnabled?'เปิด':'ปิด')+') · 🔮 '+(multi.predictive?('หลบล่วงหน้า '+multi.preempts+' · เปลี่ยนทาง '+multi.routeCuts+(multi.forecast?' · '+({clear:'ปลอดภัย',watch:'เฝ้าระวัง',danger:'เสี่ยงถูกล้อม',critical:'ถูกปิดล้อม'}[multi.forecast.map.level]):'')):'ปิด')+' · ชนะ '+wins+'/'+waves.length+' รอบ ('+(waves.length?Math.round(100*wins/waves.length):0)+'%)';}else{multiUI.wave.textContent='🎯 โหมดฝึกติดตาม · ศัตรูไม่โจมตี';}
+ ui.redMemory.textContent=multi.melee?(multi.enemyMode==='melee'?'ประชิด '+multi.meleeHits+' ครั้ง · เสีย '+Math.round(multi.damageTaken)+' HP':'🔫 ยิง '+multi.rangedFired+' · โดน '+multi.rangedHits+' · เสีย '+Math.round(multi.damageTaken)+' HP'):'สถานะของเป้าหมายแยกตาม ID';
+ ui.round.textContent=multi.melee?'BLUE vs '+multi.enemyMode.toUpperCase():'MULTI TARGET';
+ ui.score.textContent=multi.eliminated+' / '+multi.targets.length;
+ if(multi.melee){
+  const waves=multi.waveHistory.filter(x=>x.difficulty===multi.difficulty&&(x.enemyMode||'melee')===multi.enemyMode);
+  const wins=waves.filter(x=>x.winner==='blue').length;
+  const prediction=multi.enemyMode!=='ranged'&&multi.predictive?' · 🔮 หลบ '+multi.preempts:'';
+  multiUI.wave.textContent='⚔️ โดนประชิด '+multi.meleeHits+' · 🔫 ยิง '+multi.rangedFired+' / โดน '+multi.rangedHits+
+   ' · BLUE เสีย '+Math.round(multi.damageTaken)+' HP'+prediction+' · ชนะ '+wins+'/'+waves.length+
+   ' ('+(waves.length?Math.round(100*wins/waves.length):0)+'%)';
+ }else multiUI.wave.textContent='🎯 โหมดฝึกติดตาม · ศัตรูไม่โจมตี';
  ui.sightEvents.textContent=multi.targets.reduce((s,t)=>s+(multi.brains[t.id]?.sightings||0),0)+' / '+multi.targets.reduce((s,t)=>s+(multi.brains[t.id]?.losses||0),0);
  ui.learnedSpots.textContent=multi.sharedBrain.danger.length+' จุด';
- for(const t of multi.targets){const box=multiUI.list.querySelector(`[data-id="${t.id}"]`);if(!box)continue;
+ for(const t of multi.targets){
+  const box=multiUI.list.querySelector('[data-id="'+t.id+'"]');if(!box)continue;
   box.classList.toggle('focus',multi.focus===t.id);
   const status=box.querySelector('[data-status]'),tr=multi.tracks[t.id];
   status.textContent=!t.active?(multi.melee?'💀 ถูกกำจัด':'พักก่อนกลับมา'):!tr?'ยังไม่พบ':tr.status==='visible'?'🟢 มองเห็น':'🟡 จำได้ '+Math.round(tr.confidence*100)+'%';
