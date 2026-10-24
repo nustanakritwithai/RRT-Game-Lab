@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.9/.test(duel.title),'title shows V0.6.9: '+duel.title);
+  check(/RRT ARENA 06\.10/.test(duel.title),'title shows V0.6.10: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -229,6 +229,49 @@ async function main(){
   check(mixedDuo.mode==='cooperative'&&mixedDuo.blueCount===2&&mixedDuo.ranged>0&&mixedDuo.melee>0,
    'duo mixed: both simple enemy types and both original BLUEs present');
   check(mixedDuo.valid&&mixedDuo.finite,'duo mixed: finite collision-free physics and routes');
+
+  // Screenshot-matched GREEN identity ring must actually render on the Canvas
+  // around each current BLUE, rather than only B1 in Mixed melee encounters.
+  for(const [label,suffix,count] of [
+    ['duel','',1],
+    ['melee','mode=multi&enemy=melee',1],
+    ['ranged','mode=multi&enemy=ranged',1],
+    ['mixed','mode=multi&enemy=mixed',1],
+    ['duo-independent','mode=multi&enemy=ranged&blue=2',2],
+    ['duo-cooperative','mode=multi&enemy=mixed&blue=2&team=coop',2]
+  ]){
+    await page.goto(base+(suffix?sep+suffix:''));
+    const ring=await page.evaluate(()=>{
+      document.getElementById('start').click();
+      const engine=window.__rrtArenaDebug,md=window.__rrtMultiDebug;
+      engine.advance(.65);
+      const state=engine.getState();
+      const agents=state.scenario==='multi'?md.getState().team.blues:[state.bots[0]];
+      const canvas=document.getElementById('arena'),stage=document.getElementById('stage');
+      const rect=stage.getBoundingClientRect(),scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+      const R=Math.max(7.5,Math.min(17,Math.min(rect.width,rect.height)*.027));
+      const ctx=canvas.getContext('2d');
+      const visibleGreen=bot=>{
+        let count=0;
+        for(let a=-Math.PI*.54;a<Math.PI*.84;a+=.11){
+          for(const dr of [-1.25,0,1.25]){
+            const r=R*2.6+dr,x=Math.round((bot.x+Math.cos(a)*r)*scaleX),y=Math.round((bot.y+Math.sin(a)*r)*scaleY);
+            if(x<0||y<0||x>=canvas.width||y>=canvas.height)continue;
+            const pixel=ctx.getImageData(x,y,1,1).data;
+            if(pixel[1]>=138&&pixel[1]>pixel[0]+38&&pixel[2]>75)count++;
+          }
+        }
+        return count;
+      };
+      return {agents:agents.map(b=>({id:b.id,greenPixels:visibleGreen(b),hp:b.hp})),
+       features:state.blueCapabilities||md.getState().blueCapabilities,
+       phase:state.phase,stageHeight:Math.round(rect.height)};
+    });
+    check(ring.agents.length===count&&ring.agents.every(b=>b.greenPixels>=4),
+      'GREEN screenshot ring appears around '+label+' BLUE(s) '+ring.agents.map(b=>b.id+':'+b.greenPixels).join(','));
+    check(ring.features?.predictive&&ring.features?.rangedDefense&&ring.features?.keepMoving,
+      'latest BLUE predictive + ranged defense + keep-moving capabilities available in '+label);
+  }
   check(errors.length===0,'no page errors '+errors.join(' | '));
   await ctx.close();
  }
