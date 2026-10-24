@@ -1,4 +1,31 @@
-# RRT Arena V0.6.10 — Unified BLUE Combat
+# RRT Arena V0.6.11 — Team Coordination V2
+
+เพิ่มระบบประสานงานเชิงยุทธวิธีเหนือ BLUE ล่าสุด V0.6.10 โดย **ไม่เปลี่ยน HP/ความเร็ว/คูลดาวน์/กระสุน/โมเดลตัดสินใจ** ของ B1 หรือ B2. SOLO และ Duo Independent ยังเป็นชุดควบคุม และเฉพาะ Duo Cooperative เท่านั้นที่มีการตัดสินใจร่วมทีมแบบใหม่
+
+## ใหม่: แยกเป้าหมายอย่างระมัดระวัง + ไม่ยิงผ่านเพื่อน
+
+- **Visible-target splitting:** B2 หลีกการเลือกศัตรูตัวเดียวกับ B1 *เฉพาะเมื่อ* ตนเองมีเป้าหมายอื่นที่มองเห็นอยู่จริงในระยะใกล้เคียง และไม่ต้องผละจากศัตรูที่ประชิดอันตราย ระบบไม่ใช้พิกัดศัตรูจริงที่หลบอยู่หลังฉาก และไม่ไล่ตามข่าววิทยุเก่าแทนเป้าหมายที่มองเห็น
+- **Smart friendly-fire hold:** ถ้า B1/B2 อยู่ในแนวยิงของอีกตัว ตัวที่ยิงจะตรวจแนวกระสุนจาก **ตำแหน่งเป้าหมายที่ตนเองมองเห็น** และวงความคลาดเคลื่อนของการเล็งก่อนยิง ไม่เสียกระสุนหรือ cooldown โดยเปล่าประโยชน์เมื่อเพื่อนขวาง; กระสุนจริงยังคงหยุดชนเพื่อนด้วย swept collision เป็นชั้นสุดท้าย
+- **Cooperative firing-lane reposition:** หากเพื่อนขวางแนวยิงและไม่มีเหตุฉุกเฉินจากการถูกล้อม/ถูกยิง BLUE จะเสนอจุดย้ายด้านข้างด้วย pure advisor ที่คัดเฉพาะพิกัด free, LOS, ความสามารถยิงถึงเป้า, ไม่ชนทางเดิน/เพื่อน แล้วส่งจุดนั้นเข้า **Memory-Guided RRT รุ่นเดิม**; ไม่มีเทเลพอร์ต
+- **Team telemetry:** สถิติ `focusSplits`, `focusSamples`, `focusOverlap`, `heldFire`, `laneMoves`, `shotsFired` แยก B1/B2 บันทึกใน read-only debug, wave history และ Replay JSON. แถบสถานะบนมือถือสูงคงที่
+- **Fair A/B:** ไม่มี Team V2 advisor ใน Solo/Duo Independent และไม่มีการเพิ่มข้อมูลตำแหน่งลับผ่านการสื่อสาร กลไก radio latency/range/TTL ของ V0.6.9 ยังเหมือนเดิม
+
+## เปิดทดลอง
+
+- [Duo Cooperative vs Ranged](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2&team=coop)
+- [Duo Independent vs Ranged (ชุดควบคุม)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2)
+- [Duo Cooperative vs Mixed](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=mixed&blue=2&team=coop)
+- [Solo vs Melee (ฐานเดิม)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=melee)
+
+## Tests
+
+`node --test *.test.cjs` + `node tools/browser_regression.cjs`: unit tests รูปแบบ TDD, ความปลอดภัยของแนวยิง, การแยกเป้าหมาย, บอตประชิด/ยิงไกล, ความจำแยก B1/B2, และ Chromium บนหน้าจอ 320/393/1365px
+
+**หมายเหตุผลทดลอง:** ฟีเจอร์เหล่านี้อาจช่วยลดการยิงโดนเพื่อนและเลือกเป้าหมายซ้ำ แต่ต้องเก็บ benchmark จริงก่อนอ้างว่าเพิ่ม Win Rate; ตัวเลขชนะ BLUE/RED 1v1 ไม่ใช่ผลของการทดลองระบบทีม
+
+---
+
+## อ้างอิง — V0.6.10 Unified BLUE
 
 **ทุกโหมดใช้ BLUE ความสามารถล่าสุดชุดเดียวกัน** ไม่ย้อนกลับไปรุ่นเก่า: Predictive Anti-Encirclement, Ranged Threat Defense, Keep Moving, Tactical Positioning, Memory-Guided RRT และระบบความจำตามข้อมูลที่ตนเองพบ
 
