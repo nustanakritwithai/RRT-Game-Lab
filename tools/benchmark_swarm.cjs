@@ -6,7 +6,8 @@
  *
  * Usage:
  *   node tools/benchmark_swarm.cjs --seeds 1-30 --count 24 --difficulty balanced \
- *     --kite on --predictive on [--file index.html] [--jobs 4] [--out result.json]
+ *     --kite on --predictive on [--enemy melee|ranged|mixed] [--rangedDefense on|off]
+ *     [--file index.html] [--jobs 4] [--out result.json]
  *
  * Same seed + same flags + same viewport => same match. Enemy stats and BLUE stats are
  * never modified by the harness; it only toggles the strategy switches exposed in the UI.
@@ -17,7 +18,7 @@ const fs=require('node:fs');
 const {chromium}=require('playwright');
 
 function args(argv){
-  const o={seeds:'1-10',count:24,difficulty:'balanced',kite:'on',predictive:'on',file:'index.html',jobs:4,out:null,width:1365,height:900,label:null};
+  const o={seeds:'1-10',enemy:'melee',count:24,difficulty:'balanced',kite:'on',predictive:'on',file:'index.html',jobs:4,out:null,width:1365,height:900,label:null};
   for(let i=2;i<argv.length;i++){const k=argv[i].replace(/^--/,'');o[k]=argv[++i];}
   o.count=Number(o.count);o.jobs=Number(o.jobs);o.width=Number(o.width);o.height=Number(o.height);
   return o;
@@ -40,10 +41,12 @@ async function runOne(page,url,opts,seed){
     const fire=(el,type='change')=>el.dispatchEvent(new Event(type,{bubbles:true}));
     const setCheck=(id,on)=>{const el=$(id);if(!el)return on===false;if(el.checked!==on){el.checked=on;fire(el);}return true;};
     $('multiMelee').checked=true;fire($('multiMelee'));
+    if($('multiEnemyMode')){$('multiEnemyMode').value=opts.enemy;fire($('multiEnemyMode'));}else if(opts.enemy!=='melee')throw new Error('build has no enemy mode selector');
     $('multiDifficulty').value=opts.difficulty;fire($('multiDifficulty'));
     $('multiPreset').value=String(opts.count);fire($('multiPreset'));
     setCheck('multiKite',opts.kite==='on');
     const hasPredictive=setCheck('multiPredict',opts.predictive==='on');
+    if(opts.rangedDefense!==undefined)setCheck('multiRangedDefense',opts.rangedDefense==='on');
     window.__reseed(seed);
     $('reset').click();
     $('start').click();
@@ -53,7 +56,7 @@ async function runOne(page,url,opts,seed){
     const st=md.getState(),last=st.waveHistory[st.waveHistory.length-1]||null;
     return {seed,winner:last?.winner??'unfinished',hp:Math.max(0,Math.round(st.blue.hp*10)/10),seconds:last?.seconds??st.time,
       kills:st.eliminated,alive:st.targets.filter(t=>t.active).length,meleeHits:st.meleeHits,damageTaken:Math.round(st.damageTaken*10)/10,
-      kites:st.kites,microMoves:st.microMoves,planFailures:st.planFailures??null,predictive:st.predictive??null,
+      kites:st.kites,microMoves:st.microMoves,rangedFired:st.rangedFired??0,rangedHits:st.rangedHits??0,rangedDamage:Math.round((st.rangedDamage??0)*10)/10,rangedDefense:st.rangedDefense??null,planFailures:st.planFailures??null,predictive:st.predictive??null,
       hasPredictiveSwitch:hasPredictive,wallClockMs:Math.round(performance.now()-t0),title:document.title};
   },{seed,opts});
 }
@@ -75,9 +78,9 @@ async function main(){
   // Wilson 95% interval for the win rate.
   const z=1.96,den=1+z*z/n,centre=(p+z*z/(2*n))/den,half=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den;
   const mean=k=>Math.round(10*results.reduce((s,r)=>s+(r[k]||0),0)/n)/10;
-  const summary={label:o.label,file:path.basename(file),viewport:`${o.width}x${o.height}`,count:o.count,difficulty:o.difficulty,kite:o.kite,predictive:o.predictive,
+  const summary={label:o.label,file:path.basename(file),viewport:`${o.width}x${o.height}`,enemy:o.enemy,rangedDefense:o.rangedDefense??null,count:o.count,difficulty:o.difficulty,kite:o.kite,predictive:o.predictive,
     seeds:o.seeds,matches:n,wins,winRate:Math.round(1000*p)/10,wilson95:[Math.round(1000*(centre-half))/10,Math.round(1000*(centre+half))/10],
-    meanHp:mean('hp'),meanSeconds:mean('seconds'),meanAlive:mean('alive'),meanMeleeHits:mean('meleeHits'),meanPlanFailures:results[0]?.planFailures==null?null:mean('planFailures')};
+    meanHp:mean('hp'),meanSeconds:mean('seconds'),meanAlive:mean('alive'),meanMeleeHits:mean('meleeHits'),meanRangedHits:mean('rangedHits'),meanRangedFired:mean('rangedFired'),meanPlanFailures:results[0]?.planFailures==null?null:mean('planFailures')};
   const report={summary,results};
   console.log(JSON.stringify(summary));
   if(o.out)fs.writeFileSync(o.out,JSON.stringify(report,null,1));

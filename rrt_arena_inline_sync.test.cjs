@@ -6,7 +6,7 @@ const fs=require('node:fs');const path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'index.html'),'utf8');
 const modules={arenaCore:'rrt_arena_v05_core.js',agentMemoryCore:'rrt_arena_memory_v061.js',guidedSampler:'rrt_arena_guided_v061.js',
  activeTacticsCore:'rrt_arena_tactics_v062.js',dynamicDefenseCore:'rrt_arena_defense_v063.js',arenaMultiCore:'rrt_arena_multi_v064.js',
- meleeWaveCore:'rrt_arena_melee_v065.js',swarmPredictCore:'rrt_arena_swarm_v066.js',rangedEnemyCore:'rrt_arena_ranged_v067.js'};
+ meleeWaveCore:'rrt_arena_melee_v065.js',swarmPredictCore:'rrt_arena_swarm_v066.js',rangedEnemyCore:'rrt_arena_ranged_v067.js',rangedDefenseCore:'rrt_arena_rangeddef_v068.js'};
 for(const [id,file] of Object.entries(modules)){
  test(`index.html inlines ${file} unchanged`,()=>{
   const m=html.match(new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`));
@@ -17,7 +17,7 @@ for(const [id,file] of Object.entries(modules)){
 test('predictive module loads before the game script uses it',()=>{
  assert.ok(html.indexOf('<script id="swarmPredictCore">')<html.indexOf('swarmCore=globalThis.RRTArenaSwarm'));
 });
-test('page advertises the V0.6.7 build',()=>assert.match(html,/<title>RRT ARENA 06\.7/));
+test('page advertises the V0.6.8 build',()=>assert.match(html,/<title>RRT ARENA 06\.8/));
 
 const vm=require('node:vm');
 test('all standalone inline scripts parse as JavaScript',()=>{

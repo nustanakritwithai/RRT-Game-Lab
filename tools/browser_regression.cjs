@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.7/.test(duel.title),'title shows V0.6.7: '+duel.title);
+  check(/RRT ARENA 06\.8/.test(duel.title),'title shows V0.6.8: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -109,6 +109,21 @@ async function main(){
   });
   check(mixed.mode==='mixed'&&mixed.melee>0&&mixed.ranged>0,'mixed: both kinds of enemies remain active');
   check(mixed.predictive&&mixed.finite&&mixed.valid&&mixed.scroll<=0,'mixed: old swarm prediction remains available and positions valid');
+  // V0.6.8 Ranged Threat Defense: on by default, acts on observed crossfire, off restores V0.6.7 policy.
+  await page.goto(base+sep+'mode=multi&enemy=ranged');
+  const rdef=await page.evaluate(()=>{
+   const $=id=>document.getElementById(id),md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   $('multiPreset').value='12';$('multiPreset').dispatchEvent(new Event('change',{bubbles:true}));
+   $('start').click();let valid=true,intents=new Set();
+   for(let i=0;i<30&&d.getState().phase==='running';i++){d.advance(.5);const v=d.validate();valid=valid&&v.fightersFree&&v.waypointsClear;intents.add(md.getState().blueIntent);}
+   const on=md.getState();
+   $('multiRangedDefense').checked=false;$('multiRangedDefense').dispatchEvent(new Event('change',{bubbles:true}));$('start').click();d.advance(15);
+   const off=md.getState();
+   return {hasSwitch:!!$('multiRangedDefense'),onEnabled:on.rangedDefense,moves:on.coverMoves,intents:[...intents],valid,offEnabled:off.rangedDefense,offMoves:off.coverMoves,offIntent:off.blueIntent};
+  });
+  check(rdef.hasSwitch&&rdef.onEnabled&&rdef.moves>0,'ranged defense: enabled by default and relocates under fire ('+rdef.moves+' moves, intents '+rdef.intents.join(',')+')');
+  check(rdef.valid,'ranged defense: fighters outside walls, collision-free routes');
+  check(!rdef.offEnabled&&rdef.offMoves===0&&!['ranged_cover','ranged_hold'].includes(rdef.offIntent),'ranged defense off: V0.6.7 policy restored');
   check(errors.length===0,'no page errors '+errors.join(' | '));
   await ctx.close();
  }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071225">
-<title>RRT ARENA 06.7 — Basic Ranged Enemy Lab</title>
+<title>RRT ARENA 06.8 — Ranged Threat Defense</title>
 <style>
 :root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--panel2:#152640;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;--purple:#ac92fa}*{box-sizing:border-box}html,body{margin:0;min-height:100%;}body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42}button,input,select{font:inherit}button,select{cursor:pointer}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}main{max-width:1350px;margin:auto;padding:18px 13px 64px}header{padding:2px 3px 15px}.eyebrow{font-size:11px;font-weight:850;letter-spacing:1.8px;color:var(--cyan)}h1{margin:6px 0 7px;line-height:1.13;letter-spacing:-1.2px;font-size:clamp(29px,4.7vw,47px)}h1 span{color:var(--pink)}header p{color:var(--soft);font-size:14px;margin:0;max-width:800px}.tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3;background:#113657;border:1px solid #315479;color:#a7e5ff;vertical-align:middle;letter-spacing:0;margin-left:6px}
 .stats{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-bottom:12px}.fighter{min-width:0;padding:12px 14px;background:linear-gradient(135deg,#102844,#0d1b30);border:1px solid #264561;border-radius:15px}.fighter.red{background:linear-gradient(225deg,#3a1b34,#151c30);border-color:#66364f}.nameRow{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-size:15px;font-weight:850;white-space:nowrap}.name .symbol{font-size:19px;vertical-align:middle}.statnum{font-size:13px;white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}.bar{height:8px;background:#0a1423;border-radius:8px;overflow:hidden;margin:9px 0 6px;border:1px solid #253247}.fill{width:100%;height:100%;background:linear-gradient(90deg,#237cce,#50dbff);transition:width .16s}.red .fill{background:linear-gradient(90deg,#e6466b,#ff9a79)}.sublabel{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:7px;align-items:center;height:17px;min-height:17px;overflow:hidden;font-size:11px;color:var(--soft)}.sublabel span:first-child{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sublabel span:last-child{display:block;white-space:nowrap;flex-shrink:0}.nameRow .name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}.nameRow .statnum{flex-shrink:0}.fighter{min-height:105px;overflow:hidden}.sublabel strong{color:var(--ink);font-weight:650}.midstats{min-width:96px;text-align:center;display:flex;flex-direction:column;justify-content:center;background:#101b31;border:1px solid var(--line);border-radius:15px;padding:9px 13px}.midstats .round{font-size:10px;letter-spacing:1px;color:var(--soft);font-weight:850}.midstats .score{font-size:24px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}.midstats .clock{color:var(--gold);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -72,7 +72,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </style>
 </head>
 <body><main>
-<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.7 · RANGED ENEMY LAB</div>
+<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.8 · RANGED THREAT DEFENSE</div>
 <h1>RRT ARENA <span>AGENT LAB</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
 <p>บอตคำนวณมุมยิงและย้ายตำแหน่งเมื่อคาดว่าศัตรูรู้ที่อยู่ ตัดแนวยิง อ้อมเปลี่ยนมุม ไม่ยืนรอซ้ำจุดเดิม · Memory-Guided RRT · มือถือไม่ต้องมี LLM / API Key</p></header>
 <section class="modePanel" aria-label="เลือกสนามทดลอง">
@@ -85,6 +85,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
    <label>ความยาก<select id="multiDifficulty"><option value="training">ฝึกซ้อม · ประชิดช้า/เบา</option><option value="balanced" selected>สมดุล · เปรียบเทียบยุติธรรม</option><option value="hard">ยาก · ประชิดเร็ว/แรง</option></select></label>
    <label class="meleeSwitch"><input id="multiKite" type="checkbox" checked><b>🏃 เปิด Swarm-Aware Kiting (ทดลองเปิด/ปิด)</b></label>
    <label class="meleeSwitch"><input id="multiPredict" type="checkbox" checked><b>🔮 Predictive Anti-Encirclement (V0.6.6)</b></label>
+   <label class="meleeSwitch"><input id="multiRangedDefense" type="checkbox" checked><b>🛡️ Ranged Threat Defense (V0.6.8)</b></label>
     <label for="multiEnemyMode">ประเภทศัตรู<select id="multiEnemyMode" aria-label="ประเภทศัตรู"><option value="melee">⚔️ ประชิด (เดิม)</option><option value="ranged">🔫 ยิงระยะไกล</option><option value="mixed">⚔️+🔫 ผสม</option></select></label>
    <div class="multiWaveStats" id="multiWaveStats" aria-live="polite">ยังไม่เริ่มการทดลอง · จำกัดเวลา 150 วินาที</div>
   </div>
@@ -1064,23 +1065,124 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   segmentRectTime,segmentCircleTime});
 });
 </script>
+<script id="rangedDefenseCore">
+/* RRT Arena V0.6.8 — Ranged Threat Defense for the ORIGINAL BLUE agent.
+ * Pure functions: no DOM, no timers, no randomness, no world truth.
+ * Inputs are BLUE's own tracks (visible + remembered shooters), the public weapon range of
+ * the selected difficulty and map geometry queries supplied by the caller. The chosen goal
+ * is still routed by Memory-Guided RRT; all movement stays collision-checked in the game.
+ */
+(function(root,factory){'use strict';const api=factory();root.RRTArenaRangedDefense=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const TAU=Math.PI*2;
+ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const finite=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+ const SHOOTER_KINDS=Object.freeze(['sentry','patrol','hunter']);
+
+ /** Known shooters from tracks only. A remembered shooter stays at its last seen position
+   * (no hidden extrapolation) and fades out after memoryHorizon seconds. */
+ function perceiveShooters(tracks,now,{memoryHorizon=6,kinds=SHOOTER_KINDS}={}){
+  const out=[];
+  for(const t of Object.values(tracks||{})){
+   if(!finite(t)||!kinds.includes(t.kind))continue;
+   if(t.status==='visible'){out.push({id:t.id,x:t.x,y:t.y,kind:t.kind,status:'visible',confidence:1});continue;}
+   if(t.status!=='memory')continue;
+   const age=Math.max(0,now-(Number.isFinite(t.lastSeen)?t.lastSeen:-Infinity));
+   if(!(age<=memoryHorizon))continue;
+   out.push({id:t.id,x:t.x,y:t.y,kind:t.kind,status:'memory',confidence:clamp((Number.isFinite(t.confidence)?t.confidence:1)*(1-age/(memoryHorizon*1.25)),0,1)});
+  }
+  return out;
+ }
+ /** Which known shooters could hit a point: within their weapon range and with line of sight. */
+ function exposure(point,shooters,{range=200,canSee=()=>true}={}){
+  let count=0,weight=0;const ids=[];
+  for(const s of shooters||[]){
+   if(!finite(s)||dist(s,point)>range||!canSee(s,point))continue;
+   count++;ids.push(s.id);weight+=(s.status==='memory'?.7:1)*clamp(Number.isFinite(s.confidence)?s.confidence:1,0,1);
+  }
+  return {count,weight,ids};
+ }
+ /** Seconds-weighted exposure while travelling a straight leg (sampled). */
+ function routeExposure(from,to,shooters,{range=200,canSee=()=>true,speed=150,samples=6}={}){
+  if(!finite(from)||!finite(to)||!shooters?.length||!(speed>0))return 0;
+  const len=dist(from,to),k=Math.max(1,samples|0);let total=0;
+  for(let i=1;i<=k;i++){const q={x:from.x+(to.x-from.x)*i/k,y:from.y+(to.y-from.y)*i/k};total+=exposure(q,shooters,{range,canSee}).weight*(len/k)/speed;}
+  return total;
+ }
+ /** Pick where to stand: hidden from every shooter except (optionally) the focus target,
+   * ideally in the standoff band (inside BLUE's range, outside the enemy's), reached by a
+   * route that spends little time in sight. */
+ function chooseFirePosition(self,shooters,{focus=null,width=800,height=500,scale=400,radius=9,range=200,ownRange=216,speed=150,
+  canSee=()=>true,free=()=>true,direct=()=>true,history=[]}={}){
+  if(!finite(self)||!shooters?.length)return null;
+  const cands=[];
+  for(const f of [.08,.15,.24,.34])for(let i=0;i<16;i++){const a=i*TAU/16;cands.push({x:self.x+Math.cos(a)*scale*f,y:self.y+Math.sin(a)*scale*f});}
+  if(finite(focus)){
+   const band=[Math.min(ownRange*.95,Math.max(range*1.06,ownRange*.85)),ownRange*.78,ownRange*.62];
+   for(const r of band)for(let i=0;i<16;i++){const a=i*TAU/16;cands.push({x:focus.x+Math.cos(a)*r,y:focus.y+Math.sin(a)*r});}
+  }
+  const recent=Array.isArray(history)?history.slice(-6):[];
+  let best=null,evaluated=0;
+  for(const p of cands){
+   if(p.x<radius*2||p.y<radius*2||p.x>width-radius*2||p.y>height-radius*2||!free(p))continue;
+   evaluated++;
+   const ex=exposure(p,shooters,{range,canSee});
+   const focusExposed=!!focus&&ex.ids.includes(focus.id);
+   const others=ex.ids.filter(id=>!focus||id!==focus.id).length;
+   const otherWeight=ex.weight-(focusExposed?(focus.status==='memory'?.7:1)*clamp(focus.confidence??1,0,1):0);
+   const canHit=finite(focus)&&dist(p,focus)<=ownRange&&canSee(p,focus);
+   const standoff=canHit&&!focusExposed;
+   const path=routeExposure(self,p,shooters,{range,canSee,speed});
+   const straight=!!direct(self,p);
+   const edge=Math.min(p.x,width-p.x,p.y,height-p.y);
+   const edgePenalty=Math.max(0,scale*.08-edge)/(scale*.08);
+   const repeat=recent.reduce((v,h)=>v+(finite(h)?Math.max(0,1-dist(p,h)/(scale*.1)):0),0)*.4;
+   const score=-4*otherWeight-2*path-(straight?0:1.5)+(canHit?1.5:0)+(standoff?1.5:0)-.5*dist(self,p)/scale-.6*edgePenalty-repeat;
+   if(!best||score>best.score)best={goal:p,score,others,exposure:ex.count,pathExposure:path,canHit,standoff,direct:straight};
+  }
+  return best?{...best,evaluated}:null;
+ }
+ /** Is BLUE's current spot untenable? Shooters other than the engaged target always count;
+   * the engaged one counts while reloading or badly hurt. */
+ function assess(self,shooters,{range=200,canSee=()=>true,focusId=null,reloading=false,hpFraction=1}={}){
+  const ex=exposure(self,shooters,{range,canSee});
+  const others=ex.ids.filter(id=>id!==focusId).length;
+  const act=others>=1||(ex.count>=1&&(reloading||hpFraction<.35));
+  return {count:ex.count,others,weight:ex.weight,ids:ex.ids,act};
+ }
+ /** Hysteresis: act on a fresh threat, keep a cover route whose remaining leg stays hidden,
+   * re-route when that leg becomes exposed. */
+ function decide({enabled=true,assessment=null,now=0,lastAt=-Infinity,moving=false,routeExposure:routeEx=0,cooldown=.8}={}){
+  if(!enabled)return {act:false,reason:'disabled',label:''};
+  if(!assessment?.act)return {act:false,reason:'safe',label:''};
+  if(moving){
+   if(routeEx>.5&&now-lastAt>=.6)return {act:true,reason:'route_exposed',label:'เส้นทางถูกเล็ง → เปลี่ยนจุดกำบัง'};
+   return {act:false,reason:'hold_route',label:'กำลังไปจุดกำบัง'};
+  }
+  if(now-lastAt<cooldown)return {act:false,reason:'cooldown',label:'ถูกเล็ง'};
+  return {act:true,reason:'exposed',label:'ถูกเล็งจาก '+(assessment.count||1)+' ตัว → หาที่กำบัง'};
+ }
+ return Object.freeze({SHOOTER_KINDS,perceiveShooters,exposure,routeExposure,chooseFirePosition,assess,decide});
+});
+</script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 // Optional ?seed=N for reproducible experiments; without it the game stays truly random.
 const benchmarkSeed=(()=>{const v=new URLSearchParams(location.search).get('seed');if(v===null||!/^\d{1,9}$/.test(v))return null;let a=Number(v)>>>0;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};return Number(v);})();
-const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged;
+const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense;
 const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),activeDefense:$('activeDefense'),defenseStat:$('defenseStat'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
 let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
 const colors={blue:'#4dcfff',red:'#ff638d'};
-const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict'),enemyMode:$('multiEnemyMode')};
+const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict'),enemyMode:$('multiEnemyMode'),rangedDefense:$('multiRangedDefense')};
 const multiModes={patrol:'ลาดตระเวน',wander:'เดินสุ่ม',flee:'หนี',stay:'หยุดนิ่ง',approach:'เข้าหา BLUE',hunt:'ไล่ล่าจากที่เคยเห็น'};
 const rangedModes={sentry:'🔫 ป้อมยิง',patrol:'🔫 ลาดตระเวนยิง',hunter:'🔫 ไล่ล่าแล้วยิง'};
 const incomingEnemyMode=new URLSearchParams(location.search).get('enemy');
 multiUI.enemyMode.value=['melee','ranged','mixed'].includes(incomingEnemyMode)?incomingEnemyMode:'melee';
 let scenario=new URLSearchParams(location.search).get('mode')==='multi'?'multi':'duel';
-let multi={count:8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,seed:0,sharedBrain:null,melee:true,difficulty:'balanced',meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,waveHistory:[],matchId:0,kiteEnabled:true,predictive:true,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,enemyMode:'melee',rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0};
+let multi={count:8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,seed:0,sharedBrain:null,melee:true,difficulty:'balanced',meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,waveHistory:[],matchId:0,kiteEnabled:true,predictive:true,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,enemyMode:'melee',rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0,rangedDefense:true,cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,coverMoves:0,coverReroutes:0,standoffs:0};
 const multiActive=()=>scenario==='multi';
 
 const layouts={
@@ -1126,7 +1228,7 @@ function toggleReplay(force){
  updateReplayUI();draw();
 }
 function exportReplay(){if(!timeline.length)return;
- const data={format:'RRT-Arena-sampled-state',version:'0.6.7',seed:benchmarkSeed,activeTactics:ui.activeTactics.checked,activeDefense:ui.activeDefense.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,multiWave:multiActive()?{enabled:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictiveEnabled:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,count:multi.targets.length,eliminated:multi.eliminated,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,winHistory:multi.waveHistory.slice()}:null,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
+ const data={format:'RRT-Arena-sampled-state',version:'0.6.8',seed:benchmarkSeed,activeTactics:ui.activeTactics.checked,activeDefense:ui.activeDefense.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,multiWave:multiActive()?{enabled:multi.melee,enemyMode:multi.enemyMode,rangedDefenseEnabled:multi.rangedDefense,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictiveEnabled:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,count:multi.targets.length,eliminated:multi.eliminated,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,winHistory:multi.waveHistory.slice()}:null,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='rrt-arena-v067-round-'+round+'-replay.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  showNotice('บันทึก Replay JSON แล้ว (ภาพสถานะ ไม่ใช่วิดีโอ)');
@@ -1143,7 +1245,7 @@ function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encount
 // existing currentIntent, chooseGoal, beginPlan, runPlanner, dodgeMove, moveBot, shoot.
 function setupMultiTargets(){
  const blue=bots[0],shared=blue.brain;
- multi={...multi,count:multi.count||8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,sharedBrain:shared,melee:multiUI.melee.checked,enemyMode:multiUI.enemyMode.value,difficulty:multiUI.difficulty.value,kiteEnabled:multiUI.kite.checked,predictive:multiUI.predict.checked,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,meleeHits:0,damageTaken:0,rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0,microMoves:0,lastKiteAt:-20,kites:0,matchId:(multi.matchId||0)+1};
+ multi={...multi,count:multi.count||8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,sharedBrain:shared,melee:multiUI.melee.checked,enemyMode:multiUI.enemyMode.value,difficulty:multiUI.difficulty.value,kiteEnabled:multiUI.kite.checked,predictive:multiUI.predict.checked,rangedDefense:multiUI.rangedDefense.checked,cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,coverMoves:0,coverReroutes:0,standoffs:0,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,meleeHits:0,damageTaken:0,rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0,microMoves:0,lastKiteAt:-20,kites:0,matchId:(multi.matchId||0)+1};
  if(multi.melee){multiUI.priority.value='nearest';blue.moveSpeed=.385;blue.baseFire=.36;blue.range=.54*S;blue.preferred=.37*S;blue.maxAmmo=10;blue.ammo=10;blue.reload=0;}
  multiUI.wave.textContent=multi.melee?'⚔️/🔫 เอาตัวรอด 150 วินาที · ต้องกำจัดศัตรูให้ครบก่อนเวลา':'🎯 โหมดติดตาม · ศัตรูไม่โจมตี';
  for(let i=0;i<multi.count;i++)addSimpleTarget(i);
@@ -1312,7 +1414,7 @@ function senseMultiWorld(){
  }
  let selected=(multi.manualFocus&&multi.tracks[multi.manualFocus])?multi.tracks[multi.manualFocus]:multiCore.rank(multi.tracks,blue,elapsed,{priority:multiUI.priority.value,current:multi.focus,width:W,height:H});
  if(!selected&&multi.manualFocus)multi.manualFocus=null;
- if(selected?.id!==multi.focus){
+ if((selected?.id||null)!==multi.focus){
   const old=multi.focus;multi.focus=selected?.id||null;
   blue.brain=multi.focus?multi.brains[multi.focus]:multi.sharedBrain;
   blue.planner=null;blue.path=[];blue.goal=null;blue.intent='ready';blue.tactic=null;blue.tacticGoal=null;blue.thinkCooldown=0;blue.planCooldown=0;blue.lastExposedAt=-999;
@@ -1418,11 +1520,45 @@ function predictiveCheck(blue){
  blue.path=[];blue.planner=null;blue.goal=null;blue.thinkCooldown=0;blue.planCooldown=0;
  if(multi.preempts<=2||d.reason==='route_cut'&&multi.routeCuts<=2)log('BLUE 🔮 '+d.label,'blue');
 }
+// V0.6.8 Ranged Threat Defense: line-of-fire exposure from BLUE's own shooter tracks and the
+// public weapon range of the chosen difficulty; never reads hidden enemy positions.
+function rangedDefenseActive(){return multiActive()&&multi.melee&&multi.rangedDefense&&multi.enemyMode!=='melee';}
+function rangedThreatWorld(bot){
+ const shooters=rangedDef.perceiveShooters(multi.tracks,elapsed,{memoryHorizon:6});
+ return {shooters,range:rangedCore.statsFor(multi.difficulty).rangeFraction*S,canSee:clearSight};
+}
+function rangedCoverGoal(bot){
+ const w=multi.cover?.world||rangedThreatWorld(bot);multi.pendingCover=false;
+ const ft=multi.focus?multi.tracks[multi.focus]:null;
+ const focus=ft&&w.shooters.find(s=>s.id===ft.id)||null;
+ const r=rangedDef.chooseFirePosition(bot,w.shooters,{focus,width:W,height:H,scale:S,radius:R+3,range:w.range,ownRange:bot.range,speed:bot.moveSpeed*S,
+  canSee:w.canSee,free:p=>freePoint(p,R+3),direct:(a,b)=>!blocked(a,b,R+1),history:bot.maneuverHistory});
+ if(!r)return null;
+ if(r.standoff)multi.standoffs++;
+ bot.reason=(multi.coverDecision?.label||'ถูกเล็ง → หาที่กำบัง')+' · ไปจุดที่ถูกเล็ง '+r.others+' ตัว'+(r.standoff?' · ยิงนอกระยะศัตรู':r.canHit?' · ยังยิงเป้าได้':'')+' ('+r.evaluated+' จุด)';
+ bot.maneuverHistory.push({...r.goal,time:elapsed});bot.maneuverHistory=bot.maneuverHistory.slice(-8);
+ return r.goal;
+}
+function rangedDefenseCheck(blue){
+ const w=rangedThreatWorld(blue);
+ const a=rangedDef.assess(blue,w.shooters,{range:w.range,canSee:w.canSee,focusId:multi.focus,reloading:blue.reload>0,hpFraction:blue.hp/blue.maxHp});
+ multi.cover={world:w,assessment:a};
+ const moving=blue.intent==='ranged_cover'&&(!!blue.planner||blue.path.length>0);
+ let routeEx=0;
+ if(moving&&blue.path.length){let from=blue;for(let k=blue.way;k<blue.path.length;k++){routeEx+=rangedDef.routeExposure(from,blue.path[k],w.shooters,{range:w.range,canSee:w.canSee,speed:blue.moveSpeed*S});from=blue.path[k];}}
+ const d=multi.coverDecision=rangedDef.decide({enabled:true,assessment:a,now:elapsed,lastAt:multi.lastCoverAt,moving,routeExposure:routeEx});
+ if(!d.act)return;
+ multi.lastCoverAt=elapsed;multi.pendingCover=true;
+ if(d.reason==='route_exposed')multi.coverReroutes++;else multi.coverMoves++;
+ blue.path=[];blue.planner=null;blue.goal=null;blue.thinkCooldown=0;blue.planCooldown=0;
+ if(multi.coverMoves<=2||d.reason==='route_exposed'&&multi.coverReroutes<=2)log('BLUE 🛡️ '+d.label,'blue');
+}
 function loopMultiStep(dt){
  if(phase!=='running')return;
  elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);senseMultiWorld();
  const blue=bots[0];
  if(predictiveActive()&&multi.sensorAt===elapsed)predictiveCheck(blue);
+ if(rangedDefenseActive()&&multi.sensorAt===elapsed&&!multi.pendingEvade)rangedDefenseCheck(blue);
  // Reflex-level micro avoidance: never peeks at hidden enemy positions and never teleports.
  // The old BLUE RRT/AI brain remains responsible for normal route planning.
  // A predicted-safe evasive RRT route already moves BLUE away; the reflex only overrides it when the route is cut.
@@ -1494,7 +1630,7 @@ function updateMultiHUD(){
  if(multi.melee){
   const waves=multi.waveHistory.filter(x=>x.difficulty===multi.difficulty&&(x.enemyMode||'melee')===multi.enemyMode);
   const wins=waves.filter(x=>x.winner==='blue').length;
-  const prediction=multi.enemyMode!=='ranged'&&multi.predictive?' · 🔮 หลบ '+multi.preempts:'';
+  const prediction=(multi.enemyMode!=='ranged'&&multi.predictive?' · 🔮 หลบ '+multi.preempts:'')+(multi.enemyMode!=='melee'&&multi.rangedDefense?' · 🛡️ หลบแนวยิง '+multi.coverMoves+(multi.cover?' · ถูกเล็ง '+multi.cover.assessment.count:''):'');
   multiUI.wave.textContent='⚔️ โดนประชิด '+multi.meleeHits+' · 🔫 ยิง '+multi.rangedFired+' / โดน '+multi.rangedHits+
    ' · BLUE เสีย '+Math.round(multi.damageTaken)+' HP'+prediction+' · ชนะ '+wins+'/'+waves.length+
    ' ('+(waves.length?Math.round(100*wins/waves.length):0)+'%)';
@@ -1561,14 +1697,22 @@ function setIntent(bot,intent){if(bot.intent===intent.kind){if(!(ui.activeTactic
  bot.intent=intent.kind;bot.reason=intent.reason;bot.thinkingCount++;if(!['engage','advance','flank'].includes(intent.kind)){bot.tactic=null;bot.tacticGoal=null;}
  if(intent.kind==='flank')stats.flanks++;
  if(['retreat','cover'].includes(intent.kind))stats.covers++;
- const names={evade:'หลบตำแหน่งที่ถูกเปิดเผย',retreat:'ถอย',cover:'หาที่กำบัง',flank:'อ้อมโจมตี',engage:'โจมตี',advance:'เข้าประชิด',investigate:'ไปยังจุดที่จำได้',search:'ลาดตระเวนหาเป้าหมาย',swarm_kite:'ถอยสู้ฝูงประชิด',swarm_evade:'หลบก่อนถูกล้อม',order:'คำสั่งผู้เล่น'};
+ const names={evade:'หลบตำแหน่งที่ถูกเปิดเผย',retreat:'ถอย',cover:'หาที่กำบัง',flank:'อ้อมโจมตี',engage:'โจมตี',advance:'เข้าประชิด',investigate:'ไปยังจุดที่จำได้',search:'ลาดตระเวนหาเป้าหมาย',swarm_kite:'ถอยสู้ฝูงประชิด',swarm_evade:'หลบก่อนถูกล้อม',ranged_cover:'หลบแนวยิงหลายตัว',ranged_hold:'ยิงจากที่กำบัง',order:'คำสั่งผู้เล่น'};
  if(bot.thinkingCount<3||['retreat','cover','order'].includes(intent.kind))log((bot.team==='blue'?'BLUE':'RED')+' → '+(names[intent.kind]||intent.kind),bot.team);
  return true;
 }
 function currentIntent(bot){const info=botKnowledge(bot);
  if(bot.manual&&bot.team==='blue')return {kind:'order',reason:'ได้รับคำสั่งผู้เล่น → เดินไปจุดที่กำหนด'};
  if(bot.team==='blue'&&predictiveActive()&&(multi.pendingEvade||bot.intent==='swarm_evade'&&(bot.planner||bot.path.length)&&multi.decision?.reason==='hold_route'))return {kind:'swarm_evade',reason:multi.decision?.label||'เสี่ยงถูกล้อม → หลบล่วงหน้า'};
+ if(bot.team==='blue'&&rangedDefenseActive()&&(multi.pendingCover||bot.intent==='ranged_cover'&&(bot.planner||bot.path.length)&&multi.coverDecision?.reason==='hold_route'))return {kind:'ranged_cover',reason:multi.coverDecision?.label||'ถูกเล็ง → หาที่กำบัง'};
  if(multiActive()&&multi.melee&&multi.kiteEnabled&&bot.team==='blue'&&meleeCore.assessThreat(bot,visibleMeleeTracks(),{scale:S,ammo:bot.ammo}).kite)return {kind:'swarm_kite',reason:'ประชิดหลายตัว → เคลื่อนถอยเพื่อรักษาระยะยิง'};
+ // Against shooters: fire from a spot only the engaged target can see; otherwise pick a fire position by exposure.
+ if(bot.team==='blue'&&rangedDefenseActive()&&multi.cover){const a=multi.cover.assessment,ft=multi.focus?multi.tracks[multi.focus]:null;
+  if(ft&&ft.status==='visible'&&rangedDef.SHOOTER_KINDS.includes(ft.kind)){
+   const canHit=dist(bot,ft)<=bot.range&&clearSight(bot,ft);
+   if(canHit&&a.others===0&&!(bot.reload>0))return {kind:'ranged_hold',reason:'ถูกเล็งเพียงเป้าที่กำลังยิง → ยืนยิงจากจุดนี้'};
+   if(!canHit)return {kind:'ranged_cover',reason:'เป้าอยู่นอกระยะ/ถูกบัง → หาจุดยิงที่ถูกเล็งน้อย'};
+  }}
  if(info.status==='unknown')return {kind:'search',reason:bot.brain.hasSeen?'ข้อมูลตำแหน่งเก่าหมดอายุ → ลาดตระเวน':'ยังไม่พบศัตรู → ลาดตระเวนตามจุดตรวจ'};
  const exposure=defense.assess({enabled:ui.activeDefense.checked,hasEvidence:bot.lastExposedAt>-50,
   hasKnownPosition:!!info.position,exposureAge:elapsed-bot.lastExposedAt,stationaryFor:elapsed-bot.lastMoveAt,
@@ -1589,6 +1733,8 @@ function chooseGoal(bot){
  bot.coverPoint=null;
  if(kind==='swarm_kite'){const k=multiKiteGoal(bot);if(k)return k;return fallbackPoint(bot,true);}
  if(kind==='swarm_evade'){const g=swarmCorridorGoal(bot);if(g)return g;bot.reason='ทางหนีไม่ปลอดภัย → ใช้แผนถอยสำรอง';return multiKiteGoal(bot)||fallbackPoint(bot,true);}
+ if(kind==='ranged_cover'){const g=rangedCoverGoal(bot);if(g)return g;bot.reason='ไม่พบจุดกำบังที่ดีกว่า → ใช้จุดกำบังเดิม';const c=core.findCover(bot,foe,walls,p=>freePoint(p,R+1),clearSight,{w:W,h:H},R+3,S);return c||fallbackPoint(bot,true);}
+ if(kind==='ranged_hold')return copy(bot);
  if(kind==='evade'&&foe){
    const ev=defense.plan({self:{x:bot.x,y:bot.y,preferred:bot.preferred},enemy:foe,
      bounds:{w:W,h:H},scale:S,now:elapsed,style:botStyle(bot),side:bot.strafe,
@@ -1678,16 +1824,16 @@ function beginPlan(bot,target,reason='ปรับตำแหน่ง'){
  if(!freePoint(target,R+1))return false;
  const had=!!bot.goal||!!bot.planner||bot.path.length>0;
  const know=botKnowledge(bot),foe=know.position,risk=botRisk(bot),goal=copy(target);
- const useEnemyEvidence=!['cover','retreat','order','swarm_evade'].includes(bot.intent);
+ const useEnemyEvidence=!['cover','retreat','order','swarm_evade','ranged_cover'].includes(bot.intent);
  // Under predicted encirclement the first collision-free corridor matters more than refining
  // exposure to the gun-less RED proxy, so the anytime refinement window is short.
- const refine=bot.intent==='swarm_evade'?24:null;
+ const refine=['swarm_evade','ranged_cover'].includes(bot.intent)?24:null;
  const sampleSpec={start:copy(bot),goal,step:STEP,pad:R+2,width:W,height:H,
   lastSeen:useEnemyEvidence?know.position:null,lastSeenAge:useEnemyEvidence?(know.age||0):0,confidence:useEnemyEvidence?know.confidence:0,
   previousEncounters:useEnemyEvidence?bot.brain.encounters.map(e=>({...e})):[]};
- bot.planner={goal,nodes:[{x:bot.x,y:bot.y,parent:-1,cost:0}],tries:0,rejected:0,max:1850,risk,refine,foeSnapshot:foe?copy(foe):null,firstGoalTry:-1,bestGoal:-1,bestCost:Infinity,sampleSpec,counts:{goal:0,memory:0,history:0,corridor:0,global:0}};
+ bot.planner={goal,nodes:[{x:bot.x,y:bot.y,parent:-1,cost:0}],tries:0,rejected:0,max:1850,risk,refine,rootMargin:freePoint(bot,R+1)?R+1:R+.5,foeSnapshot:foe?copy(foe):null,firstGoalTry:-1,bestGoal:-1,bestCost:Infinity,sampleSpec,counts:{goal:0,memory:0,history:0,corridor:0,global:0}};
  bot.goal=goal;bot.path=[];bot.way=0;bot.agePlan=0;bot.treeAge=0;bot.hold=false;
- bot.mode=reason==='คำสั่ง'?'ตามคำสั่ง':'RRT: '+({evade:'ย้ายจุดป้องกัน',retreat:'ถอย',cover:'เข้าที่กำบัง',flank:'อ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เข้าประชิด',investigate:'สืบค้น',search:'ลาดตระเวน',swarm_kite:'ถอยหลบฝูงประชิด',swarm_evade:'หลบก่อนถูกล้อม'}[bot.intent]||'วางแผน');
+ bot.mode=reason==='คำสั่ง'?'ตามคำสั่ง':'RRT: '+({evade:'ย้ายจุดป้องกัน',retreat:'ถอย',cover:'เข้าที่กำบัง',flank:'อ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เข้าประชิด',investigate:'สืบค้น',search:'ลาดตระเวน',swarm_kite:'ถอยหลบฝูงประชิด',swarm_evade:'หลบก่อนถูกล้อม',ranged_cover:'หลบแนวยิงหลายตัว',ranged_hold:'ยิงจากที่กำบัง'}[bot.intent]||'วางแผน');
  bot.planCooldown=0;bot.planCount++;stats.plans++;
  if(had){stats.replans++;if(reason==='กำแพง')log((bot.team==='blue'?'BLUE':'RED')+' กำแพงเปลี่ยน → วางแผนใหม่',bot.team);}
  return true;
@@ -1718,7 +1864,7 @@ function finishPlan(bot,idx){const plan=bot.planner;let pts=[],k=idx;
    exposed+=edgeLen*core.edgeExposure(pts[i-1],pts[i],plan.foeSnapshot,riskSight,S);
  }
  bot.pathRisk=length>0?Math.round(exposed/length*100):0;
- bot.mode=bot.intent==='evade'?'ย้ายตำแหน่งป้องกัน':(ui.activeTactics.checked&&bot.tactic&&botKnowledge(bot).status==='visible')?({orbit:'เลื่อนเปลี่ยนมุมยิง',flank:'อ้อมโจมตีข้าง',pressure:'เข้าระยะโจมตี',kite:'ถอยแล้วยิง'}[bot.tactic]):({retreat:'ถอยเข้าที่กำบัง',cover:'มุ่งสู่ที่กำบัง',flank:'กำลังอ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เคลื่อนเข้าหาศัตรู',investigate:'กำลังตรวจจุดที่เห็นล่าสุด',search:'ลาดตระเวน',swarm_kite:'รักษาระยะจากศัตรูประชิด',swarm_evade:'วิ่งผ่านช่องว่างที่ยังเปิด',order:'ตามคำสั่ง'}[bot.intent]||'เดินตาม RRT');
+ bot.mode=bot.intent==='evade'?'ย้ายตำแหน่งป้องกัน':(ui.activeTactics.checked&&bot.tactic&&botKnowledge(bot).status==='visible')?({orbit:'เลื่อนเปลี่ยนมุมยิง',flank:'อ้อมโจมตีข้าง',pressure:'เข้าระยะโจมตี',kite:'ถอยแล้วยิง'}[bot.tactic]):({retreat:'ถอยเข้าที่กำบัง',cover:'มุ่งสู่ที่กำบัง',flank:'กำลังอ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เคลื่อนเข้าหาศัตรู',investigate:'กำลังตรวจจุดที่เห็นล่าสุด',search:'ลาดตระเวน',swarm_kite:'รักษาระยะจากศัตรูประชิด',swarm_evade:'วิ่งผ่านช่องว่างที่ยังเปิด',ranged_cover:'ไปจุดที่ถูกเล็งน้อยที่สุด',ranged_hold:'ยืนยิงจากที่กำบัง',order:'ตามคำสั่ง'}[bot.intent]||'เดินตาม RRT');
 }
 function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
  const risk=p.risk,foe=p.foeSnapshot,nearLimit=STEP*1.95,nearLimit2=nearLimit*nearLimit;
@@ -1731,7 +1877,12 @@ function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
   if(nearest<0)break;
   const n=p.nodes[nearest],len=Math.sqrt(best);if(len<.01)continue;
   const step=Math.min(STEP,len),q={x:n.x+(sample.x-n.x)*step/len,y:n.y+(sample.y-n.y)*step/len};
-  if(blocked(n,q,R+1)){p.rejected++;stats.rejected++;continue;}
+  // Movement keeps R+.5 clearance, so a root standing between R+.5 and R+1 of a wall may use the movement margin.
+  const rootEdge=nearest===0?p.rootMargin:R+1;
+  if(blocked(n,q,rootEdge)){p.rejected++;stats.rejected++;
+   // Rejected samples also consume the try budget, so a boxed-in planner fails instead of hanging.
+   if(p.tries>=p.max&&p.bestGoal<0){planFailed(bot,p);return;}
+   continue;}
   let parent=nearest,cost=n.cost+edgeCostFor(bot,n,q,foe,risk);
   // RRT-style random exploration with cost-aware local parent selection, NOT full RRT* rewiring.
   if(risk>0){let candidates=[];
@@ -1746,7 +1897,7 @@ function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
     for(const c of candidates.slice(0,10)){
       const pp=p.nodes[c.j];
       const candidateCost=pp.cost+edgeCostFor(bot,pp,q,foe,risk);
-      if(candidateCost<cost&&!blocked(pp,q,R+1)){cost=candidateCost;parent=c.j;}
+      if(candidateCost<cost&&!blocked(pp,q,c.j===0?p.rootMargin:R+1)){cost=candidateCost;parent=c.j;}
     }
   }
   p.nodes.push({...q,parent,cost});stats.nodes++;
@@ -1762,13 +1913,15 @@ function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
   }
   if(p.tries>=p.max){
     if(p.bestGoal>=0){finishPlan(bot,p.bestGoal);return;}
+    planFailed(bot,p);return;
+  }
+ }
+}
+function planFailed(bot,p){
     bot.tree=p.nodes;bot.treeAge=0;bot.planner=null;bot.path=[];bot.goal=null;bot.failedPlans++;if(multiActive()&&bot.team==='blue')multi.planFailures++;
     bot.planCooldown=.4+Math.min(1.2,bot.failedPlans*.25);bot.mode='หาเส้นทางไม่พบ';
     bot.reason='ไม่พบเส้นทางถึงจุดหมาย → ลองเป้าหมายใหม่';
     if(bot.failedPlans===1||bot.failedPlans%3===0)log((bot.team==='blue'?'BLUE':'RED')+' หาเส้นทางไม่สำเร็จ ลองแผนใหม่',bot.team);
-    return;
-  }
- }
 }
 function findThreatDodge(bot,dt){bot.dodgeCooldown=Math.max(0,bot.dodgeCooldown-dt);if(bot.dodgeCooldown>0||bot.dodgeTimer>0||bot.hp<=0)return;
   for(const shot of (multiActive()&&multi.melee?bullets.concat(multi.rangedShots.filter(s=>dist(bot,s)<S*.7&&clearSight(bot,s))):bullets)){if(shot.team===bot.team)continue;let rx=bot.x-shot.x,ry=bot.y-shot.y,v2=shot.vx**2+shot.vy**2;let t=(rx*shot.vx+ry*shot.vy)/v2;if(t<.07||t>.37)continue;let cx=shot.x+shot.vx*t,cy=shot.y+shot.vy*t;if(Math.hypot(cx-bot.x,cy-bot.y)>R*1.5)continue;
@@ -1957,7 +2110,7 @@ function updateHUD(){if(!bots.length)return;
   ui[id+'Mode'].textContent=bot.mode;ui[id+'Mode'].title=bot.mode;
   ui[id+'Mode'].setAttribute('aria-label',bot.mode);
   ui[id+'Ammo'].textContent=bot.reload>0?'รีโหลด '+bot.reload.toFixed(1)+'s':'กระสุน '+bot.ammo+'/'+bot.maxAmmo;
-  const intentNames={ready:'เตรียมพร้อม',evade:'🛡️ ย้ายตำแหน่งที่ถูกพบ',retreat:'🛡️ ถอยเข้าที่กำบัง',cover:'🛡️ หาที่กำบัง',flank:'↪️ อ้อมโจมตี',engage:'🎯 เปลี่ยนมุมยิง',advance:'⚔️ เข้าประชิด',investigate:'📍 ตรวจตำแหน่งล่าสุด',search:'🔎 ลาดตระเวนค้นหา',swarm_kite:'🏃 ยิงแล้วถอยจากฝูง',swarm_evade:'🔮 หลบก่อนถูกล้อม',order:'☞ ทำตามคำสั่ง'};
+  const intentNames={ready:'เตรียมพร้อม',evade:'🛡️ ย้ายตำแหน่งที่ถูกพบ',retreat:'🛡️ ถอยเข้าที่กำบัง',cover:'🛡️ หาที่กำบัง',flank:'↪️ อ้อมโจมตี',engage:'🎯 เปลี่ยนมุมยิง',advance:'⚔️ เข้าประชิด',investigate:'📍 ตรวจตำแหน่งล่าสุด',search:'🔎 ลาดตระเวนค้นหา',swarm_kite:'🏃 ยิงแล้วถอยจากฝูง',swarm_evade:'🔮 หลบก่อนถูกล้อม',ranged_cover:'🛡️ หลบแนวยิง',ranged_hold:'🎯 ยิงจากที่กำบัง',order:'☞ ทำตามคำสั่ง'};
   ui[id+'Think'].textContent=(ui.activeTactics.checked&&bot.tactic&&botKnowledge(bot).status==='visible'?({orbit:'↔️ เลื่อนยิงด้านข้าง',flank:'↪️ อ้อมหามุมยิง',pressure:'⚔️ เข้ากดดัน',kite:'🛡️ ถอยรักษาระยะ'}[bot.tactic]):null)||intentNames[bot.intent]||bot.mode;
   ui[id+'Reason'].textContent=bot.reason;
   ui[id+'Risk'].textContent='เส้นล่าสุดเสี่ยง '+bot.pathRisk+'%';
@@ -2023,6 +2176,7 @@ multiUI.scenario.addEventListener('change',()=>{
 multiUI.preset.addEventListener('change',()=>{if(phase==='running'){showNotice('หยุดหรือจบรอบก่อนเปลี่ยนจำนวน');return;}multi.count=Number(multiUI.preset.value);resetGame();showNotice('เตรียมศัตรู '+multi.count+' ตัวแล้ว');});
  multiUI.kite.addEventListener('change',()=>{multi.kiteEnabled=multiUI.kite.checked;resetGame();showNotice('Swarm-Aware Kiting '+(multi.kiteEnabled?'เปิด':'ปิด')+' แล้ว');});
  multiUI.predict.addEventListener('change',()=>{multi.predictive=multiUI.predict.checked;resetGame();showNotice('Predictive Anti-Encirclement '+(multi.predictive?'เปิด':'ปิด (พฤติกรรม V0.6.5)')+' แล้ว');});
+ multiUI.rangedDefense.addEventListener('change',()=>{multi.rangedDefense=multiUI.rangedDefense.checked;resetGame();showNotice('Ranged Threat Defense '+(multi.rangedDefense?'เปิด':'ปิด (พฤติกรรม V0.6.7)')+' แล้ว');});
  multiUI.plus.addEventListener('click',()=>{if(multi.melee&&phase==='running')return;if(multi.targets.length>=24)return;multi.count=multi.targets.length+1;addSimpleTarget(multi.targets.length);renderMultiTargetRows();});
 multiUI.minus.addEventListener('click',()=>{if(multi.melee&&phase==='running')return;if(multi.targets.length<=4)return;const t=multi.targets.pop();delete multi.tracks[t.id];delete multi.brains[t.id];if(multi.manualFocus===t.id)multi.manualFocus=null;if(multi.focus===t.id){multi.focus=null;multi.sensorAt=-1;}multi.count=multi.targets.length;renderMultiTargetRows();});
 multiUI.applyAll.addEventListener('click',()=>{
@@ -2052,7 +2206,7 @@ window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(do
 window.addEventListener('resize',()=>resize());
 // Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
 window.__rrtMultiDebug={
- getState:()=>({scenario,time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
+ getState:()=>({scenario,time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,rangedDefense:multi.rangedDefense,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,exposedTo:multi.cover?multi.cover.assessment.count:null,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
  advance:(secs)=>{const prev=phase;phase='running';for(let i=0;i<secs*60;i++)loopStep(1/60);phase=prev;updateHUD();draw();},
  forceTarget:(id,coords)=>{const t=multi.targets.find(t=>t.id===id);if(!t||!freePoint(coords,R+1))return false;t.x=coords.x;t.y=coords.y;t.wp=null;multi.sensorAt=-1;return true;},
  forceBlue:(coords)=>{const b=bots[0];if(!freePoint(coords,R+1))return false;b.x=coords.x;b.y=coords.y;b.planner=null;b.goal=null;b.path=[];multi.sensorAt=-1;return true;},
