@@ -1612,6 +1612,18 @@ function senseMultiWorld(){
  const blue=bots[0],previous=multi.tracks;
  const measured=multiCore.observe(blue,multi.targets,previous,elapsed,{range:S*.98,ttl:8,canSee:clearSight});
  multi.tracks=measured.tracks;
+ if(team.mode==='cooperative'&&team.blues.length===2){
+  const received=teamCore.receive(team.radio,blue.id,elapsed,{ttl:3.5});
+  team.radio=received.radio;
+  multi.tracks=teamCore.mergeTracks(multi.tracks,received.received,elapsed,{ttl:3.5});
+  for(const m of received.received){
+   const ownBrain=multi.brains[m.targetId];
+   if(ownBrain)mem.rememberEncounter(ownBrain,{x:m.x/W,y:m.y/H},elapsed,.45);
+  }
+  const peer=team.blues.find(b=>b!==blue&&b.hp>0);
+  if(peer)team.radio=teamCore.broadcast(team.radio,blue.id,peer.id,measured.tracks,elapsed,
+   {from:blue,to:peer,range:S*.95,latency:.30});
+ }
  // Each target has an independent memory brain; no transfer of secret positions.
  for(const target of multi.targets){
   const brain=multi.brains[target.id];if(!brain)continue;
@@ -1622,6 +1634,11 @@ function senseMultiWorld(){
   if(vis&&change.event==='spotted'){mem.rememberEncounter(brain,{x:trace.x/W,y:trace.y/H},elapsed,1);log('BLUE พบ '+target.id,'blue');}
  }
  let selected=(multi.manualFocus&&multi.tracks[multi.manualFocus])?multi.tracks[multi.manualFocus]:multiCore.rank(multi.tracks,blue,elapsed,{priority:multiUI.priority.value,current:multi.focus,width:W,height:H});
+ // Cooperative B2 avoids duplicating B1's target if it independently knows an alternative.
+ if(team.mode==='cooperative'&&blue.id==='B2'&&!multi.manualFocus&&selected?.id===team.primaryFocus){
+  const id=teamCore.chooseFocus(multi.tracks,blue,team.primaryFocus,true);
+  if(id&&id!==selected.id)selected=multi.tracks[id];
+ }
  if(!selected&&multi.manualFocus)multi.manualFocus=null;
  if((selected?.id||null)!==multi.focus){
   const old=multi.focus;multi.focus=selected?.id||null;
@@ -1637,6 +1654,7 @@ function senseMultiWorld(){
   proxy.maxHp=42;
  }else{proxy.x=W+S*3;proxy.y=H+S*3;proxy.hp=42;proxy.maxHp=42;}
  blue.seenStatus=multi.focus?selected.status:'unknown';
+ if(blue.id==='B1')team.primaryFocus=multi.focus;
 }
 function multiProjectiles(dt){
  for(let k=bullets.length-1;k>=0;k--){
