@@ -1726,10 +1726,14 @@ function senseMultiWorld(){
   if(vis&&change.event==='spotted'){mem.rememberEncounter(brain,{x:trace.x/W,y:trace.y/H},elapsed,1);log('BLUE พบ '+target.id,'blue');}
  }
  let selected=(multi.manualFocus&&multi.tracks[multi.manualFocus])?multi.tracks[multi.manualFocus]:multiCore.rank(multi.tracks,blue,elapsed,{priority:multiUI.priority.value,current:multi.focus,width:W,height:H});
- // Cooperative B2 avoids duplicating B1's target if it independently knows an alternative.
+ // The B1-led pair uses only B2's current observed/radio-memory tracks.
+ // Keep a dangerous visible target if the alternative is stale, hidden or too far.
  if(team.mode==='cooperative'&&blue.id==='B2'&&!multi.manualFocus&&selected?.id===team.primaryFocus){
-  const id=teamCore.chooseFocus(multi.tracks,blue,team.primaryFocus,true);
-  if(id&&id!==selected.id)selected=multi.tracks[id];
+  const option=coopCore.deconflictFocus(blue,multi.tracks,selected.id,team.primaryFocus,
+   {now:elapsed,scale:S,maxExtraDistance:.25,criticalDistance:R*3.25});
+  if(option.changed&&multi.tracks[option.targetId]){
+   selected=multi.tracks[option.targetId];team.focusSplits++;
+  }
  }
  if(!selected&&multi.manualFocus)multi.manualFocus=null;
  if((selected?.id||null)!==multi.focus){
@@ -1953,6 +1957,11 @@ function loopDuoStep(dt){
  if(phase!=='running')return;
  elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);
  for(const blue of team.blues)if(blue.hp>0)duoBlueTurn(blue,dt);
+ // Same-world metrics for Independent vs Cooperative without changing either AI.
+ if(team.blues.every(b=>b.hp>0)){
+  const a=multi.focus,b=team.secondary?.focus;
+  if(a&&b){team.focusSamples++;if(a===b)team.focusOverlap++;}
+ }
  multiProjectiles(dt);stepRangedProjectiles(dt);meleeWaveAttacks();
  if(multi.melee){
   const outcome=teamCore.outcome(team.blues,multi.targets.filter(t=>t.active).length,elapsed,150);
