@@ -1356,7 +1356,7 @@ function resize(){let r=stage.getBoundingClientRect();const oldW=W,oldH=H;W=Math
 }
 function buildWalls(){walls=(layouts[ui.map.value]||layouts.ruins).map(([x,y,w,h],i)=>({x:x*W,y:y*H,w:w*W,h:h*H,id:'b'+i,manual:false}));for(const w of extraWalls)walls.push(w);}
 function spawnBot(team,x,y){const lessons=storedLessons[team];return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0,brain:mem.createMemory(ui.carryMemory.checked?lessons.danger:[],ui.carryMemory.checked?lessons.encounters:[]),lastEncounterLog:-99,scanIndex:0,seenStatus:'unknown',searchCooldown:0,tactic:null,tacticGoal:null,tacticScore:null,maneuverHistory:[],lastMoveAt:0,lastExposedAt:-100,lastDamageAt:-100,defenseHistory:[],defenseGoal:null,defenseReason:null,defenseCount:0};}
-function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive())setupMultiTargets();bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
+function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive()){setupMultiTargets();setupBlueTeam();}else{bots[0].id='B1';team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0};}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
 function hideOverlay(){ui.overlay.classList.add('hidden');}
 function showNotice(text){ui.notice.textContent=text;}
@@ -1401,6 +1401,54 @@ function startGame(){if(phase==='ended'){round++;setupRound();phase='running';lo
 function pauseGame(){if(phase==='running'){phase='paused';showOverlay('⏸️','หยุดชั่วคราว','กด “เล่นต่อ” เพื่อให้บอตกลับมาค้นหาเส้นทางและต่อสู้');}else if(phase==='paused'){phase='running';hideOverlay();}updateControls();}
 function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]}};round=1;scores={blue:0,red:0};phase='ready';setupRound();ui.log.innerHTML='';log('รีเซ็ตเกมและคะแนนทั้งหมด');showOverlay('⚔️',multiActive()?'BLUE ตัวเดิมกับหลายเป้าหมาย':'พร้อมให้บอตดวลกัน!',multiActive()?'BLUE ยิงระยะไกลปะทะบอตประชิดหลายตัว มีผลแพ้ชนะชัดเจน':'กด “เริ่มดวล” แล้วชมการตัดสินใจและเส้นทาง RRT ของทั้งสองตัว');showNotice('รีเซ็ตเรียบร้อย — กดเริ่มทดลอง');updateControls();}
 
+// B1/B2 are both instantiated with the exact, currently published V0.6.8
+// spawnBot('blue'), currentIntent/chooseGoal/RRT/movement/shoot code.
+// Only the per-agent observation and tactical transient state are context switched.
+function setupBlueTeam(){
+ const primary=bots[0];primary.id='B1';
+ team={mode:multiUI.teamMode.value,blues:[primary],secondary:null,
+  radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0};
+ if(team.mode==='solo')return;
+ const candidates=[
+  {x:primary.x+R*4.3,y:primary.y},{x:primary.x,y:primary.y-R*4.3},
+  {x:primary.x+R*4,y:primary.y-R*2.5},{x:primary.x+R*2.5,y:primary.y-R*4.3}
+ ];
+ let pos=candidates.find(p=>freePoint(p,R+2)&&dist(p,primary)>R*2.4&&
+  multi.targets.every(t=>!t.active||dist(p,t)>R*3));
+ if(!pos){for(let i=0;i<220;i++){const p={x:rand(R*2,W-R*2),y:rand(R*2,H-R*2)};
+  if(freePoint(p,R+2)&&dist(p,primary)>R*3&&multi.targets.every(t=>!t.active||dist(p,t)>R*3)){pos=p;break;}}}
+ if(!pos)pos=candidates.find(p=>freePoint(p,R+1))||{x:primary.x,y:primary.y-R*3};
+ const secondary=spawnBot('blue',pos.x,pos.y);
+ secondary.id='B2'; // Same BLUE stats as B1; never a substitute or weaker AI.
+ for(const key of ['moveSpeed','baseFire','range','preferred','maxAmmo','ammo','aim','hp','maxHp'])
+  secondary[key]=primary[key];
+ secondary.strafe=1;
+ team.blues.push(secondary);
+ const brains={};for(const t of multi.targets){
+  const memory=mem.createMemory();memory.danger=secondary.brain.danger;memory.encounters=secondary.brain.encounters;
+  brains[t.id]=memory;
+ }
+ team.secondary={tracks:{},brains,sharedBrain:secondary.brain,focus:null,manualFocus:null,
+  sensorAt:-1,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,
+  preempts:0,routeCuts:0,planFailures:0,lastKiteAt:-20,kites:0,microMoves:0,
+  rangedDefense:multi.rangedDefense,mobile:multi.mobile,cover:null,coverDecision:null,
+  pendingCover:false,lastCoverAt:-20,coverMoves:0,coverReroutes:0,standoffs:0,
+  coverage:rangedDef.createCoverage(W,H,10),coverageAt:-1,bridgeSteps:0,jinks:0
+ };
+}
+// Keep world positions/HP/bullets shared, but switch every private perception,
+// target brain, RRT input and defense history before running the second BLUE.
+function withBlueContext(blue,fn){
+ if(blue===team.blues[0]||!team.secondary)return fn();
+ const saved={},proxy=bots[1],p={x:proxy.x,y:proxy.y,hp:proxy.hp,maxHp:proxy.maxHp};
+ for(const key of Object.keys(team.secondary)){saved[key]=multi[key];multi[key]=team.secondary[key];}
+ const original=bots[0];bots[0]=blue;
+ try{return fn();}
+ finally{
+  for(const key of Object.keys(team.secondary)){team.secondary[key]=multi[key];multi[key]=saved[key];}
+  bots[0]=original;Object.assign(proxy,p);
+ }
+}
 // V0.6.4: the ONLY advanced fighter remains the old spawnBot('blue'), using
 // existing currentIntent, chooseGoal, beginPlan, runPlanner, dodgeMove, moveBot, shoot.
 function setupMultiTargets(){
