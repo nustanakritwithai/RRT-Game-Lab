@@ -18,6 +18,8 @@ jobs:
       - name: Test original BLUE agent, multi-target sensor, melee-wave tactics and predictive swarm defense
         run: |
           node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs
+      - name: Verify benchmark script syntax
+        run: node --check tools/benchmark_swarm.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
@@ -51,3 +53,32 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run duel, tracking, melee, ranged, and mixed browser tests
         run: node tools/browser_regression.cjs
+
+  team-benchmark:
+    name: Team exploratory 12 ranged bots (${{ matrix.team }})
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        team: [independent, cooperative]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium and Playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Simulate 20 seeded team matches
+        run: |
+          mkdir -p benchmarks/team-v0611
+          node tools/benchmark_swarm.cjs --seeds 1001-1020 --count 12 --difficulty balanced --enemy ranged --team "${{ matrix.team }}" --width 393 --height 852 --jobs 3 --out "benchmarks/team-v0611/${{ matrix.team }}.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: team-v0611-${{ matrix.team }}
+          path: benchmarks/team-v0611/${{ matrix.team }}.json
+          retention-days: 30
