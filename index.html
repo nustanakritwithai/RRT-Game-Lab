@@ -1789,10 +1789,10 @@ function rangedDefenseCheck(blue){
 function mobileActive(){return multiActive()&&multi.melee&&multi.mobile&&multi.enemyMode!=='melee';}
 function keepMoving(blue,dt){
  const w=multi.cover?.world||rangedThreatWorld(blue),speed=blue.moveSpeed*S;
- const melee=Object.values(visibleMeleeTracks()),avoid=p=>melee.some(t=>dist(p,t)<R*3);
+ const melee=Object.values(visibleMeleeTracks()),avoid=p=>melee.some(t=>dist(p,t)<R*3)||!teamFriendClear(blue,p);
  if(blue.planner){
   const p=rangedDef.bridgeStep(blue,blue.planner.goal,dt,{speed,blocked:(a,b)=>blocked(a,b,R+1)});
-  if(p&&!avoid(p)){blue.x=p.x;blue.y=p.y;blue.lastMoveAt=elapsed;multi.bridgeSteps++;return;}
+  if(p&&!avoid(p)&&teamFriendClear(blue,p)){blue.x=p.x;blue.y=p.y;blue.lastMoveAt=elapsed;multi.bridgeSteps++;return;}
  }
  blue.jinkClock=(blue.jinkClock||0)+dt;
  if(blue.jinkClock>.42){blue.jinkClock=0;blue.jinkDir=-(blue.jinkDir||1);}
@@ -1800,7 +1800,53 @@ function keepMoving(blue,dt){
   free:q=>freePoint(q,R+1),blocked:(a,b)=>blocked(a,b,R+.5),avoid});
  if(j){blue.x=j.point.x;blue.y=j.point.y;blue.jinkDir=j.dir;blue.lastMoveAt=elapsed;multi.jinks++;if(!blue.planner&&!blue.path.length)blue.mode='ส่ายหลบแนวยิง';}
 }
+// Duo is a separate scheduling path. One-blue still executes the exact v0.6.8 loop below.
+function duoBlueTurn(blue,dt){
+ withBlueContext(blue,()=>{
+  senseMultiWorld();
+  if(predictiveActive()&&multi.sensorAt===elapsed)predictiveCheck(blue);
+  if(rangedDefenseActive()&&multi.sensorAt===elapsed&&!multi.pendingEvade)rangedDefenseCheck(blue);
+  if(rangedDefenseActive()&&multi.coverage&&elapsed-multi.coverageAt>=.5){
+   multi.coverageAt=elapsed;rangedDef.markVisible(multi.coverage,blue,elapsed,{range:S*.98,canSee:clearSight});
+  }
+  const keepRoute=predictiveActive()&&blue.intent==='swarm_evade'&&blue.path.length>0&&multi.decision?.reason==='hold_route';
+  if(multi.melee&&multi.kiteEnabled&&!keepRoute){
+   const p=meleeCore.microStep(blue,visibleMeleeTracks(),dt,{scale:S,speed:blue.moveSpeed,radius:R,
+    free:q=>freePoint(q,R+1)&&teamFriendClear(blue,q),blocked:(a,b)=>blocked(a,b,R+.5)});
+   if(p){blue.x=p.x;blue.y=p.y;blue.lastMoveAt=elapsed;blue.mode='หลบประชิดฉุกเฉิน';
+    blue.path=[];blue.planner=null;blue.goal=null;blue.planCooldown=.14;blue.thinkCooldown=.14;multi.microMoves++;}
+  }
+  checkPlanning(blue,dt);
+  if(multi.melee&&multi.kiteEnabled&&elapsed-multi.lastKiteAt>.95){
+   const t=meleeCore.assessThreat(blue,visibleMeleeTracks(),{scale:S,ammo:blue.ammo});
+   if(t.critical||t.kite&&blue.intent!=='swarm_kite'&&blue.intent!=='swarm_evade'){
+    blue.path=[];blue.planner=null;blue.goal=null;blue.thinkCooldown=0;blue.planCooldown=0;multi.lastKiteAt=elapsed;
+   }
+  }
+  if(blue.planner)runPlanner(blue,28);
+  const bx=blue.x,by=blue.y;
+  if(!dodgeMove(blue,dt))moveBot(blue,dt);
+  if(mobileActive()&&blue.x===bx&&blue.y===by)keepMoving(blue,dt);
+  shoot(blue);
+ });
+}
+function loopDuoStep(dt){
+ if(phase!=='running')return;
+ elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);
+ for(const blue of team.blues)if(blue.hp>0)duoBlueTurn(blue,dt);
+ multiProjectiles(dt);stepRangedProjectiles(dt);meleeWaveAttacks();
+ if(multi.melee){
+  const outcome=teamCore.outcome(team.blues,multi.targets.filter(t=>t.active).length,elapsed,150);
+  if(outcome)finishMultiWave(outcome);
+ }
+ for(let k=particles.length-1;k>=0;k--){
+  const p=particles[k];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+  if(p.life<=0)particles.splice(k,1);
+ }
+ sampleAcc+=dt;if(sampleAcc>=.25){sampleAcc=0;snapshot();}
+}
 function loopMultiStep(dt){
+ if(teamDuo())return loopDuoStep(dt);
  if(phase!=='running')return;
  elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);senseMultiWorld();
  const blue=bots[0];
@@ -2190,20 +2236,20 @@ function moveBot(bot,dt){if(bot.planner||!bot.path.length)return;
   if(bot.way>=bot.path.length){bot.path=[];bot.way=0;bot.goal=null;bot.thinkCooldown=.12;return;}
   let q=bot.path[bot.way],dx=q.x-bot.x,dy=q.y-bot.y,d=Math.hypot(dx,dy),step=Math.min(d,bot.moveSpeed*S*dt);
   let next={x:bot.x+(dx/d)*step,y:bot.y+(dy/d)*step},foe=opponent(bot);
-  if((multiActive()?(!multi.melee&&multi.targets.some(t=>t.active&&dist(next,t)<R*1.85)):dist(next,foe)<R*2+2)){bot.mode='รักษาระยะ';bot.path=[];bot.goal=null;bot.thinkCooldown=.25;return;}
+  if((multiActive()?(!teamFriendClear(bot,next)||!multi.melee&&multi.targets.some(t=>t.active&&dist(next,t)<R*1.85)):dist(next,foe)<R*2+2)){bot.mode='รักษาระยะ';bot.path=[];bot.goal=null;bot.thinkCooldown=.25;return;}
   if(blocked(bot,next,R+.5)){bot.path=[];bot.goal=null;bot.planner=null;bot.thinkCooldown=0;bot.planCooldown=.05;bot.mode='กำแพงขวาง!';return;}
   bot.x=next.x;bot.y=next.y;bot.steps++;if(step>0.005)bot.lastMoveAt=elapsed;
   if(bot.manual&&dist(bot,bot.manual)<R*1.75){bot.manual=null;log('BLUE ไปถึงตำแหน่งที่คุณสั่ง',bot.team);}
 }
 function dodgeMove(bot,dt){if(bot.dodgeTimer<=0)return false;const d=bot.dodgeVec,step=bot.moveSpeed*S*dt*1.8,next={x:bot.x+d.x*step,y:bot.y+d.y*step},foe=opponent(bot);
- bot.dodgeTimer=Math.max(0,bot.dodgeTimer-dt);if(freePoint(next,R+1)&&(multiActive()?(!multi.melee&&multi.targets.every(t=>!t.active||dist(next,t)>R*2)):dist(next,foe)>R*2+2)&&!blocked(bot,next,R+.5)){bot.x=next.x;bot.y=next.y;if(step>0.005)bot.lastMoveAt=elapsed;}else bot.dodgeTimer=0;
+ bot.dodgeTimer=Math.max(0,bot.dodgeTimer-dt);if(freePoint(next,R+1)&&(multiActive()?(teamFriendClear(bot,next)&&(!multi.melee&&multi.targets.every(t=>!t.active||dist(next,t)>R*2)||multi.melee)):dist(next,foe)>R*2+2)&&!blocked(bot,next,R+.5)){bot.x=next.x;bot.y=next.y;if(step>0.005)bot.lastMoveAt=elapsed;}else bot.dodgeTimer=0;
  if(bot.dodgeTimer<=0){bot.path=[];bot.goal=null;bot.thinkCooldown=.04;}return true;
 }
 function shoot(bot){const foe=opponent(bot),d=dist(bot,foe);if(multiActive()&&(!multi.focus||multi.tracks[multi.focus]?.status!=='visible'))return;if(bot.hp<=0||foe.hp<=0||!bot.brain.wasVisible||d>bot.range||!clearSight(bot,foe)||bot.cool>0||bot.reload>0)return;
  if(bot.ammo<=0){bot.reload=1.3;bot.mode='บรรจุกระสุน';return;}
  const spread=(1-bot.aim)*.35;const ang=Math.atan2(foe.y-bot.y,foe.x-bot.x)+rand(-spread,spread);
  const sx=bot.x+Math.cos(ang)*(R+3),sy=bot.y+Math.sin(ang)*(R+3),spd=S*1.35;
- bullets.push({x:sx,y:sy,px:sx,py:sy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,team:bot.team,ttl:1.6});bot.ammo--;bot.cool=bot.baseFire*rand(.9,1.12);bot.fireFlash=.11;bot.mode='กำลังยิง';burst(sx,sy,colors[bot.team],4,2);
+ bullets.push({x:sx,y:sy,px:sx,py:sy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,team:bot.team,ownerId:bot.id||bot.team,ttl:1.6});bot.ammo--;bot.cool=bot.baseFire*rand(.9,1.12);bot.fireFlash=.11;bot.mode='กำลังยิง';burst(sx,sy,colors[bot.team],4,2);
  if(bot.ammo===0){bot.reload=1.35;bot.mode='กำลังรีโหลด';}
 }
 function burst(x,y,color,count=9,spread=3){for(let i=0;i<count;i++){const a=rand(-Math.PI,Math.PI),v=rand(18,86)*spread/3,life=rand(.18,.48);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life,total:life,color});}}
