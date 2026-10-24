@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071225">
-<title>RRT ARENA 06.9 — BLUE Team Combat Lab</title>
+<title>RRT ARENA 06.10 — Unified BLUE Combat</title>
 <style>
 :root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--panel2:#152640;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;--purple:#ac92fa}*{box-sizing:border-box}html,body{margin:0;min-height:100%;}body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42}button,input,select{font:inherit}button,select{cursor:pointer}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}main{max-width:1350px;margin:auto;padding:18px 13px 64px}header{padding:2px 3px 15px}.eyebrow{font-size:11px;font-weight:850;letter-spacing:1.8px;color:var(--cyan)}h1{margin:6px 0 7px;line-height:1.13;letter-spacing:-1.2px;font-size:clamp(29px,4.7vw,47px)}h1 span{color:var(--pink)}header p{color:var(--soft);font-size:14px;margin:0;max-width:800px}.tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3;background:#113657;border:1px solid #315479;color:#a7e5ff;vertical-align:middle;letter-spacing:0;margin-left:6px}
 .stats{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-bottom:12px}.fighter{min-width:0;padding:12px 14px;background:linear-gradient(135deg,#102844,#0d1b30);border:1px solid #264561;border-radius:15px}.fighter.red{background:linear-gradient(225deg,#3a1b34,#151c30);border-color:#66364f}.nameRow{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-size:15px;font-weight:850;white-space:nowrap}.name .symbol{font-size:19px;vertical-align:middle}.statnum{font-size:13px;white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}.bar{height:8px;background:#0a1423;border-radius:8px;overflow:hidden;margin:9px 0 6px;border:1px solid #253247}.fill{width:100%;height:100%;background:linear-gradient(90deg,#237cce,#50dbff);transition:width .16s}.red .fill{background:linear-gradient(90deg,#e6466b,#ff9a79)}.sublabel{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:7px;align-items:center;height:17px;min-height:17px;overflow:hidden;font-size:11px;color:var(--soft)}.sublabel span:first-child{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sublabel span:last-child{display:block;white-space:nowrap;flex-shrink:0}.nameRow .name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}.nameRow .statnum{flex-shrink:0}.fighter{min-height:105px;overflow:hidden}.sublabel strong{color:var(--ink);font-weight:650}.midstats{min-width:96px;text-align:center;display:flex;flex-direction:column;justify-content:center;background:#101b31;border:1px solid var(--line);border-radius:15px;padding:9px 13px}.midstats .round{font-size:10px;letter-spacing:1px;color:var(--soft);font-weight:850}.midstats .score{font-size:24px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}.midstats .clock{color:var(--gold);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -81,7 +81,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </style>
 </head>
 <body><main>
-<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.9 · TWO BLUE TEAM LAB</div>
+<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.10 · UNIFIED BLUE</div>
 <h1>RRT ARENA <span>AGENT LAB</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
 <p>บอตคำนวณมุมยิงและย้ายตำแหน่งเมื่อคาดว่าศัตรูรู้ที่อยู่ ตัดแนวยิง อ้อมเปลี่ยนมุม ไม่ยืนรอซ้ำจุดเดิม · Memory-Guided RRT · มือถือไม่ต้องมี LLM / API Key</p></header>
 <section class="modePanel" aria-label="เลือกสนามทดลอง">
@@ -1363,7 +1363,7 @@ function resize(){let r=stage.getBoundingClientRect();const oldW=W,oldH=H;W=Math
 }
 function buildWalls(){walls=(layouts[ui.map.value]||layouts.ruins).map(([x,y,w,h],i)=>({x:x*W,y:y*H,w:w*W,h:h*H,id:'b'+i,manual:false}));for(const w of extraWalls)walls.push(w);}
 function spawnBot(team,x,y){const lessons=storedLessons[team];return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0,brain:mem.createMemory(ui.carryMemory.checked?lessons.danger:[],ui.carryMemory.checked?lessons.encounters:[]),lastEncounterLog:-99,scanIndex:0,seenStatus:'unknown',searchCooldown:0,tactic:null,tacticGoal:null,tacticScore:null,maneuverHistory:[],lastMoveAt:0,lastExposedAt:-100,lastDamageAt:-100,defenseHistory:[],defenseGoal:null,defenseReason:null,defenseCount:0};}
-function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive()){setupMultiTargets();setupBlueTeam();}else{bots[0].id='B1';team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0};}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
+function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive()){setupMultiTargets();setupBlueTeam();}else{bots[0].id='B1';team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),primaryFocus:null,blockedFriendlyShots:0};multi.cover=null;multi.coverDecision=null;multi.pendingCover=false;multi.lastCoverAt=-20;multi.coverage=rangedDef.createCoverage(W,H,10);multi.coverageAt=-1;}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
 function hideOverlay(){ui.overlay.classList.add('hidden');}
 function showNotice(text){ui.notice.textContent=text;}
@@ -1739,7 +1739,17 @@ function multiKiteGoal(bot){
 }
 // V0.6.6 Predictive Anti-Encirclement: forecast from BLUE's own tracks (visible + bounded
 // last-seen memory). Enemy speed is the public difficulty rule, never a hidden live value.
-function predictiveActive(){return multiActive()&&multi.melee&&multi.predictive&&multi.enemyMode!=='ranged';}
+// BLUE policy is capability-based, NOT enemy-mode-based. The same V0.6.9 BLUE
+// can counter melee and ranged threats if observations contain those threats.
+// The duel has no melee swarm, so no synthetic melee forecast is ever created.
+function blueFeatureOn(feature){
+ const combat=multiActive()?multi.melee:true;
+ const value=multiActive()
+  ?({predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile})[feature]
+  :({predictive:multiUI.predict.checked,rangedDefense:multiUI.rangedDefense.checked,mobile:multiUI.mobile.checked})[feature];
+ return !!combat&&!!value;
+}
+function predictiveActive(){return multiActive()&&blueFeatureOn('predictive');}
 function swarmForecast(bot){
  const threats=swarmCore.perceive(meleeOnlyTracks(),elapsed,{memoryHorizon:2.4,width:W,height:H});
  const enemySpeed=meleeCore.statsFor(multi.difficulty).speed*S,reach=R*2.42,ray=S*.12;
@@ -1770,14 +1780,27 @@ function predictiveCheck(blue){
 }
 // V0.6.8 Ranged Threat Defense: line-of-fire exposure from BLUE's own shooter tracks and the
 // public weapon range of the chosen difficulty; never reads hidden enemy positions.
-function rangedDefenseActive(){return multiActive()&&multi.melee&&multi.rangedDefense&&multi.enemyMode!=='melee';}
+function rangedDefenseActive(){return blueFeatureOn('rangedDefense');}
+// Duel uses the very same ranged-defense system. RED's location enters this
+// adapter ONLY via BLUE's observation memory, never by reading RED world truth.
+function duelShooterTrack(bot){
+ const knowledge=botKnowledge(bot);
+ if(!knowledge.position||knowledge.status==='unknown')return {};
+ const age=Number.isFinite(knowledge.age)?knowledge.age:0;
+ const p=knowledge.position;
+ return {RED:{id:'RED',x:p.x,y:p.y,kind:'hunter',
+  status:knowledge.status==='visible'?'visible':'memory',
+  lastSeen:elapsed-age,confidence:knowledge.confidence,vx:0,vy:0}};
+}
 function rangedThreatWorld(bot){
- const shooters=rangedDef.perceiveShooters(multi.tracks,elapsed,{memoryHorizon:6});
- return {shooters,range:rangedCore.statsFor(multi.difficulty).rangeFraction*S,canSee:clearSight};
+ const tracks=multiActive()?multi.tracks:duelShooterTrack(bot);
+ const shooters=rangedDef.perceiveShooters(tracks,elapsed,{memoryHorizon:6});
+ const range=multiActive()?rangedCore.statsFor(multi.difficulty).rangeFraction*S:bots[1].range;
+ return {shooters,range,canSee:clearSight};
 }
 function rangedCoverGoal(bot){
  const w=multi.cover?.world||rangedThreatWorld(bot);multi.pendingCover=false;
- const ft=multi.focus?multi.tracks[multi.focus]:null;
+ const ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):w.shooters.find(s=>s.id==='RED');
  const focus=ft&&w.shooters.find(s=>s.id===ft.id)||null;
  const r=rangedDef.chooseFirePosition(bot,w.shooters,{focus,width:W,height:H,scale:S,radius:R+3,range:w.range,ownRange:bot.range,speed:bot.moveSpeed*S,
   canSee:w.canSee,free:p=>freePoint(p,R+3),direct:(a,b)=>!blocked(a,b,R+1),history:bot.maneuverHistory});
@@ -1789,7 +1812,7 @@ function rangedCoverGoal(bot){
 }
 function rangedDefenseCheck(blue){
  const w=rangedThreatWorld(blue);
- const a=rangedDef.assess(blue,w.shooters,{range:w.range,canSee:w.canSee,focusId:multi.focus,reloading:blue.reload>0,hpFraction:blue.hp/blue.maxHp});
+ const a=rangedDef.assess(blue,w.shooters,{range:w.range,canSee:w.canSee,focusId:multiActive()?multi.focus:'RED',reloading:blue.reload>0,hpFraction:blue.hp/blue.maxHp});
  multi.cover={world:w,assessment:a};
  const moving=blue.intent==='ranged_cover'&&(!!blue.planner||blue.path.length>0);
  let routeEx=0;
@@ -1803,10 +1826,10 @@ function rangedDefenseCheck(blue){
 }
 // Keep Moving: no standing still while shooters can see BLUE. During RRT planning take normal-speed
 // steps toward the planner goal when that segment is clear; otherwise jink across the line of fire.
-function mobileActive(){return multiActive()&&multi.melee&&multi.mobile&&multi.enemyMode!=='melee';}
+function mobileActive(){return blueFeatureOn('mobile');}
 function keepMoving(blue,dt){
  const w=multi.cover?.world||rangedThreatWorld(blue),speed=blue.moveSpeed*S;
- const melee=Object.values(visibleMeleeTracks()),avoid=p=>melee.some(t=>dist(p,t)<R*3)||!teamFriendClear(blue,p);
+ const melee=multiActive()?Object.values(visibleMeleeTracks()):[],avoid=p=>melee.some(t=>dist(p,t)<R*3)||!teamFriendClear(blue,p)||!multiActive()&&dist(p,bots[1])<R*2.1;
  if(blue.planner){
   const p=rangedDef.bridgeStep(blue,blue.planner.goal,dt,{speed,blocked:(a,b)=>blocked(a,b,R+1)});
   if(p&&!avoid(p)&&teamFriendClear(blue,p)){blue.x=p.x;blue.y=p.y;blue.lastMoveAt=elapsed;multi.bridgeSteps++;return;}
@@ -1893,14 +1916,28 @@ function loopMultiStep(dt){
  for(let k=particles.length-1;k>=0;k--){const p=particles[k];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.life<=0)particles.splice(k,1);}
  sampleAcc+=dt;if(sampleAcc>=.25){sampleAcc=0;snapshot();}
 }
-function drawSwarmForecast(){
- if(!ui.showThreat.checked||!predictiveActive()||!multi.forecast||phase==='ready')return;
- const m=multi.forecast.map,b=bots[0];if(!m.inbound)return;
- const r=R*2.6,n=m.sectors.length,peak=Math.max(.001,...m.sectors);
- ctx.save();ctx.lineWidth=Math.max(2,R*.32);
- for(let i=0;i<n;i++){const a=i*2*Math.PI/n;ctx.strokeStyle='rgba(255,99,120,'+(.08+.55*m.sectors[i]/peak).toFixed(2)+')';ctx.beginPath();ctx.arc(b.x,b.y,r,a-Math.PI/n,a+Math.PI/n);ctx.stroke();}
- if(m.gap.width>0){ctx.strokeStyle='#86ffc5';ctx.lineWidth=Math.max(2.5,R*.38);ctx.beginPath();ctx.arc(b.x,b.y,r+R*.5,m.gap.angle-m.gap.width/2,m.gap.angle+m.gap.width/2);ctx.stroke();}
+// GREEN ring identifies unified BLUE in all modes. It does not imply hidden threat knowledge.
+function drawBlueCapabilityRing(bot){
+ if(!bot||bot.team!=='blue'||bot.hp<=0)return;
+ ctx.save();
+ ctx.strokeStyle='#86ffc5';ctx.globalAlpha=.86;
+ ctx.lineWidth=Math.max(2.7,R*.37);ctx.lineCap='round';
+ ctx.beginPath();ctx.arc(bot.x,bot.y,R*2.6,-Math.PI*.57,Math.PI*.87);ctx.stroke();
  ctx.restore();
+}
+function drawSwarmForecast(){
+ // B1 and B2 have distinct observation histories and must never share risk maps.
+ for(const b of team.blues)drawBlueCapabilityRing(b);
+ if(!ui.showThreat.checked||!predictiveActive()||phase==='ready')return;
+ for(const b of team.blues){
+  const f=b===team.blues[0]?multi.forecast:team.secondary?.forecast;
+  const m=f?.map;if(!m?.inbound)continue;
+  const r=R*2.6,n=m.sectors.length,peak=Math.max(.001,...m.sectors);
+  ctx.save();ctx.lineWidth=Math.max(2,R*.32);
+  for(let i=0;i<n;i++){const a=i*2*Math.PI/n;ctx.strokeStyle='rgba(255,99,120,'+(.08+.55*m.sectors[i]/peak).toFixed(2)+')';ctx.beginPath();ctx.arc(b.x,b.y,r,a-Math.PI/n,a+Math.PI/n);ctx.stroke();}
+  if(m.gap.width>0){ctx.strokeStyle='#86ffc5';ctx.lineWidth=Math.max(2.5,R*.38);ctx.beginPath();ctx.arc(b.x,b.y,r+R*.5,m.gap.angle-m.gap.width/2,m.gap.angle+m.gap.width/2);ctx.stroke();}
+  ctx.restore();
+ }
 }
 function drawMultiTargets(){
  ctx.save();ctx.textAlign='center';ctx.font=`800 ${clamp(S*.025,10,13)}px system-ui`;
@@ -2024,7 +2061,7 @@ function currentIntent(bot){const info=botKnowledge(bot);
  if(bot.team==='blue'&&rangedDefenseActive()&&(multi.pendingCover||bot.intent==='ranged_cover'&&(bot.planner||bot.path.length)&&multi.coverDecision?.reason==='hold_route'))return {kind:'ranged_cover',reason:multi.coverDecision?.label||'ถูกเล็ง → หาที่กำบัง'};
  if(multiActive()&&multi.melee&&multi.kiteEnabled&&bot.team==='blue'&&meleeCore.assessThreat(bot,visibleMeleeTracks(),{scale:S,ammo:bot.ammo}).kite)return {kind:'swarm_kite',reason:'ประชิดหลายตัว → เคลื่อนถอยเพื่อรักษาระยะยิง'};
  // Against shooters: fire from a spot only the engaged target can see; otherwise pick a fire position by exposure.
- if(bot.team==='blue'&&rangedDefenseActive()&&multi.cover){const a=multi.cover.assessment,ft=multi.focus?multi.tracks[multi.focus]:null;
+ if(bot.team==='blue'&&rangedDefenseActive()&&multi.cover){const a=multi.cover.assessment,ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):rangedThreatWorld(bot).shooters.find(s=>s.id==='RED');
   if(ft&&ft.status==='visible'&&rangedDef.SHOOTER_KINDS.includes(ft.kind)){
    const canHit=dist(bot,ft)<=bot.range&&clearSight(bot,ft);
    if(canHit&&a.others===0&&!(bot.reload>0))return {kind:'ranged_hold',reason:'ถูกเล็งเพียงเป้าที่กำลังยิง → ยืนยิงจากจุดนี้'};
@@ -2351,10 +2388,20 @@ function checkPlanning(bot,dt){if(bot.hp<=0)return;
 }
 function loopStep(dt){if(multiActive()){loopMultiStep(dt);return;}if(phase!=='running')return;elapsed+=dt;
  senseWorld();
- // Search and movement happen independently for both agents.
+ // Duel BLUE is the latest combined BLUE, not a weaker original-mode special case.
+ // All tactical input comes through its own sight/memory; RED AI stays unchanged.
+ const blue=bots[0];
+ if(rangedDefenseActive()&&blue.hp>0){
+  rangedDefenseCheck(blue);
+  if(multi.coverage&&elapsed-multi.coverageAt>.5){
+   multi.coverageAt=elapsed;rangedDef.markVisible(multi.coverage,blue,elapsed,{range:S*.98,canSee:clearSight});
+  }
+ }
+ const bx=blue.x,by=blue.y;
  for(const bot of bots)checkPlanning(bot,dt);
  for(const bot of bots)if(bot.planner)runPlanner(bot,28);
  for(const bot of bots){if(!dodgeMove(bot,dt))moveBot(bot,dt);}
+ if(mobileActive()&&blue.hp>0&&blue.x===bx&&blue.y===by)keepMoving(blue,dt);
  for(const bot of bots)shoot(bot);
  projectiles(dt);
  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-2*dt);p.vy*=Math.max(0,1-2*dt);if(p.life<=0)particles.splice(i,1);}
@@ -2413,7 +2460,7 @@ function drawMemory(){if(!ui.showMemory.checked)return;
 function drawReplay(){if(!timeline.length)return;
  const frame=timeline[Math.min(timeline.length-1,replayIndex)];if(!frame)return;
  ctx.save();ctx.textAlign='center';ctx.font='900 11px system-ui';ctx.fillStyle='#c6e5ff';ctx.fillText('⏪ REPLAY · '+formatTime(frame.t),W/2,22);
- for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText((b.id||b.team.toUpperCase())+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
+ for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];if(b.team==='blue')drawBlueCapabilityRing({team:'blue',x,y,hp:b.hp});ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText((b.id||b.team.toUpperCase())+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
  if(multiActive())for(const t of (frame.targets||[])){ctx.fillStyle='#ffd28c';ctx.beginPath();ctx.arc(t.x*W,t.y*H,R*.65,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(t.id,t.x*W,t.y*H-R);}
  for(const shot of frame.bullets){ctx.fillStyle=shot.team==='blue'?'#88e7ff':shot.team==='ranged'?'#ffbf70':'#ffb3ba';ctx.beginPath();ctx.arc(shot.x*W,shot.y*H,2.6,0,Math.PI*2);ctx.fill();}
  ctx.restore();
@@ -2422,7 +2469,7 @@ function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(
  if(replayActive){drawReplay();return;}
  drawMemory();for(const b of (multiActive()?team.blues:bots))drawTree(b);for(const b of (multiActive()?team.blues:bots))drawPath(b);drawTactics();for(const s of bullets)drawShot(s);drawRangedShots();for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.total);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,S*.004),0,Math.PI*2);ctx.fill();ctx.restore();}
  if(tool==='order'&&bots[0]&&bots[0].manual){const p=bots[0].manual;ctx.save();ctx.strokeStyle='#ffdf8a';ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p.x,p.y,R*.9,0,Math.PI*2);ctx.stroke();ctx.restore();}
- if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else for(const b of bots)drawFighter(b);
+ if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else{drawBlueCapabilityRing(bots[0]);for(const b of bots)drawFighter(b);}
  ctx.fillStyle='#b6d4eb';ctx.font=`700 ${clamp(S*.026,10,13)}px system-ui`;ctx.textAlign='left';ctx.fillText('RRT TACTICAL · '+ui.map.selectedOptions[0].textContent.split('·').pop().trim(),12,H-14);
 }
 function updateHUD(){if(!bots.length)return;
@@ -2539,7 +2586,7 @@ window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(do
 window.addEventListener('resize',()=>resize());
 // Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
 window.__rrtMultiDebug={
- getState:()=>({scenario,time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,exposedTo:multi.cover?multi.cover.assessment.count:null,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),team:{mode:team.mode,count:team.blues.length,alive:teamCore.teamMetrics(team.blues).alive,blockedFriendlyShots:team.blockedFriendlyShots,radioQueued:team.radio.queue.length,radioSent:team.radioSent,radioDelivered:team.radioDelivered,memorySeparated:!teamDuo()||team.blues[0].brain!==team.blues[1].brain&&multi.brains!==team.secondary.brains,secondaryTracks:team.secondary?Object.keys(team.secondary.tracks).length:0,blues:team.blues.map(b=>({id:b.id,team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,intent:b.intent,focus:b.id==='B1'?multi.focus:team.secondary?.focus,planCount:b.planCount,hasPlanner:!!b.planner,pathLength:b.path.length,memoryId:b.id,brain:b.brain?{sightings:b.brain.sightings,losses:b.brain.losses,encounters:b.brain.encounters.length}:null}))},targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
+ getState:()=>({scenario,blueCapabilities:{predictive:blueFeatureOn('predictive'),rangedDefense:blueFeatureOn('rangedDefense'),keepMoving:blueFeatureOn('mobile')},time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,exposedTo:multi.cover?multi.cover.assessment.count:null,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),team:{mode:team.mode,count:team.blues.length,alive:teamCore.teamMetrics(team.blues).alive,blockedFriendlyShots:team.blockedFriendlyShots,radioQueued:team.radio.queue.length,radioSent:team.radioSent,radioDelivered:team.radioDelivered,memorySeparated:!teamDuo()||team.blues[0].brain!==team.blues[1].brain&&multi.brains!==team.secondary.brains,secondaryTracks:team.secondary?Object.keys(team.secondary.tracks).length:0,blues:team.blues.map(b=>({id:b.id,team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,intent:b.intent,focus:b.id==='B1'?multi.focus:team.secondary?.focus,planCount:b.planCount,hasPlanner:!!b.planner,pathLength:b.path.length,memoryId:b.id,brain:b.brain?{sightings:b.brain.sightings,losses:b.brain.losses,encounters:b.brain.encounters.length}:null}))},targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
  advance:(secs)=>{const prev=phase;phase='running';for(let i=0;i<secs*60;i++)loopStep(1/60);phase=prev;updateHUD();draw();},
  forceTarget:(id,coords)=>{const t=multi.targets.find(t=>t.id===id);if(!t||!freePoint(coords,R+1))return false;t.x=coords.x;t.y=coords.y;t.wp=null;multi.sensorAt=-1;return true;},
  forceBlue2:(coords)=>{const b=team.blues[1];if(!b||!freePoint(coords,R+1)||!teamFriendClear(b,coords))return false;b.x=coords.x;b.y=coords.y;b.path=[];b.planner=null;b.goal=null;if(team.secondary)team.secondary.sensorAt=-1;return true;},
@@ -2554,7 +2601,7 @@ window.__rrtMultiDebug={
  simulateStrike:(id)=>{const t=multi.targets.find(t=>t.id===id);if(!t)return false;t.nextAttackAt=0;meleeWaveAttacks();return true;},
 };
 window.__rrtArenaDebug={
- getState:()=>({scenario,phase,round,scores:{...scores},time:elapsed,activeDefense:ui.activeDefense.checked,stats:{...stats},bots:bots.map(b=>({team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,reload:b.reload,mode:b.mode,intent:b.intent,reason:b.reason,strategy:botStyle(b),tactic:b.tactic,tacticScore:b.tacticScore,tacticGoal:b.tacticGoal,recentManeuvers:b.maneuverHistory.length,defenseCount:b.defenseCount,defenseGoal:b.defenseGoal,exposureAge:b.lastExposedAt<0?null:elapsed-b.lastExposedAt,stillFor:elapsed-b.lastMoveAt,lastDamageAge:b.lastDamageAt<0?null:elapsed-b.lastDamageAt,riskWeight:botRisk(b),pathRisk:b.pathRisk,coverPoint:b.coverPoint,planCount:b.planCount,planning:!!b.planner,pathLength:b.path.length,way:b.way,dodge:b.dodgeTimer>0,knowledge:botKnowledge(b),memory:{sightings:b.brain.sightings,losses:b.brain.losses,hits:b.brain.hits,dangerCount:b.brain.danger.length,encounters:b.brain.encounters.length},patrolIndex:b.scanIndex})),replay:{active:replayActive,frames:timeline.length,index:replayIndex,events:events.length,winner:finalResult},bullets:bullets.length,walls:walls.length,manualWalls:extraWalls.length}),
+ getState:()=>({scenario,blueCapabilities:{predictive:blueFeatureOn('predictive'),rangedDefense:blueFeatureOn('rangedDefense'),keepMoving:blueFeatureOn('mobile')},phase,round,scores:{...scores},time:elapsed,activeDefense:ui.activeDefense.checked,stats:{...stats},bots:bots.map(b=>({team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,reload:b.reload,mode:b.mode,intent:b.intent,reason:b.reason,strategy:botStyle(b),tactic:b.tactic,tacticScore:b.tacticScore,tacticGoal:b.tacticGoal,recentManeuvers:b.maneuverHistory.length,defenseCount:b.defenseCount,defenseGoal:b.defenseGoal,exposureAge:b.lastExposedAt<0?null:elapsed-b.lastExposedAt,stillFor:elapsed-b.lastMoveAt,lastDamageAge:b.lastDamageAt<0?null:elapsed-b.lastDamageAt,riskWeight:botRisk(b),pathRisk:b.pathRisk,coverPoint:b.coverPoint,planCount:b.planCount,planning:!!b.planner,pathLength:b.path.length,way:b.way,dodge:b.dodgeTimer>0,knowledge:botKnowledge(b),memory:{sightings:b.brain.sightings,losses:b.brain.losses,hits:b.brain.hits,dangerCount:b.brain.danger.length,encounters:b.brain.encounters.length},patrolIndex:b.scanIndex})),replay:{active:replayActive,frames:timeline.length,index:replayIndex,events:events.length,winner:finalResult},bullets:bullets.length,walls:walls.length,manualWalls:extraWalls.length}),
  advance:(seconds)=>{for(let s=0;s<seconds*60&&phase==='running';s++)loopStep(1/60);updateHUD();draw();},
  validate:()=>({fightersFree:(multiActive()?[...team.blues,...multi.targets.filter(t=>t.active)]:bots).every(b=>freePoint(b,R*.95)),waypointsClear:(multiActive()?team.blues:bots).every(b=>{let p=copy(b);for(let k=b.way;k<b.path.length;k++){const q=b.path[k];if(blocked(p,q,R*.9))return false;p=q;}return true;})}),
  tools:()=>[...Object.keys(core),...Object.keys(mem),...Object.keys(defense)],

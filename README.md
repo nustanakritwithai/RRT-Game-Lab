@@ -1,4 +1,30 @@
-# RRT Arena V0.6.9 — BLUE Team Combat Lab
+# RRT Arena V0.6.10 — Unified BLUE Combat
+
+**ทุกโหมดใช้ BLUE ความสามารถล่าสุดชุดเดียวกัน** ไม่ย้อนกลับไปรุ่นเก่า: Predictive Anti-Encirclement, Ranged Threat Defense, Keep Moving, Tactical Positioning, Memory-Guided RRT และระบบความจำตามข้อมูลที่ตนเองพบ
+
+### BLUE ที่มีวงแหวนสีเขียว
+
+วงแหวนสีเขียวรอบ BLUE ตามภาพอ้างอิงคือเอกลักษณ์ภาพของ Unified BLUE ที่เปิดได้ใน **Duel / Melee / Ranged / Mixed / Solo / Duo Independent / Duo Cooperative** รวมถึง Replay. สีเขียวพื้นฐานระบุรุ่นของ BLUE เท่านั้น **ไม่ได้แปลว่าเส้นทางปลอดภัยเสมอไป**; ส่วนแดงและช่องหนีที่เรืองแสงจาก Predictive แสดงตาม threat map จริงของ B1 หรือ B2 แยกกัน
+
+ใน V0.6.9 ระบบ Predictive ถูกปิดเมื่อเลือก Ranged-only และ Ranged Threat Defense/Keep Moving ถูกปิดเมื่อเลือก Melee-only. V0.6.10 เปลี่ยนเป็น **เปิดใช้กลไกเดียวกันตามภัยที่ตรวจพบ** ไม่ขึ้นกับชื่อชนิดศัตรู; เมื่อไม่มีภัยประชิดหรือกระสุน ก็ไม่มีการสร้างตำแหน่งศัตรูหรือสั่งหลบปลอม
+
+ในโหมดดวล BLUE ยังใช้ฟังก์ชันเดิม `spawnBot('blue')`, `currentIntent`, `chooseGoal`, `beginPlan`, `runPlanner`, `moveBot`, `shoot` แต่เพิ่ม Ranged Defense และ Keep Moving ผ่านข้อมูล **RED ที่ BLUE ตรวจพบ/จำตำแหน่ง**; ไม่มีการอ่านตำแหน่ง RED ที่มองไม่เห็นเป็นข้อมูลให้ BLUE. ฝ่าย RED และกติกาการยิงเหมือนเดิม
+
+### เข้าเกม
+
+- [BLUE 2 ตัว Cooperative ต่อสู้ศัตรูผสม](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=mixed&blue=2&team=coop)
+- [BLUE 2 ตัว Independent ต่อสู้ศัตรูยิงไกล](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2)
+- [BLUE 1 ตัว vs Melee](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=melee)
+- [BLUE ดวล RED 1 ต่อ 1](https://nustanakritwithai.github.io/RRT-Game-Lab/)
+
+### Validation
+
+`node --test *.test.cjs` และ `node tools/browser_regression.cjs` ตรวจเวอร์ชัน ความสามารถ พฤติกรรมต่างโหมด วงสีเขียวที่แสดงจริงบน Canvas และตำแหน่ง HUD บน 320/393/1365px
+
+**Baseline note:** การเปิด Keep Moving ให้โหมดประชิดและโหมดดวลอาจเปลี่ยน Win Rate จากเวอร์ชันก่อนหน้า ต้องเก็บผลทดลองใหม่ก่อนอ้างว่าเก่งขึ้น
+
+---
+## อ้างอิง — V0.6.9 BLUE Team Combat Lab
 
 ## ทดลอง BLUE สองตัวด้วย AI ต้นฉบับ V0.6.8
 
