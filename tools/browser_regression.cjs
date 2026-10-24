@@ -17,7 +17,7 @@ const check=(ok,msg)=>{console.log((ok?'  ✓ ':'  ✗ ')+msg);if(!ok)failures++
 const frozen=()=>{function m(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}Math.random=m(7);window.requestAnimationFrame=()=>0;};
 const layout=()=>{const r=e=>document.querySelector(e)?.getBoundingClientRect();return {stageTop:Math.round(r('#stage').top),stageH:Math.round(r('#stage').height),
  fighters:[...document.querySelectorAll('.fighter')].map(f=>Math.round(f.getBoundingClientRect().height)),wave:Math.round(r('#multiWaveStats').height),
- scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth,heights:Object.fromEntries(['header','.modePanel','#multiPanel','.multiSummary','.meleeSettings','.multiInputs','.multiBotList','#blueTeamStatus','.help','.stats'].map(k=>[k,Math.round(r(k)?.height||0)]))};};
+ scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth,scrollY:Math.round(window.scrollY),documentStageTop:Math.round(r('#stage').top+window.scrollY),tops:Object.fromEntries(['header','.modePanel','#multiPanel','.stats','.layout','.arena','.panelhead','#stage'].map(k=>[k,Math.round(r(k)?.top||0)])),heights:Object.fromEntries(['header','.modePanel','#multiPanel','.multiSummary','.meleeSettings','.multiInputs','.multiBotList','#blueTeamStatus','.help','.stats'].map(k=>[k,Math.round(r(k)?.height||0)]))};};
 const finiteState=s=>[s.blue?.x,s.blue?.y,s.blue?.hp].every(Number.isFinite)&&s.targets.every(t=>Number.isFinite(t.x)&&Number.isFinite(t.y));
 
 async function main(){
