@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071225">
-<title>RRT ARENA 06.1 — Memory-Guided RRT Arena</title>
+<title>RRT ARENA 06.2 — Active Tactical Positioning</title>
 <style>
 :root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--panel2:#152640;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;--purple:#ac92fa}*{box-sizing:border-box}html,body{margin:0;min-height:100%;}body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42}button,input,select{font:inherit}button,select{cursor:pointer}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}main{max-width:1350px;margin:auto;padding:18px 13px 64px}header{padding:2px 3px 15px}.eyebrow{font-size:11px;font-weight:850;letter-spacing:1.8px;color:var(--cyan)}h1{margin:6px 0 7px;line-height:1.13;letter-spacing:-1.2px;font-size:clamp(29px,4.7vw,47px)}h1 span{color:var(--pink)}header p{color:var(--soft);font-size:14px;margin:0;max-width:800px}.tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3;background:#113657;border:1px solid #315479;color:#a7e5ff;vertical-align:middle;letter-spacing:0;margin-left:6px}
 .stats{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-bottom:12px}.fighter{min-width:0;padding:12px 14px;background:linear-gradient(135deg,#102844,#0d1b30);border:1px solid #264561;border-radius:15px}.fighter.red{background:linear-gradient(225deg,#3a1b34,#151c30);border-color:#66364f}.nameRow{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-size:15px;font-weight:850;white-space:nowrap}.name .symbol{font-size:19px;vertical-align:middle}.statnum{font-size:13px;white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}.bar{height:8px;background:#0a1423;border-radius:8px;overflow:hidden;margin:9px 0 6px;border:1px solid #253247}.fill{width:100%;height:100%;background:linear-gradient(90deg,#237cce,#50dbff);transition:width .16s}.red .fill{background:linear-gradient(90deg,#e6466b,#ff9a79)}.sublabel{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;color:var(--soft)}.sublabel strong{color:var(--ink);font-weight:650}.midstats{min-width:96px;text-align:center;display:flex;flex-direction:column;justify-content:center;background:#101b31;border:1px solid var(--line);border-radius:15px;padding:9px 13px}.midstats .round{font-size:10px;letter-spacing:1px;color:var(--soft);font-weight:850}.midstats .score{font-size:24px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}.midstats .clock{color:var(--gold);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -27,6 +27,8 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 @media(max-width:390px){.strategy-grid{gap:6px}.strategy-grid select{padding:8px 5px;font-size:11px}}
 /* v0.6 memory and replay controls */
 .memoryStat{margin-top:8px;border-top:1px solid #29405f;padding-top:7px;color:#d5dbff;font-size:11px;line-height:1.4}
+.tacticsSwitch{padding:12px;border-radius:12px;border:1px solid #4389a1;background:linear-gradient(140deg,#11435b,#142842);margin:10px 0 17px}
+.tacticsSwitch label{display:flex;gap:9px;align-items:center;font-size:12px;font-weight:850;cursor:pointer}.tacticsSwitch input{width:19px;height:19px;accent-color:#72ecba}.tacticsSwitch .subnote{font-size:11px;margin-top:6px;color:#a8dbe4}
 .guideSlider{background:linear-gradient(145deg,#133748,#132341);border:1px solid #276e93;padding:10px 10px 7px;border-radius:12px;margin-bottom:16px}
 .guideMetric{background:#102d40;border-radius:9px;padding:7px 8px;display:grid;gap:5px}.guideMetric strong{font-size:10px;white-space:normal;word-break:break-word;color:#8ee5ef}
 .replayBar{margin:0 14px 10px;padding:10px 12px;border:1px solid #344e74;background:#10243d;border-radius:12px}
@@ -37,16 +39,16 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </style>
 </head>
 <body><main>
-<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.1 · GUIDED SEARCH</div>
-<h1>RRT ARENA <span>MEMORY-GUIDED LAB</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
-<p>AI แบบใช้กฎ 2 ตัวต่อสู้และใช้ Memory-Guided RRT: เน้นสุ่มจุดที่เคยเห็นศัตรูและแนวเส้นทางที่น่าจะไปถึง พร้อมเหลือการสำรวจทั่วสนามเพื่อหาทางอ้อม · ไม่ใช้ LLM / API Key</p></header>
+<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 06.2 · ACTIVE TACTICS</div>
+<h1>RRT ARENA <span>TACTICAL POSITIONING</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
+<p>บอตประเมินมุมยิงและเปลี่ยนตำแหน่งจริงเมื่อเห็นศัตรู: เลื่อนยิง อ้อมด้านข้าง เข้ากดดัน และถอยรักษาระยะ โดยเรียก Memory-Guided RRT คำนวณทางเดิน · เล่นบนมือถือ ไม่ต้องมี LLM / API Key</p></header>
 <section class="stats" aria-label="พลังชีวิตผู้ต่อสู้">
 <article class="fighter"><div class="nameRow"><div class="name"><span class="symbol">🔷</span> BLUE · สายวางแผน</div><div class="statnum" id="blueHp">120/120</div></div><div class="bar"><div class="fill" id="blueBar"></div></div><div class="sublabel"><span id="blueMode">พร้อมรบ</span><span id="blueAmmo">กระสุน 6/6</span></div></article>
 <div class="midstats"><span class="round" id="roundNo">ROUND 01</span><span class="score" id="scores">0 : 0</span><span class="clock" id="clock">00:00</span></div>
 <article class="fighter red"><div class="nameRow"><div class="name"><span class="symbol">🔺</span> RED · สายบุก</div><div class="statnum" id="redHp">120/120</div></div><div class="bar"><div class="fill" id="redBar"></div></div><div class="sublabel"><span id="redMode">พร้อมรบ</span><span id="redAmmo">กระสุน 6/6</span></div></article>
 </section>
 <section class="layout"><div class="panel arena">
-<div class="panelhead"><span>◈ Memory-Guided RRT · Tactical Agent</span><span class="live"><i class="dot" id="liveDot"></i><span class="muted" id="liveText">ยังไม่เริ่ม</span></span></div>
+<div class="panelhead"><span>◈ Combat Maneuvers · Memory-Guided RRT</span><span class="live"><i class="dot" id="liveDot"></i><span class="muted" id="liveText">ยังไม่เริ่ม</span></span></div>
 <div class="stage" id="stage"><canvas id="arena" role="img" aria-label="เกม RRT สองบอตต่อสู้กันบนสนามที่มีกำแพง"></canvas>
 <div class="overlay" id="overlay"><div class="modal"><div class="big" id="overlayIcon">⚔️</div><strong id="overlayTitle">พร้อมให้บอตดวลกัน!</strong><p id="overlayText">กด “เริ่มดวล” แล้วชมทั้งสองตัวค้นหาทางอ้อมกำแพง ยิง และหลบกระสุน</p><div class="hint" id="overlayHint">🔵 สีน้ำเงิน · 🔴 สีแดง · ▧ กำแพง</div></div></div></div>
 <div class="buttons"><button id="start" class="btn primary">▶ เริ่มดวล</button><button id="pause" class="btn" disabled>⏸ หยุด</button><button id="reset" class="btn ghost">↺ รีเซ็ตทั้งหมด</button></div>
@@ -67,15 +69,16 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 <div class="sliderLine"><label class="setlabel" for="risk">หลีกเลี่ยงเส้นทางเสี่ยง <b id="riskValue">60%</b></label><input id="risk" type="range" min="0" max="100" value="60" step="10"><div class="subnote">0 = เน้นสั้นที่สุด · 100 = ยอมอ้อมเพื่อกำบัง</div></div>
 <div class="strategy-grid"><label class="setlabel" for="blueStyle">🔷 BLUE<select id="blueStyle" aria-label="กลยุทธ์ BLUE"><option value="cautious" selected>ระมัดระวัง</option><option value="balanced">สมดุล</option><option value="aggressive">บุกหนัก</option></select></label><label class="setlabel" for="redStyle">🔺 RED<select id="redStyle" aria-label="กลยุทธ์ RED"><option value="cautious">ระมัดระวัง</option><option value="balanced">สมดุล</option><option value="aggressive" selected>บุกหนัก</option></select></label></div>
 <div class="sliderLine"><label class="setlabel" for="speed">ความเร็วเกม <b id="speedValue">1.0×</b></label><input id="speed" type="range" min="0.5" max="2" value="1" step="0.25"></div>
+<div class="tacticsSwitch"><label><input id="activeTactics" type="checkbox" checked><b>🎯 Active Combat Positioning (V0.6.2)</b></label><div class="subnote">เปิด: ให้คะแนนจุดยิงหลายตำแหน่งแล้วเรียก RRT เดินไปเปลี่ยนมุม • ปิด: เปรียบเทียบพฤติกรรม V0.6.1</div></div>
 <div class="checks"><label><input id="showTree" type="checkbox" checked> แสดงกิ่ง RRT ที่สำรวจ</label><label><input id="showPath" type="checkbox" checked> แสดงเส้นทางที่วางแผน</label><label><input id="smooth" type="checkbox" checked> ปรับเส้นทางให้สั้น (Smoothing)</label><label><input id="autoNext" type="checkbox"> เริ่มรอบใหม่อัตโนมัติเมื่อจบ</label><label><input id="showThreat" type="checkbox" checked> แสดงจุดกำบังและแนวเสี่ยง</label><label><input id="showMemory" type="checkbox" checked> แสดงตำแหน่งศัตรูที่จำได้และจุดเสี่ยง</label><label><input id="carryMemory" type="checkbox" checked> จดจำจุดเสี่ยงและตำแหน่งที่เคยพบศัตรูข้ามรอบ (สนามเดิม)</label></div>
 </div></div>
 <div class="panel"><div class="sidepad"><h2 class="cardTitle">🧠 สิ่งที่บอตกำลังคิด</h2>
 <div class="tacticBox bluebox"><div class="tacticHead"><b>🔷 BLUE</b><span id="blueThinking">รอเริ่ม</span></div><p id="blueReason">รอประเมินสถานการณ์</p><div class="tinyStats"><span id="blueRisk">เสี่ยง --</span><span id="bluePlans">แผน 0</span></div><div class="memoryStat" id="blueMemory">👁️ ยังไม่พบศัตรู · จุดเสี่ยง 0</div></div>
 <div class="tacticBox redbox"><div class="tacticHead"><b>🔺 RED</b><span id="redThinking">รอเริ่ม</span></div><p id="redReason">รอประเมินสถานการณ์</p><div class="tinyStats"><span id="redRisk">เสี่ยง --</span><span id="redPlans">แผน 0</span></div><div class="memoryStat" id="redMemory">👁️ ยังไม่พบศัตรู · จุดเสี่ยง 0</div></div>
-<div class="divider"></div><div class="metricRow"><span>ศัตรูถูกพบ / หลุดสายตา</span><strong id="sightEvents">0 / 0</strong></div><div class="metricRow"><span>ความทรงจำจุดอันตราย</span><strong id="learnedSpots">0 จุด</strong></div><div class="metricRow guideMetric"><span>การสุ่ม RRT (จำ/แนว/ทั่ว/เป้า)</span><strong id="samplingStat">0 / 0 / 0 / 0</strong></div><div class="metricRow"><span>รวมจุด RRT ที่สร้าง</span><strong id="nodes">0</strong></div><div class="metricRow"><span>คำนวณเส้นทาง</span><strong id="plans">0 ครั้ง</strong></div><div class="metricRow"><span>ลองแล้วชนกำแพง</span><strong id="rejects">0 ครั้ง</strong></div><div class="metricRow"><span>ยิงโดนเป้าหมาย</span><strong id="hits">0 นัด</strong></div><div class="metricRow"><span>สั่งหาที่กำบัง</span><strong id="coverMoves">0 ครั้ง</strong></div><div class="metricRow"><span>สั่งอ้อมโจมตี</span><strong id="flanks">0 ครั้ง</strong></div><div class="metricRow"><span>คำนวณเส้นทางใหม่</span><strong id="replans">0 ครั้ง</strong></div>
+<div class="divider"></div><div class="metricRow"><span>ศัตรูถูกพบ / หลุดสายตา</span><strong id="sightEvents">0 / 0</strong></div><div class="metricRow"><span>ความทรงจำจุดอันตราย</span><strong id="learnedSpots">0 จุด</strong></div><div class="metricRow guideMetric"><span>การเคลื่อนที่เชิงรุก</span><strong id="maneuverStat">เลื่อน 0 · อ้อม 0 · บุก 0 · ถอย 0</strong></div><div class="metricRow guideMetric"><span>การสุ่ม RRT (จำ/แนว/ทั่ว/เป้า)</span><strong id="samplingStat">0 / 0 / 0 / 0</strong></div><div class="metricRow"><span>รวมจุด RRT ที่สร้าง</span><strong id="nodes">0</strong></div><div class="metricRow"><span>คำนวณเส้นทาง</span><strong id="plans">0 ครั้ง</strong></div><div class="metricRow"><span>ลองแล้วชนกำแพง</span><strong id="rejects">0 ครั้ง</strong></div><div class="metricRow"><span>ยิงโดนเป้าหมาย</span><strong id="hits">0 นัด</strong></div><div class="metricRow"><span>สั่งหาที่กำบัง</span><strong id="coverMoves">0 ครั้ง</strong></div><div class="metricRow"><span>สั่งอ้อมโจมตี</span><strong id="flanks">0 ครั้ง</strong></div><div class="metricRow"><span>คำนวณเส้นทางใหม่</span><strong id="replans">0 ครั้ง</strong></div>
 <div class="divider"></div><div class="legend"><span class="swatch" style="background:#4dcfff"></span>กิ่งต้นไม้ของ BLUE　 <span class="swatch" style="background:#ff638d"></span>กิ่งของ RED<br><span class="swatch" style="background:#86ffc5"></span>เส้นเดิน BLUE　<span class="swatch" style="background:#ffd098"></span>เส้นเดิน RED</div>
 </div></div>
-<div class="panel full"><div class="sidepad"><h2 class="cardTitle">📡 บันทึกการต่อสู้</h2><div class="battlelog" id="battlelog" aria-label="ลำดับเหตุการณ์การต่อสู้"><div>กดเริ่มดวลเพื่อดูการทำงานของบอต</div></div><div class="learn"><strong>ต่างจาก LLM อย่างไร?</strong><p>ตัวอย่างนี้ใช้ <b>กฎยุทธวิธี + Risk-aware RRT</b> ไม่มีโมเดลภาษาและไม่ใช้ API Key. บอตรับรู้ตำแหน่งศัตรูที่มองเห็นและบันทึกตำแหน่งที่เคยพบ (ไม่รู้ตำแหน่งจริงเมื่อถูกบัง) RRT ใช้ความจำและแนวเส้นทางเพิ่มน้ำหนักพื้นที่ค้นหา แต่ยังสุ่มทั่วสนามบางส่วน จุดเสี่ยงเกิดจากที่เคยถูกยิง ไม่ใช่การฝึก ML. Replay เป็นภาพสถานะที่บันทึกเป็นช่วง ไม่ใช่วิดีโอหรือการเล่นแบบ deterministic. LLM Tool Calling คือขั้นต่อไป</p></div></div></div>
+<div class="panel full"><div class="sidepad"><h2 class="cardTitle">📡 บันทึกการต่อสู้</h2><div class="battlelog" id="battlelog" aria-label="ลำดับเหตุการณ์การต่อสู้"><div>กดเริ่มดวลเพื่อดูการทำงานของบอต</div></div><div class="learn"><strong>ต่างจาก LLM อย่างไร?</strong><p>ตัวอย่างนี้ใช้ <b>กฎยุทธวิธี + Risk-aware RRT</b> ไม่มีโมเดลภาษาและไม่ใช้ API Key. บอตจะประเมิน 30–40 จุดยิงจากมุมมองของตัวเองเมื่อเห็นศัตรู เลือกจุดที่มีแนวยิงเหมาะสมและไม่ซ้ำจุดเดิม แล้วยังคงใช้ Memory-Guided RRT วางเส้นทางจริง บอตรับรู้ตำแหน่งศัตรูที่มองเห็นและบันทึกตำแหน่งที่เคยพบ (ไม่รู้ตำแหน่งจริงเมื่อถูกบัง) RRT ใช้ความจำและแนวเส้นทางเพิ่มน้ำหนักพื้นที่ค้นหา แต่ยังสุ่มทั่วสนามบางส่วน จุดเสี่ยงเกิดจากที่เคยถูกยิง ไม่ใช่การฝึก ML. Replay เป็นภาพสถานะที่บันทึกเป็นช่วง ไม่ใช่วิดีโอหรือการเล่นแบบ deterministic. LLM Tool Calling คือขั้นต่อไป</p></div></div></div>
 </aside></section>
 <div class="footer"><b>ทดลอง:</b> เปรียบเทียบ Memory-Guided 0% กับ 85% → ดูการกระจายกิ่ง RRT → ดูสถานะการมองเห็น → วางกำแพงบังศัตรู → ดูการค้นหาจากความจำ → ดูความเสี่ยงจากจุดที่เคยถูกยิง → เล่น Replay หลังจบแมตช์ • ทุกอย่างทำงานในเบราว์เซอร์</div>
 </main>
@@ -337,13 +340,96 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  return Object.freeze({sample});
 });
 </script>
+<script id="activeTacticsCore">
+/* RRT Arena v0.6.2 — deterministic tactical positioning.
+ * Input consists ONLY of this bot's own state and a currently VISIBLE observation.
+ * Collision/line of sight/danger are injected query functions, never hidden world state.
+ * Returns a target for RRT, not an instantaneous teleport or AI-model decision.
+ */
+(function(root,factory){
+ 'use strict'; const api=factory(); root.RRTArenaTactics=api;
+ if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const PI=Math.PI, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+ const valid=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
+ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const STRATEGIES=['aggressive','balanced','cautious'];
+ function preferredRange(style,preferred,range){
+   const f=style==='aggressive'?.83:style==='cautious'?1.14:1;
+   return clamp(preferred*f,Math.min(30,range*.5),range*.83);
+ }
+ function plan(input){
+   const {self,enemy,bounds,free,canSee,canTravel,dangerAt,history=[],strategy='balanced',side=1,now=0,scale=320}=input||{};
+   if(!valid(self)||!valid(enemy)||!bounds||!(bounds.w>0&&bounds.h>0)||
+      !(self.range>0&&self.preferred>0)||typeof free!=='function'||typeof canSee!=='function'||typeof canTravel!=='function')return null;
+   const style=STRATEGIES.includes(strategy)?strategy:'balanced';
+   const d=distance(self,enemy),desired=preferredRange(style,self.preferred,self.range),
+     danger=(p)=>typeof dangerAt==='function'?clamp(dangerAt(p),0,1):0;
+   if(d<1)return null;
+   const ux=(self.x-enemy.x)/d,uy=(self.y-enemy.y)/d;
+   const a0=Math.atan2(uy,ux),dir=side>=0?1:-1;
+   let mode=d<desired*.68?'kite':d>desired*1.30?'pressure':'orbit';
+   if(style==='cautious'&&d<desired*.95)mode='kite';
+   const minTravel=Math.max(scale*.075,17),radius=Math.max(minTravel*.9,desired);
+   const targets=[];
+   // Tangent moves produce actual lateral displacement even when already in firing range.
+   const tang={x:-uy,y:ux};
+   for(const sideSign of [dir,-dir])for(const n of [1,1.6,2.25]){
+     const stride=Math.max(minTravel*1.65,scale*.17)*n;
+     const push=mode==='pressure'?-Math.min(stride*.38,Math.max(0,d-desired)):mode==='kite'?Math.min(stride*.38,Math.max(0,desired-d)):0;
+     targets.push({x:self.x+sideSign*tang.x*stride+ux*push,y:self.y+sideSign*tang.y*stride+uy*push,turn:sideSign,kind:'orbit'});
+   }
+   // Target-relative orbit angles; large offsets are flanks and smaller offsets are strafes.
+   for(const sign of [dir,-dir])for(const angle of [.38,.72,1.10,1.48])for(const factor of [.92,1.12]){
+     const a=a0+sign*angle,r=radius*factor;
+     targets.push({x:enemy.x+Math.cos(a)*r,y:enemy.y+Math.sin(a)*r,turn:sign,kind:angle>=1.10?'flank':'orbit'});
+   }
+   // Push or kite along offset radials, avoiding blindly rushing straight into a firing lane.
+   for(const sign of [dir,-dir])for(const angle of [.20,.44,.66]){
+     const a=a0+sign*angle,r=mode==='pressure'?desired*.83:desired*1.12;
+     targets.push({x:enemy.x+Math.cos(a)*r,y:enemy.y+Math.sin(a)*r,turn:sign,kind:mode});
+   }
+   let best=null,second=null,considered=0;
+   for(const raw of targets){
+     const p={x:raw.x,y:raw.y},travel=distance(self,p),fd=distance(p,enemy);
+     if(p.x<0||p.x>bounds.w||p.y<0||p.y>bounds.h||!free(p)||fd<self.range*.19||travel<minTravel)continue;
+     // Distances beyond firing range are a poor offensive destination.
+     const los=canSee(p,enemy),direct=canTravel(self,p),heat=danger(p);
+     let penalty=travel*.33+Math.abs(fd-desired)*.56 + (los?0:scale*.62) +
+       (fd>self.range*.96?(fd-self.range*.96)*2.6:0)+
+       (direct?0:scale*.20+travel*.28)+heat*scale*(style==='cautious'?.78:.48);
+     // A change of angle is useful, but keeping a firing line dominates gratuitous detours.
+     penalty-=scale*(raw.kind==='flank'?.045:mode==='orbit'?.040:.035);
+     penalty+=(raw.turn===dir?0:scale*.022);
+     // Avoid endlessly selecting the same destination or circling at one fixed corner.
+     for(const h of history.slice(-8)){
+       if(!valid(h))continue;
+       const age=Math.max(0,now-(Number.isFinite(h.time)?h.time:0));
+       if(age>15)continue;
+       const sep=distance(p,h),memoryRadius=scale*.22;
+       penalty+=scale*.95*Math.max(0,1-sep/memoryRadius)*Math.max(.10,1-age/15);
+     }
+     considered++;
+     const candidate={goal:p,kind:mode==='orbit'?(raw.kind==='flank'?'flank':'orbit'):mode,
+       score:Math.round(penalty*10)/10,range:Math.round(fd),move:Math.round(travel),lineOfFire:los,directPath:direct,danger:Math.round(heat*100),evaluated:0};
+     if(!best||candidate.score<best.score){second=best;best=candidate;}else if(!second||candidate.score<second.score)second=candidate;
+   }
+   if(!best)return null;
+   best.evaluated=considered;
+   const names={orbit:'เปลี่ยนมุมยิงขณะเคลื่อนที่',flank:'อ้อมเข้าด้านข้าง',pressure:'กดดันและเข้าระยะเหมาะสม',kite:'ถอยรักษาระยะพร้อมยิง'};
+   best.reason=names[best.kind]+' · เป้าหมาย '+best.range+'px · เดิน '+best.move+'px · เสี่ยง '+best.danger+'%'+(best.directPath?'':' · ใช้ RRT หาเส้นทางอ้อม');
+   return best;
+ }
+ return Object.freeze({plan,preferredRange});
+});
+</script>
 <script>
-
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided;
-const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
-let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
+const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics;
+const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
+let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
 const colors={blue:'#4dcfff',red:'#ff638d'};
 const layouts={
@@ -356,8 +442,8 @@ function resize(){let r=stage.getBoundingClientRect();const oldW=W,oldH=H;W=Math
   if(Math.abs(oldW-W)>3||Math.abs(oldH-H)>3){setupRound();if(phase==='running'){showNotice('หน้าจอเปลี่ยนขนาด — เริ่มตำแหน่งในสนามใหม่เพื่อให้คำนวณตรงกัน');}else{phase='ready';showOverlay('⚔️','พร้อมให้บอตดวลกัน!','กดเริ่มดวลเพื่อทดลอง RRT และการต่อสู้');}}
 }
 function buildWalls(){walls=(layouts[ui.map.value]||layouts.ruins).map(([x,y,w,h],i)=>({x:x*W,y:y*H,w:w*W,h:h*H,id:'b'+i,manual:false}));for(const w of extraWalls)walls.push(w);}
-function spawnBot(team,x,y){const lessons=storedLessons[team];return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0,brain:mem.createMemory(ui.carryMemory.checked?lessons.danger:[],ui.carryMemory.checked?lessons.encounters:[]),lastEncounterLog:-99,scanIndex:0,seenStatus:'unknown',searchCooldown:0};}
-function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
+function spawnBot(team,x,y){const lessons=storedLessons[team];return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0,brain:mem.createMemory(ui.carryMemory.checked?lessons.danger:[],ui.carryMemory.checked?lessons.encounters:[]),lastEncounterLog:-99,scanIndex:0,seenStatus:'unknown',searchCooldown:0,tactic:null,tacticGoal:null,tacticScore:null,maneuverHistory:[]};}
+function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
 function hideOverlay(){ui.overlay.classList.add('hidden');}
 function showNotice(text){ui.notice.textContent=text;}
@@ -365,7 +451,7 @@ function log(message,team){events.push({t:Number(elapsed.toFixed(2)),team:team||
 function snapshot(){
  if(phase!=='running'&&phase!=='ended')return;
  const stamp=Number(elapsed.toFixed(2));if(timeline.length&&Math.abs(timeline[timeline.length-1].t-stamp)<.045)return;
- timeline.push({t:stamp,bots:bots.map(b=>({team:b.team,x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),hp:Number(b.hp.toFixed(1)),ammo:b.ammo,intent:b.intent,knowledge:mem.knowledge(b.brain,elapsed).status})),bullets:bullets.map(b=>({x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),team:b.team})).slice(0,55)});
+ timeline.push({t:stamp,bots:bots.map(b=>({team:b.team,x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),hp:Number(b.hp.toFixed(1)),ammo:b.ammo,intent:b.intent,tactic:b.tactic,knowledge:mem.knowledge(b.brain,elapsed).status})),bullets:bullets.map(b=>({x:Number((b.x/W).toFixed(4)),y:Number((b.y/H).toFixed(4)),team:b.team})).slice(0,55)});
  if(timeline.length>660)timeline.shift();
  updateReplayUI();
 }
@@ -389,7 +475,7 @@ function toggleReplay(force){
  updateReplayUI();draw();
 }
 function exportReplay(){if(!timeline.length)return;
- const data={format:'RRT-Arena-sampled-state',version:'0.6.1',guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
+ const data={format:'RRT-Arena-sampled-state',version:'0.6.2',activeTactics:ui.activeTactics.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='rrt-arena-v06-round-'+round+'-replay.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  showNotice('บันทึก Replay JSON แล้ว (ภาพสถานะ ไม่ใช่วิดีโอ)');
@@ -447,8 +533,8 @@ function fallbackPoint(bot,away){
  }
  return best||copy(bot);
 }
-function setIntent(bot,intent){if(bot.intent===intent.kind){bot.reason=intent.reason;return false;}
- bot.intent=intent.kind;bot.reason=intent.reason;bot.thinkingCount++;
+function setIntent(bot,intent){if(bot.intent===intent.kind){if(!(ui.activeTactics.checked&&bot.tactic&&botKnowledge(bot).status==='visible'))bot.reason=intent.reason;return false;}
+ bot.intent=intent.kind;bot.reason=intent.reason;bot.thinkingCount++;if(!['engage','advance','flank'].includes(intent.kind)){bot.tactic=null;bot.tacticGoal=null;}
  if(intent.kind==='flank')stats.flanks++;
  if(['retreat','cover'].includes(intent.kind))stats.covers++;
  const names={retreat:'ถอย',cover:'หาที่กำบัง',flank:'อ้อมโจมตี',engage:'โจมตี',advance:'เข้าประชิด',investigate:'ไปยังจุดที่จำได้',search:'ลาดตระเวนหาเป้าหมาย',order:'คำสั่งผู้เล่น'};
@@ -468,6 +554,27 @@ function chooseGoal(bot){
  const info=botKnowledge(bot),foe=info.position,kind=bot.intent;
  if(bot.manual&&bot.team==='blue')return copy(bot.manual);
  bot.coverPoint=null;
+ // The observation-only combat positioning tool runs when the enemy is ACTUALLY visible.
+ // It selects an offensive destination, which still has to pass through RRT and collision checks.
+ if(ui.activeTactics.checked&&info.status==='visible'&&foe&&['engage','advance','flank'].includes(kind)){
+   const tactical=tactics.plan({self:{x:bot.x,y:bot.y,range:bot.range,preferred:bot.preferred},enemy:foe,
+     bounds:{w:W,h:H},scale:S,now:elapsed,side:bot.strafe,strategy:botStyle(bot),
+     free:p=>freePoint(p,R+3),canSee:clearSight,canTravel:(a,b)=>!blocked(a,b,R+1),
+     dangerAt:p=>mem.dangerAt(bot.brain,{x:p.x/W,y:p.y/H},elapsed),history:bot.maneuverHistory});
+   if(tactical){
+     bot.tactic=tactical.kind;bot.tacticGoal=copy(tactical.goal);bot.tacticScore=tactical.score;
+     bot.reason=tactical.reason+' · เปรียบเทียบ '+tactical.evaluated+' จุด';
+     bot.maneuverHistory.push({...tactical.goal,time:elapsed});
+     bot.maneuverHistory=bot.maneuverHistory.filter(p=>elapsed-p.time<16).slice(-8);
+     stats.maneuvers[tactical.kind]++;
+     if(stats.maneuvers[tactical.kind]<=2||stats.maneuvers[tactical.kind]%8===0)
+       log(bot.team.toUpperCase()+' → '+({orbit:'เปลี่ยนมุมยิง',flank:'อ้อมด้านข้าง',pressure:'บุกกดดัน',kite:'ถอยรักษาระยะ'}[tactical.kind])+' ('+tactical.evaluated+' จุด)',bot.team);
+     return tactical.goal;
+   }
+   bot.tactic=null;bot.tacticGoal=null;
+   bot.reason='ยังไม่มีตำแหน่งโจมตีที่เหมาะสม → ทดลองจุดสำรอง';
+ }
+
  if(kind==='search'||!foe){
   // Historical sightings are candidate patrol sites, never hidden live coordinates.
   const hotspot=mem.selectSearchHotspot(bot.brain,bot.scanIndex,{w:W,h:H},p=>freePoint(p,R+2),bot,R*3.5);
@@ -555,7 +662,7 @@ function finishPlan(bot,idx){const plan=bot.planner;let pts=[],k=idx;
    exposed+=edgeLen*core.edgeExposure(pts[i-1],pts[i],plan.foeSnapshot,riskSight,S);
  }
  bot.pathRisk=length>0?Math.round(exposed/length*100):0;
- bot.mode=({retreat:'ถอยเข้าที่กำบัง',cover:'มุ่งสู่ที่กำบัง',flank:'กำลังอ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เคลื่อนเข้าหาศัตรู',investigate:'กำลังตรวจจุดที่เห็นล่าสุด',search:'ลาดตระเวน',order:'ตามคำสั่ง'}[bot.intent]||'เดินตาม RRT');
+ bot.mode=(ui.activeTactics.checked&&bot.tactic&&botKnowledge(bot).status==='visible')?({orbit:'เลื่อนเปลี่ยนมุมยิง',flank:'อ้อมโจมตีข้าง',pressure:'เข้าระยะโจมตี',kite:'ถอยแล้วยิง'}[bot.tactic]):({retreat:'ถอยเข้าที่กำบัง',cover:'มุ่งสู่ที่กำบัง',flank:'กำลังอ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เคลื่อนเข้าหาศัตรู',investigate:'กำลังตรวจจุดที่เห็นล่าสุด',search:'ลาดตระเวน',order:'ตามคำสั่ง'}[bot.intent]||'เดินตาม RRT');
 }
 function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
  const risk=p.risk,foe=p.foeSnapshot,nearLimit=STEP*1.95,nearLimit2=nearLimit*nearLimit;
@@ -748,6 +855,13 @@ function drawTactics(){if(!ui.showThreat.checked)return;
    ctx.setLineDash([]);ctx.fillStyle=ctx.strokeStyle;ctx.textAlign='center';ctx.font='700 10px system-ui';
    ctx.fillText('COVER',b.coverPoint.x,b.coverPoint.y-R-6);ctx.restore();
  }
+ if(ui.activeTactics.checked)for(const b of bots){
+   const p=b.tacticGoal;if(!p||botKnowledge(b).status!=='visible')continue;
+   ctx.save();ctx.globalAlpha=.73;ctx.lineWidth=2;ctx.strokeStyle=colors[b.team];ctx.setLineDash([5,4]);
+   ctx.beginPath();ctx.arc(p.x,p.y,R*.78,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+   ctx.fillStyle=colors[b.team];ctx.font='700 10px system-ui';ctx.textAlign='center';
+   ctx.fillText(({orbit:'STRAFE',flank:'FLANK',pressure:'PUSH',kite:'KITE'}[b.tactic]||'TARGET'),p.x,p.y-R-7);ctx.restore();
+ }
 }
 function drawFighter(bot){const foe=perceivedFoe(bot),a=foe?Math.atan2(foe.y-bot.y,foe.x-bot.x):(bot.team==='blue'?-0.7:2.4),color=colors[bot.team];ctx.save();ctx.translate(bot.x,bot.y);ctx.rotate(a);ctx.shadowBlur=bot.hitFlash?25:13;ctx.shadowColor=bot.hitFlash?'#ffffff':color;ctx.fillStyle=bot.hitFlash?'#ffffff':bot.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(R*.25,-R*.38);ctx.lineTo(R*.95,0);ctx.lineTo(R*.25,R*.38);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#e7faff';ctx.beginPath();ctx.arc(-R*.21,-R*.22,R*.16,0,Math.PI*2);ctx.arc(-R*.21,R*.22,R*.16,0,Math.PI*2);ctx.fill();if(bot.fireFlash>0){ctx.fillStyle='#ffe5ac';ctx.beginPath();ctx.arc(R*1.33,0,R*.42,0,Math.PI*2);ctx.fill();}ctx.restore();ctx.save();ctx.fillStyle='#ddebff';ctx.textAlign='center';ctx.font=`800 ${clamp(S*.028,9,14)}px system-ui`;ctx.fillText(bot.team==='blue'?'BLUE':'RED',bot.x,bot.y-R-9);ctx.restore();const w=R*2.5,h=3;ctx.fillStyle='#15283b';ctx.fillRect(bot.x-w/2,bot.y+R+6,w,h);ctx.fillStyle=color;ctx.fillRect(bot.x-w/2,bot.y+R+6,w*bot.hp/bot.maxHp,h);if(bot.dodgeTimer>0){ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.beginPath();ctx.arc(bot.x,bot.y,R*1.6,0,Math.PI*2);ctx.stroke();ctx.restore();}}
 function drawShot(s){ctx.save();ctx.strokeStyle=s.team==='blue'?'#88e7ff':'#ffb3ba';ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=9;ctx.lineWidth=Math.max(2,S*.007);ctx.beginPath();ctx.moveTo(s.x-s.vx*.024,s.y-s.vy*.024);ctx.lineTo(s.x,s.y);ctx.stroke();ctx.restore();}
@@ -786,7 +900,7 @@ function updateHUD(){if(!bots.length)return;
   ui[id+'Mode'].textContent=bot.mode;
   ui[id+'Ammo'].textContent=bot.reload>0?'รีโหลด '+bot.reload.toFixed(1)+'s':'กระสุน '+bot.ammo+'/6';
   const intentNames={ready:'เตรียมพร้อม',retreat:'🛡️ ถอยเข้าที่กำบัง',cover:'🛡️ หาที่กำบัง',flank:'↪️ อ้อมโจมตี',engage:'🎯 เปลี่ยนมุมยิง',advance:'⚔️ เข้าประชิด',investigate:'📍 ตรวจตำแหน่งล่าสุด',search:'🔎 ลาดตระเวนค้นหา',order:'☞ ทำตามคำสั่ง'};
-  ui[id+'Think'].textContent=intentNames[bot.intent]||bot.mode;
+  ui[id+'Think'].textContent=(ui.activeTactics.checked&&bot.tactic&&botKnowledge(bot).status==='visible'?({orbit:'↔️ เลื่อนยิงด้านข้าง',flank:'↪️ อ้อมหามุมยิง',pressure:'⚔️ เข้ากดดัน',kite:'🛡️ ถอยรักษาระยะ'}[bot.tactic]):null)||intentNames[bot.intent]||bot.mode;
   ui[id+'Reason'].textContent=bot.reason;
   ui[id+'Risk'].textContent='เส้นล่าสุดเสี่ยง '+bot.pathRisk+'%';
   ui[id+'Plans'].textContent='แผน '+bot.planCount;
@@ -800,6 +914,7 @@ function updateHUD(){if(!bots.length)return;
  ui.flanks.textContent=stats.flanks+' ครั้ง';ui.replans.textContent=stats.replans+' ครั้ง';
  ui.sightEvents.textContent=bots.reduce((n,b)=>n+b.brain.sightings,0)+' / '+bots.reduce((n,b)=>n+b.brain.losses,0);
  ui.learnedSpots.textContent=bots.reduce((n,b)=>n+b.brain.danger.length,0)+' จุด';
+ const maneuvers=stats.maneuvers;ui.maneuverStat.textContent=`เลื่อน ${maneuvers.orbit} · อ้อม ${maneuvers.flank} · บุก ${maneuvers.pressure} · ถอย ${maneuvers.kite}`;
  const counts=stats.samples;ui.samplingStat.textContent=`จำ ${counts.memory+counts.history} | แนวทาง ${counts.corridor} | ทั่วสนาม ${counts.global} | เป้า ${counts.goal}`;
 }
 function animation(t){let dt=last?Math.min((t-last)/1000,.052):0;last=t;if(phase==='running'){let scale=Number(ui.speed.value),n=Math.max(1,Math.ceil(dt*scale/.022));for(let i=0;i<n;i++){loopStep(dt*scale/n);if(phase!=='running')break;}}else if(phase==='ended'&&ui.auto.checked){scoreDelay-=dt;if(scoreDelay<=0){startGame();}}
@@ -828,6 +943,7 @@ ui.order.addEventListener('click',()=>{tool=tool==='order'?'none':'order';update
 ui.clear.addEventListener('click',()=>{if(!extraWalls.length){showNotice('ยังไม่มีกำแพงที่เพิ่มเอง');return;}extraWalls=[];buildWalls();for(const b of bots){b.planner=null;b.tree=[];b.goal=null;b.path=[];b.coverPoint=null;b.thinkCooldown=.04;b.brain.wasVisible=false;}showNotice('ลบกำแพงที่เพิ่มเองทั้งหมดแล้ว');log('ลบกำแพงที่ผู้เล่นเพิ่ม');});
 ui.bias.addEventListener('input',()=>ui.biasVal.textContent=ui.bias.value+'%');
 ui.focus.addEventListener('input',()=>{ui.focusVal.textContent=ui.focus.value+'%';for(const b of bots){if(b.planner)b.planner=null;b.path=[];b.goal=null;b.thinkCooldown=0;b.planCooldown=0;}showNotice('เปลี่ยนระดับ Memory-Guided RRT — บอตกำลังวางแผนใหม่');});
+ui.activeTactics.addEventListener('change',()=>{for(const b of bots){b.tactic=null;b.tacticGoal=null;b.path=[];b.goal=null;b.planner=null;b.thinkCooldown=.01;b.planCooldown=0;}showNotice(ui.activeTactics.checked?'เปิดคำนวณมุมยิง: ทั้งสองบอตกำลังปรับแผน':'กลับโหมดการต่อสู้แบบ V0.6.1');});
 ui.risk.addEventListener('input',()=>{ui.riskVal.textContent=ui.risk.value+'%';for(const bot of bots){bot.thinkCooldown=0;bot.agePlan=9;}});
 for(const team of ['blue','red'])ui[team+'Style'].addEventListener('change',()=>{const bot=bots.find(b=>b.team===team);if(bot){bot.thinkCooldown=0;bot.agePlan=9;}showNotice('เปลี่ยนกลยุทธ์ '+team.toUpperCase()+' แล้ว');});ui.speed.addEventListener('input',()=>ui.speedVal.textContent=Number(ui.speed.value).toFixed(2).replace(/0$/,'')+'×');
 ui.map.addEventListener('change',()=>{resetGame();showNotice('เปลี่ยนสนามแล้ว — กดเริ่มดวล');});ui.smooth.addEventListener('change',()=>{for(const b of bots){if(b.planner)continue;if(b.path.length){b.goal=null;b.path=[];b.thinkCooldown=.01;}}showNotice(ui.smooth.checked?'เปิด Path Smoothing รอบใหม่':'ปิด Path Smoothing รอบใหม่');});
@@ -836,7 +952,7 @@ window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(do
 window.addEventListener('resize',()=>resize());
 // Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
 window.__rrtArenaDebug={
- getState:()=>({phase,round,scores:{...scores},time:elapsed,stats:{...stats},bots:bots.map(b=>({team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,reload:b.reload,mode:b.mode,intent:b.intent,reason:b.reason,strategy:botStyle(b),riskWeight:botRisk(b),pathRisk:b.pathRisk,coverPoint:b.coverPoint,planCount:b.planCount,planning:!!b.planner,pathLength:b.path.length,way:b.way,dodge:b.dodgeTimer>0,knowledge:botKnowledge(b),memory:{sightings:b.brain.sightings,losses:b.brain.losses,hits:b.brain.hits,dangerCount:b.brain.danger.length,encounters:b.brain.encounters.length},patrolIndex:b.scanIndex})),replay:{active:replayActive,frames:timeline.length,index:replayIndex,events:events.length,winner:finalResult},bullets:bullets.length,walls:walls.length,manualWalls:extraWalls.length}),
+ getState:()=>({phase,round,scores:{...scores},time:elapsed,stats:{...stats},bots:bots.map(b=>({team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,reload:b.reload,mode:b.mode,intent:b.intent,reason:b.reason,strategy:botStyle(b),tactic:b.tactic,tacticScore:b.tacticScore,tacticGoal:b.tacticGoal,recentManeuvers:b.maneuverHistory.length,riskWeight:botRisk(b),pathRisk:b.pathRisk,coverPoint:b.coverPoint,planCount:b.planCount,planning:!!b.planner,pathLength:b.path.length,way:b.way,dodge:b.dodgeTimer>0,knowledge:botKnowledge(b),memory:{sightings:b.brain.sightings,losses:b.brain.losses,hits:b.brain.hits,dangerCount:b.brain.danger.length,encounters:b.brain.encounters.length},patrolIndex:b.scanIndex})),replay:{active:replayActive,frames:timeline.length,index:replayIndex,events:events.length,winner:finalResult},bullets:bullets.length,walls:walls.length,manualWalls:extraWalls.length}),
  advance:(seconds)=>{for(let s=0;s<seconds*60&&phase==='running';s++)loopStep(1/60);updateHUD();draw();},
  validate:()=>({fightersFree:bots.every(b=>freePoint(b,R*.95)),waypointsClear:bots.every(b=>{let p=copy(b);for(let k=b.way;k<b.path.length;k++){const q=b.path[k];if(blocked(p,q,R*.9))return false;p=q;}return true;})}),
  tools:()=>[...Object.keys(core),...Object.keys(mem)],

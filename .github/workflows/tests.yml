@@ -18,10 +18,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run core, memory and guided RRT tests
-        run: node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs
-      - name: Check memory-guided RRT entrypoint
+      - name: Run tactical, memory, guided and active-combat unit tests
+        run: |
+          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs
+      - name: Check browser entrypoint and tactical module
         run: |
           test -s index.html
-          grep -q 'Memory-Guided RRT Arena' index.html
-          grep -q 'RRTArenaGuided' index.html
+          grep -q 'Active Tactical Positioning' index.html
+          grep -q 'RRTArenaTactics' index.html
+          grep -q 'Memory-Guided RRT' index.html
