@@ -119,10 +119,11 @@ async function main(){
    const on=md.getState();
    $('multiRangedDefense').checked=false;$('multiRangedDefense').dispatchEvent(new Event('change',{bubbles:true}));$('start').click();d.advance(15);
    const off=md.getState();
-   return {hasSwitch:!!$('multiRangedDefense'),onEnabled:on.rangedDefense,moves:on.coverMoves,intents:[...intents],valid,offEnabled:off.rangedDefense,offMoves:off.coverMoves,offIntent:off.blueIntent};
+   return {hasSwitch:!!$('multiRangedDefense'),onEnabled:on.rangedDefense,moves:on.coverMoves,mobile:on.mobile,bridge:on.bridgeSteps,jinks:on.jinks,hasMobileSwitch:!!$('multiMobile'),intents:[...intents],valid,offEnabled:off.rangedDefense,offMoves:off.coverMoves,offIntent:off.blueIntent};
   });
   check(rdef.hasSwitch&&rdef.onEnabled&&rdef.moves>0,'ranged defense: enabled by default and relocates under fire ('+rdef.moves+' moves, intents '+rdef.intents.join(',')+')');
   check(rdef.valid,'ranged defense: fighters outside walls, collision-free routes');
+  check(rdef.hasMobileSwitch&&rdef.mobile&&rdef.bridge+rdef.jinks>0,'keep moving: enabled by default, BLUE moved while planning/exposed ('+rdef.bridge+' bridge steps, '+rdef.jinks+' jinks)');
   check(!rdef.offEnabled&&rdef.offMoves===0&&!['ranged_cover','ranged_hold'].includes(rdef.offIntent),'ranged defense off: V0.6.7 policy restored');
   check(errors.length===0,'no page errors '+errors.join(' | '));
   await ctx.close();

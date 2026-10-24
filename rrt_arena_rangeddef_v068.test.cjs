@@ -50,3 +50,27 @@ test('decision acts on a fresh threat',()=>{const d=rd.decide({enabled:true,asse
 test('decision keeps an in-flight safe cover route',()=>assert.equal(rd.decide({enabled:true,assessment:{act:true,count:2},now:5,lastAt:4.5,moving:true,routeExposure:0}).act,false));
 test('decision re-routes when the cover route becomes exposed',()=>assert.equal(rd.decide({enabled:true,assessment:{act:true,count:2},now:5,lastAt:4,moving:true,routeExposure:1.2}).act,true));
 test('decision cooldown prevents frame-by-frame replanning',()=>assert.equal(rd.decide({enabled:true,assessment:{act:true,count:2},now:5,lastAt:4.8}).act,false));
+
+// --- Keep moving: bridge steps while RRT plans, lateral jinks while exposed ---
+const open=(extra={})=>({speed:150,range:200,canSee:()=>true,free:()=>true,blocked:()=>false,...extra});
+test('bridge step moves straight toward a goal whose segment is clear',()=>{const p=rd.bridgeStep({x:100,y:100},{x:200,y:100},1/60,open());assert.ok(p&&p.x>100&&Math.abs(p.y-100)<1e-9);});
+test('bridge step never exceeds normal walking speed',()=>{const a={x:100,y:100};const p=rd.bridgeStep(a,{x:400,y:100},1/60,open());assert.ok(dist(a,p)<=150/60+1e-9);});
+test('bridge step refuses a goal behind a wall',()=>assert.equal(rd.bridgeStep({x:100,y:200},{x:300,y:200},1/60,open({blocked:(a,b)=>crosses(a,b)})),null));
+test('bridge step stops at the goal instead of overshooting',()=>{const p=rd.bridgeStep({x:100,y:100},{x:101,y:100},1,open());assert.deepEqual(p,{x:101,y:100});});
+test('jink moves sideways relative to the exposing shooter',()=>{const s=[T('a',100,0)];const r=rd.jinkStep({x:100,y:150},s,1/60,open({dir:1}));assert.ok(r);assert.ok(Math.abs(r.point.y-150)<1e-6&&Math.abs(r.point.x-100)>1);});
+test('jink keeps walking speed',()=>{const a={x:100,y:150};const r=rd.jinkStep(a,[T('a',100,0)],1/60,open({dir:1}));assert.ok(dist(a,r.point)<=150/60+1e-9);});
+test('jink flips direction when the first side is blocked',()=>{const r=rd.jinkStep({x:100,y:150},[T('a',100,0)],1/60,open({dir:1,free:p=>p.x>=100}));assert.ok(r&&r.point.x>100&&r.dir===-1);});
+test('jink never steps into more crossfire',()=>{const shooters=[T('a',100,0),T('b',300,150)];const r=rd.jinkStep({x:100,y:150},shooters,1/60,open({dir:1,canSee:(s,p)=>s.id==='a'||p.x>101}));assert.ok(!r||r.point.x<=101);});
+test('no jink when no shooter can see BLUE',()=>assert.equal(rd.jinkStep({x:300,y:200},[T('a',100,200)],1/60,open({canSee})),null));
+test('jink respects an avoid predicate (e.g. melee bots nearby)',()=>assert.equal(rd.jinkStep({x:100,y:150},[T('a',100,0)],1/60,open({dir:1,avoid:()=>true})),null));
+test('rejoin picks the furthest waypoint reachable in a straight line',()=>{const path=[{x:110,y:100},{x:150,y:100},{x:150,y:200}];assert.equal(rd.rejoinIndex({x:120,y:100},path,0,(a,b)=>!(b.y>150)),1);});
+test('rejoin keeps the current waypoint when nothing further is reachable',()=>assert.equal(rd.rejoinIndex({x:0,y:0},[{x:1,y:1},{x:2,y:2}],0,()=>false),0));
+
+// --- Exploration memory: what BLUE has actually looked at ---
+const cov=()=>rd.createCoverage(400,400,10);
+test('coverage starts with every cell unseen',()=>{const c=cov();assert.equal(c.cols*c.rows,c.seen.length);assert.ok(c.seen.every(v=>v===-Infinity));});
+test('cells in range and in sight are marked seen',()=>{const c=cov();rd.markVisible(c,{x:50,y:50},5,{range:120,canSee:()=>true});const i=rd.cellIndex(c,{x:70,y:60});assert.equal(c.seen[i],5);assert.equal(c.seen[rd.cellIndex(c,{x:390,y:390})],-Infinity);});
+test('cells behind a wall stay unseen',()=>{const c=cov();rd.markVisible(c,{x:100,y:200},5,{range:400,canSee});assert.equal(c.seen[rd.cellIndex(c,{x:300,y:200})],-Infinity);assert.equal(c.seen[rd.cellIndex(c,{x:100,y:260})],5);});
+test('explore goal heads for the area seen least recently',()=>{const c=cov();for(let i=0;i<c.seen.length;i++)c.seen[i]=10;c.seen[rd.cellIndex(c,{x:350,y:350})]=-Infinity;const g=rd.exploreGoal(c,{x:50,y:50},12,{free:()=>true});assert.ok(g&&dist(g,{x:350,y:350})<30,JSON.stringify(g));});
+test('explore goal skips blocked cells',()=>{const c=cov();const g=rd.exploreGoal(c,{x:50,y:50},12,{free:p=>p.x<200});assert.ok(g&&g.x<200);});
+test('explore goal returns null when nothing is free',()=>assert.equal(rd.exploreGoal(cov(),{x:50,y:50},1,{free:()=>false}),null));

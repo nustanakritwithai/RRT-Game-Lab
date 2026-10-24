@@ -95,5 +95,61 @@
   if(now-lastAt<cooldown)return {act:false,reason:'cooldown',label:'ถูกเล็ง'};
   return {act:true,reason:'exposed',label:'ถูกเล็งจาก '+(assessment.count||1)+' ตัว → หาที่กำบัง'};
  }
- return Object.freeze({SHOOTER_KINDS,perceiveShooters,exposure,routeExposure,chooseFirePosition,assess,decide});
+ /** While RRT is still planning, take one normal-speed step straight toward its goal,
+   * only when that whole segment is collision-free. Returns null otherwise. */
+ function bridgeStep(self,goal,dt,{speed=150,blocked=()=>true}={}){
+  if(!finite(self)||!finite(goal)||!(dt>0)||!(speed>0))return null;
+  const d=dist(self,goal);if(d<1e-6||blocked(self,goal))return null;
+  const step=Math.min(d,speed*dt);
+  return {x:self.x+(goal.x-self.x)*step/d,y:self.y+(goal.y-self.y)*step/d};
+ }
+ /** Lateral dodge relative to the nearest shooter that can currently see BLUE. Shots are aimed
+   * at BLUE's present position, so moving across the line of fire makes them miss. One normal
+   * speed step, collision-checked, never into more exposure, never into an avoided spot. */
+ function jinkStep(self,shooters,dt,{speed=150,dir=1,range=200,canSee=()=>true,free=()=>true,blocked=()=>false,avoid=()=>false}={}){
+  if(!finite(self)||!(dt>0)||!(speed>0))return null;
+  const ex=exposure(self,shooters,{range,canSee});if(!ex.count)return null;
+  let near=null;for(const s of shooters)if(ex.ids.includes(s.id)&&(!near||dist(self,s)<dist(self,near)))near=s;
+  const d=Math.max(1e-9,dist(self,near)),px=-(self.y-near.y)/d,py=(self.x-near.x)/d,step=speed*dt;
+  for(const sign of [dir>=0?1:-1,dir>=0?-1:1]){
+   const p={x:self.x+px*step*sign,y:self.y+py*step*sign};
+   if(!free(p)||blocked(self,p)||avoid(p))continue;
+   if(exposure(p,shooters,{range,canSee}).count>ex.count)continue;
+   return {point:p,dir:sign,from:near.id};
+  }
+  return null;
+ }
+ /** After BLUE moved during planning, resume the new route at the furthest waypoint that is
+   * reachable in a straight collision-free line (fallback: the current waypoint). */
+ function rejoinIndex(self,path,from=0,clear=()=>false){
+  if(!Array.isArray(path))return from;
+  for(let k=path.length-1;k>from;k--)if(finite(path[k])&&clear(self,path[k]))return k;
+  return from;
+ }
+ /** Exploration memory: a coarse grid of when BLUE last had each cell centre in sight.
+   * Built only from BLUE's own position, range and map line of sight — no enemy data. */
+ function createCoverage(width,height,cells=10){
+  const cols=Math.max(2,cells|0),rows=Math.max(2,Math.round(cols*height/Math.max(1,width)));
+  return {width,height,cols,rows,seen:new Array(cols*rows).fill(-Infinity)};
+ }
+ function cellIndex(c,p){const i=clamp(Math.floor(p.x/c.width*c.cols),0,c.cols-1),j=clamp(Math.floor(p.y/c.height*c.rows),0,c.rows-1);return j*c.cols+i;}
+ function cellCentre(c,k){return {x:(k%c.cols+.5)*c.width/c.cols,y:(Math.floor(k/c.cols)+.5)*c.height/c.rows};}
+ function markVisible(c,self,now,{range=300,canSee=()=>true}={}){
+  if(!c||!finite(self))return c;
+  for(let k=0;k<c.seen.length;k++){const q=cellCentre(c,k);if(dist(self,q)<=range&&canSee(self,q))c.seen[k]=now;}
+  return c;
+ }
+ /** Search target: the free cell centre unseen for longest, discounted by travel distance. */
+ function exploreGoal(c,self,now,{free=()=>true,stalenessCap=40,distanceWeight=.012}={}){
+  if(!c||!finite(self))return null;
+  let best=null,score=-Infinity;
+  for(let k=0;k<c.seen.length;k++){
+   const q=cellCentre(c,k);if(!free(q))continue;
+   const s=Math.min(stalenessCap,now-c.seen[k])-distanceWeight*dist(self,q);
+   if(s>score){score=s;best=q;}
+  }
+  return best;
+ }
+ return Object.freeze({SHOOTER_KINDS,perceiveShooters,exposure,routeExposure,chooseFirePosition,assess,decide,bridgeStep,jinkStep,rejoinIndex,
+  createCoverage,cellIndex,markVisible,exploreGoal});
 });
