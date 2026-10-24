@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071225">
+<title>RRT ARENA 05 — Tactical AI Battle Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--panel2:#152640;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;--purple:#ac92fa}*{box-sizing:border-box}html,body{margin:0;min-height:100%;}body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42}button,input,select{font:inherit}button,select{cursor:pointer}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}main{max-width:1350px;margin:auto;padding:18px 13px 64px}header{padding:2px 3px 15px}.eyebrow{font-size:11px;font-weight:850;letter-spacing:1.8px;color:var(--cyan)}h1{margin:6px 0 7px;line-height:1.13;letter-spacing:-1.2px;font-size:clamp(29px,4.7vw,47px)}h1 span{color:var(--pink)}header p{color:var(--soft);font-size:14px;margin:0;max-width:800px}.tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11px;line-height:1.3;background:#113657;border:1px solid #315479;color:#a7e5ff;vertical-align:middle;letter-spacing:0;margin-left:6px}
+.stats{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch;margin-bottom:12px}.fighter{min-width:0;padding:12px 14px;background:linear-gradient(135deg,#102844,#0d1b30);border:1px solid #264561;border-radius:15px}.fighter.red{background:linear-gradient(225deg,#3a1b34,#151c30);border-color:#66364f}.nameRow{display:flex;justify-content:space-between;gap:10px;align-items:center}.name{font-size:15px;font-weight:850;white-space:nowrap}.name .symbol{font-size:19px;vertical-align:middle}.statnum{font-size:13px;white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}.bar{height:8px;background:#0a1423;border-radius:8px;overflow:hidden;margin:9px 0 6px;border:1px solid #253247}.fill{width:100%;height:100%;background:linear-gradient(90deg,#237cce,#50dbff);transition:width .16s}.red .fill{background:linear-gradient(90deg,#e6466b,#ff9a79)}.sublabel{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;color:var(--soft)}.sublabel strong{color:var(--ink);font-weight:650}.midstats{min-width:96px;text-align:center;display:flex;flex-direction:column;justify-content:center;background:#101b31;border:1px solid var(--line);border-radius:15px;padding:9px 13px}.midstats .round{font-size:10px;letter-spacing:1px;color:var(--soft);font-weight:850}.midstats .score{font-size:24px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}.midstats .clock{color:var(--gold);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 315px;gap:13px;align-items:start}.panel{background:linear-gradient(165deg,rgba(20,36,58,.98),rgba(10,23,42,.98));border:1px solid var(--line);border-radius:18px;box-shadow:0 13px 36px #020a152e;overflow:hidden}.panelhead{display:flex;justify-content:space-between;gap:7px;align-items:center;padding:12px 14px;font-size:13px;font-weight:800}.panelhead .muted{font-size:11px;color:var(--soft);font-weight:600}.live{display:inline-flex;align-items:center;gap:7px}.dot{height:8px;width:8px;border-radius:50%;background:#6f879d;box-shadow:0 0 0 3px #586b7e22}.dot.on{background:#72ecba;box-shadow:0 0 0 3px #72ecba2a,0 0 10px #72ecba80}.stage{width:100%;aspect-ratio:1.59;position:relative;background:#061322;overflow:hidden;border-top:1px solid #253750;border-bottom:1px solid #253750;touch-action:manipulation}canvas{display:block;width:100%;height:100%;touch-action:manipulation}.stage.editing canvas{cursor:crosshair}.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;background:linear-gradient(90deg,#051123ad,#081226ab);padding:15px}.overlay.hidden{display:none}.modal{max-width:310px;text-align:center;border:1px solid #426280;border-radius:19px;padding:21px 20px;background:#0a1933ef;box-shadow:0 16px 40px #0006,0 0 44px #24598e20}.modal .big{font-size:34px}.modal strong{display:block;font-size:23px;letter-spacing:-.4px;margin:5px 0}.modal p{margin:7px 0 0;color:#b5c8df;font-size:13px}.modal .hint{font-size:11px;color:#ffd69b;margin-top:9px}.buttons{padding:12px 14px 8px;display:flex;flex-wrap:wrap;gap:8px}.btn{border:1px solid #3b5270;background:#1a2e49;color:#edf5ff;border-radius:11px;padding:10px 13px;font-size:13px;font-weight:800;min-height:42px;transition:transform .1s,border-color .1s,background .1s}.btn:active{transform:scale(.98)}.btn.primary{background:linear-gradient(120deg,#0d8fb1,#187de4);border-color:#3dbef1;box-shadow:0 6px 20px #128fd52f}.btn:disabled{opacity:.5;cursor:not-allowed}.btn.ghost{background:#111e32}.btn.active{background:#204c66;border-color:#71dfff;color:#b8f1ff}.btn.orange.active{background:#513e23;border-color:#ffcb77;color:#ffe5b3}.toolrow{padding:0 14px 10px;display:flex;flex-wrap:wrap;gap:7px}.toolrow .btn{font-size:11.5px;min-height:36px;padding:8px 10px}.tip{padding:0 14px 12px;font-size:12px;color:var(--soft);margin:0}.notice{margin:0 14px 13px;padding:9px 12px;border:1px solid #284862;background:#102943;border-radius:10px;font-size:12px;min-height:36px;color:#c5e8fb}
+aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16px}.cardTitle{display:flex;align-items:center;justify-content:space-between;margin:0 0 13px;font-size:14px}.cardTitle small{font-size:10px;letter-spacing:1px;color:var(--soft)}.setlabel{font-size:12px;color:#c8d7e8;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.sliderLine{margin:0 0 15px}input[type=range]{width:100%;height:8px;accent-color:#56d6f2;margin:2px 0 0}select{width:100%;padding:10px 11px;border-radius:9px;background:#10233a;color:#e9f3ff;border:1px solid #36516f;font-size:12px;margin-bottom:14px}.checks{display:grid;gap:9px}.checks label{display:flex;gap:9px;align-items:center;font-size:12px;color:#c4d3e4;cursor:pointer}.checks input{accent-color:#51d6fb;width:16px;height:16px}.botRow{display:grid;grid-template-columns:16px 1fr auto;align-items:center;gap:8px;font-size:12px;margin:8px 0}.colorDot{height:10px;width:10px;border-radius:50%}.botRow b{font-size:12px}.botRow span:last-child{color:var(--soft);font-size:11px}.divider{height:1px;background:#293d55;margin:12px 0}.metricRow{display:flex;justify-content:space-between;color:var(--soft);font-size:12px;padding:5px 0}.metricRow strong{color:var(--ink);font-variant-numeric:tabular-nums}.battlelog{font-size:11px;color:#c6d6e7;display:flex;flex-direction:column;gap:8px;max-height:160px;overflow:auto}.battlelog div{padding:7px 9px;background:#11263d;border-radius:8px;border-left:2px solid #527c9e}.legend{font-size:11px;color:var(--soft);line-height:1.7}.swatch{display:inline-block;width:19px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}.learn{margin-top:15px;background:#0c2335;padding:12px 13px;border-radius:12px;border:1px solid #265473;color:#bcd6e9;font-size:12px}.learn strong{color:#a0eafa}.learn p{margin:5px 0 0}.footer{margin-top:14px;color:#8ea6c4;font-size:12px;padding:10px 2px}.footer b{color:#ccdcf0}
+@media (max-width:860px){.layout{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1fr 1fr}.panel.full{grid-column:1/-1}}@media (max-width:600px){main{padding:12px 10px 36px}header{padding-bottom:12px}header p{font-size:12px}.tag{font-size:9px;padding:3px 6px}h1{letter-spacing:-.7px}.stats{grid-template-columns:1fr 1fr;gap:7px}.fighter{padding:9px 10px}.fighter .name{font-size:12px}.name .symbol{font-size:15px}.statnum{font-size:11px}.sublabel{font-size:10px}.midstats{grid-row:2;grid-column:1/-1;flex-direction:row;gap:10px;min-height:37px;align-items:center;justify-content:center;padding:5px 8px}.midstats .score{font-size:17px}.midstats .clock{font-size:11px}.stage{aspect-ratio:1.02}.panelhead{padding:10px 12px}.buttons{padding:10px 11px 7px}.buttons .btn{flex:1 1 27%;padding:9px 6px;font-size:12px}.toolrow{padding:0 11px 8px}.toolrow .btn{flex:1 1 44%}.tip{padding:0 11px 10px;font-size:11px}.notice{margin:0 11px 11px}aside{grid-template-columns:1fr}.panel.full{grid-column:auto}.modal{padding:17px 16px}.modal strong{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.fill,.btn{transition:none}}
+
+.subnote{color:#8199b6;font-size:10px;margin-top:4px}
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:3px}
+.strategy-grid .setlabel{display:block;font-weight:700}
+.strategy-grid select{margin:5px 0 13px;font-size:12px}
+.tacticBox{border-radius:12px;padding:10px 11px;margin-bottom:9px;border:1px solid #2a5d7d;background:linear-gradient(140deg,#1439519a,#0a1e32)}
+.tacticBox.redbox{border-color:#683950;background:linear-gradient(140deg,#3d24399a,#181e31)}
+.tacticHead{display:flex;gap:6px;justify-content:space-between;align-items:center;font-size:12px}
+.tacticHead span{font-weight:800;color:#9ce7fe;text-align:right;font-size:11px}
+.redbox .tacticHead span{color:#ffc0d0}
+.tacticBox p{margin:7px 0 8px;font-size:11px;color:#c2d5e8;line-height:1.5;min-height:33px}
+.tinyStats{display:flex;gap:8px;justify-content:space-between;color:#9db6ce;font-size:10.5px}
+@media(max-width:390px){.strategy-grid{gap:6px}.strategy-grid select{padding:8px 5px;font-size:11px}}
+</style>
+</head>
+<body><main>
+<header><div class="eyebrow">INTERACTIVE PATHFINDING · LEVEL 05 · TACTICAL AI vs AI</div>
+<h1>RRT ARENA <span>TACTICAL LAB</span> <span class="tag">เล่นออฟไลน์ได้</span></h1>
+<p>บอต 2 ตัวประลองด้วยแผนยุทธวิธี: หาที่กำบัง รีโหลด อ้อมโจมตี และเลือกเส้นทาง RRT ตามระดับความเสี่ยง · ใช้กฎ JavaScript ไม่ต้องใช้ AI API</p></header>
+<section class="stats" aria-label="พลังชีวิตผู้ต่อสู้">
+<article class="fighter"><div class="nameRow"><div class="name"><span class="symbol">🔷</span> BLUE · สายวางแผน</div><div class="statnum" id="blueHp">120/120</div></div><div class="bar"><div class="fill" id="blueBar"></div></div><div class="sublabel"><span id="blueMode">พร้อมรบ</span><span id="blueAmmo">กระสุน 6/6</span></div></article>
+<div class="midstats"><span class="round" id="roundNo">ROUND 01</span><span class="score" id="scores">0 : 0</span><span class="clock" id="clock">00:00</span></div>
+<article class="fighter red"><div class="nameRow"><div class="name"><span class="symbol">🔺</span> RED · สายบุก</div><div class="statnum" id="redHp">120/120</div></div><div class="bar"><div class="fill" id="redBar"></div></div><div class="sublabel"><span id="redMode">พร้อมรบ</span><span id="redAmmo">กระสุน 6/6</span></div></article>
+</section>
+<section class="layout"><div class="panel arena">
+<div class="panelhead"><span>◈ Tactical AI · Risk-aware RRT</span><span class="live"><i class="dot" id="liveDot"></i><span class="muted" id="liveText">ยังไม่เริ่ม</span></span></div>
+<div class="stage" id="stage"><canvas id="arena" role="img" aria-label="เกม RRT สองบอตต่อสู้กันบนสนามที่มีกำแพง"></canvas>
+<div class="overlay" id="overlay"><div class="modal"><div class="big" id="overlayIcon">⚔️</div><strong id="overlayTitle">พร้อมให้บอตดวลกัน!</strong><p id="overlayText">กด “เริ่มดวล” แล้วชมทั้งสองตัวค้นหาทางอ้อมกำแพง ยิง และหลบกระสุน</p><div class="hint" id="overlayHint">🔵 สีน้ำเงิน · 🔴 สีแดง · ▧ กำแพง</div></div></div></div>
+<div class="buttons"><button id="start" class="btn primary">▶ เริ่มดวล</button><button id="pause" class="btn" disabled>⏸ หยุด</button><button id="reset" class="btn ghost">↺ รีเซ็ตทั้งหมด</button></div>
+<div class="toolrow" role="group" aria-label="เครื่องมือแผนที่"><button id="wallTool" class="btn ghost orange">▤ แตะวางกำแพง</button><button id="orderTool" class="btn ghost">☞ สั่งตัวฟ้าเดิน</button><button id="clearWalls" class="btn ghost">✕ ลบกำแพงที่เพิ่ม</button></div>
+<p class="tip" id="touchHint">ลองวางกำแพงระหว่างดวล เพื่อดูบอตคำนวณเส้นทางใหม่อัตโนมัติ หรือแตะแผนที่ในโหมดสั่งตัวฟ้าเดิน</p>
+<div class="notice" role="status" aria-live="polite" id="notice">พร้อมทดลอง — เลือกแผนที่ แล้วกดเริ่มดวล</div>
+</div>
+<aside>
+<div class="panel"><div class="sidepad"><h2 class="cardTitle">⚙️ ตั้งค่ากลยุทธ์ + RRT <small>ปรับได้ระหว่างเล่น</small></h2>
+<label class="setlabel" for="mapSelect">รูปแบบสนาม</label><select id="mapSelect"><option value="ruins">🏛️ ซากเมือง · ทางอ้อมหลายทาง</option><option value="lanes">🧱 ถนนและแนวกำแพง</option><option value="open">🌿 ลานโล่ง · สู้กันไว</option></select>
+<div class="sliderLine"><label class="setlabel" for="bias">Goal Bias <b id="biasValue">15%</b></label><input id="bias" type="range" min="0" max="45" value="15" step="5"></div>
+<div class="sliderLine"><label class="setlabel" for="risk">หลีกเลี่ยงเส้นทางเสี่ยง <b id="riskValue">60%</b></label><input id="risk" type="range" min="0" max="100" value="60" step="10"><div class="subnote">0 = เน้นสั้นที่สุด · 100 = ยอมอ้อมเพื่อกำบัง</div></div>
+<div class="strategy-grid"><label class="setlabel" for="blueStyle">🔷 BLUE<select id="blueStyle" aria-label="กลยุทธ์ BLUE"><option value="cautious" selected>ระมัดระวัง</option><option value="balanced">สมดุล</option><option value="aggressive">บุกหนัก</option></select></label><label class="setlabel" for="redStyle">🔺 RED<select id="redStyle" aria-label="กลยุทธ์ RED"><option value="cautious">ระมัดระวัง</option><option value="balanced">สมดุล</option><option value="aggressive" selected>บุกหนัก</option></select></label></div>
+<div class="sliderLine"><label class="setlabel" for="speed">ความเร็วเกม <b id="speedValue">1.0×</b></label><input id="speed" type="range" min="0.5" max="2" value="1" step="0.25"></div>
+<div class="checks"><label><input id="showTree" type="checkbox" checked> แสดงกิ่ง RRT ที่สำรวจ</label><label><input id="showPath" type="checkbox" checked> แสดงเส้นทางที่วางแผน</label><label><input id="smooth" type="checkbox" checked> ปรับเส้นทางให้สั้น (Smoothing)</label><label><input id="autoNext" type="checkbox"> เริ่มรอบใหม่อัตโนมัติเมื่อจบ</label><label><input id="showThreat" type="checkbox" checked> แสดงจุดกำบังและแนวเสี่ยง</label></div>
+</div></div>
+<div class="panel"><div class="sidepad"><h2 class="cardTitle">🧠 สิ่งที่บอตกำลังคิด</h2>
+<div class="tacticBox bluebox"><div class="tacticHead"><b>🔷 BLUE</b><span id="blueThinking">รอเริ่ม</span></div><p id="blueReason">รอประเมินสถานการณ์</p><div class="tinyStats"><span id="blueRisk">เสี่ยง --</span><span id="bluePlans">แผน 0</span></div></div>
+<div class="tacticBox redbox"><div class="tacticHead"><b>🔺 RED</b><span id="redThinking">รอเริ่ม</span></div><p id="redReason">รอประเมินสถานการณ์</p><div class="tinyStats"><span id="redRisk">เสี่ยง --</span><span id="redPlans">แผน 0</span></div></div>
+<div class="divider"></div><div class="metricRow"><span>รวมจุด RRT ที่สร้าง</span><strong id="nodes">0</strong></div><div class="metricRow"><span>คำนวณเส้นทาง</span><strong id="plans">0 ครั้ง</strong></div><div class="metricRow"><span>ลองแล้วชนกำแพง</span><strong id="rejects">0 ครั้ง</strong></div><div class="metricRow"><span>ยิงโดนเป้าหมาย</span><strong id="hits">0 นัด</strong></div><div class="metricRow"><span>สั่งหาที่กำบัง</span><strong id="coverMoves">0 ครั้ง</strong></div><div class="metricRow"><span>สั่งอ้อมโจมตี</span><strong id="flanks">0 ครั้ง</strong></div><div class="metricRow"><span>คำนวณเส้นทางใหม่</span><strong id="replans">0 ครั้ง</strong></div>
+<div class="divider"></div><div class="legend"><span class="swatch" style="background:#4dcfff"></span>กิ่งต้นไม้ของ BLUE　 <span class="swatch" style="background:#ff638d"></span>กิ่งของ RED<br><span class="swatch" style="background:#86ffc5"></span>เส้นเดิน BLUE　<span class="swatch" style="background:#ffd098"></span>เส้นเดิน RED</div>
+</div></div>
+<div class="panel full"><div class="sidepad"><h2 class="cardTitle">📡 บันทึกการต่อสู้</h2><div class="battlelog" id="battlelog" aria-label="ลำดับเหตุการณ์การต่อสู้"><div>กดเริ่มดวลเพื่อดูการทำงานของบอต</div></div><div class="learn"><strong>ต่างจาก LLM อย่างไร?</strong><p>ตัวอย่างนี้ใช้ <b>กฎยุทธวิธี + Risk-aware RRT</b> ไม่มีโมเดลภาษาและไม่ใช้ API Key. คะแนนเสี่ยงอิงแนวการมองเห็นศัตรูแบบง่าย ไม่ใช่การคาดการณ์กระสุนจริงทุกมิติ การทำให้เป็น LLM Agent จะเป็นขั้นต่อไป</p></div></div></div>
+</aside></section>
+<div class="footer"><b>ทดลอง:</b> เริ่มดวล → สลับกลยุทธ์ BLUE/RED → ปรับความเสี่ยง → ดูจุดกำบัง → วางกำแพงขวางเพื่อบังคับวางแผนใหม่ • ทุกอย่างทำงานในเบราว์เซอร์</div>
+</main>
+<script id="arenaCore">
+/* RRT ARENA: pure tactical decisions and risk-aware route scoring.
+ * No network, DOM, timers, or external dependencies. Shared with Node tests.
+ */
+(function(root, factory) {
+  'use strict';
+  const api = factory();
+  root.RRTArenaCore = api;
+  if (typeof module === 'object' && module.exports) module.exports = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function() {
+  'use strict';
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const dist = (a, b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+  /** How dangerous is a line segment according to a foe's position & visibility? [0..1]. */
+  function edgeExposure(a, b, foe, canSee, scale) {
+    if (!foe || typeof canSee !== 'function') return 0;
+    let sum = 0;
+    for (const t of [.10, .30, .50, .70, .90]) {
+      const p = {x: a.x + (b.x-a.x)*t, y: a.y + (b.y-a.y)*t};
+      if (canSee(p, foe)) {
+        const rangeFactor = clamp((scale*1.1 - dist(p,foe))/(scale*.9), 0, 1);
+        sum += .78 + rangeFactor*.22;
+      }
+    }
+    return clamp(sum/5, 0, 1);
+  }
+
+  /** Cost remains Euclidean when riskWeight=0; safer routes become competitive as risk grows. */
+  function edgeCost(a, b, foe, canSee, riskWeight, scale) {
+    const length = dist(a,b);
+    if (riskWeight<=0 || !foe) return length;
+    return length * (1 + 3.2 * clamp(riskWeight,0,100)/100 * edgeExposure(a,b,foe,canSee,scale));
+  }
+
+  function pathCost(points, foe, canSee, riskWeight, scale) {
+    let sum=0;
+    for (let i=1;i<points.length;i++) sum += edgeCost(points[i-1],points[i],foe,canSee,riskWeight,scale);
+    return sum;
+  }
+
+  /** Do not turn a sheltered detour into a risky straight-line shortcut just because it is shorter. */
+  function shouldShortcut(a,mid,b,foe,canSee,riskWeight,scale) {
+    const direct=edgeCost(a,b,foe,canSee,riskWeight,scale);
+    const detour=edgeCost(a,mid,foe,canSee,riskWeight,scale)+edgeCost(mid,b,foe,canSee,riskWeight,scale);
+    return direct<=detour*1.015;
+  }
+
+  /** Find an open position behind wall faces or corners that blocks enemy line of sight. */
+  function findCover(bot,foe,walls,free,canSee,bounds,margin,scale) {
+    if (!foe || !walls || !walls.length) return null;
+    let best=null,bestScore=Infinity;
+    const outer=margin+2;
+    for (const w of walls) {
+      const x0=w.x-outer, x1=w.x+w.w+outer;
+      const y0=w.y-outer, y1=w.y+w.h+outer;
+      const candidates=[];
+      for (const t of [.12,.5,.88]) {
+        candidates.push({x:x0,y:w.y+w.h*t},{x:x1,y:w.y+w.h*t});
+        candidates.push({x:w.x+w.w*t,y:y0},{x:w.x+w.w*t,y:y1});
+      }
+      for (const x of [x0,x1]) for(const y of [y0,y1]) candidates.push({x,y});
+      for (const p of candidates) {
+        if (p.x<margin+2||p.x>bounds.w-margin-2||p.y<margin+2||p.y>bounds.h-margin-2)continue;
+        if (!free(p)) continue;
+        if (canSee(p,foe)) continue;
+        const travel=dist(bot,p), foeD=dist(p,foe);
+        if (foeD<scale*.10) continue;
+        // Prefer near, valid cover; avoid standing too close to enemies.
+        const score=travel + Math.max(0,scale*.26-foeD)*1.4 +
+          (foeD>scale*.90?(foeD-scale*.90)*.12:0);
+        if (score<bestScore){bestScore=score;best={x:p.x,y:p.y};}
+      }
+    }
+    return best;
+  }
+
+  /** Intent does not move the character. It selects which existing game tool should be used. */
+  function decideIntent(input) {
+    const {hp,maxHp,ammo,reload,foeVisible,distance,range} = input;
+    const strategy=['aggressive','balanced','cautious'].includes(input.strategy)?input.strategy:'balanced';
+    const ratio=maxHp>0?hp/maxHp:1;
+    const retreatAt={aggressive:.20,balanced:.32,cautious:.46}[strategy];
+    if (ratio<retreatAt && (foeVisible || distance<range*.52))
+      return {kind:'retreat',reason:'พลังชีวิตต่ำและยังเสี่ยงถูกยิง → ถอยหาที่กำบัง'};
+    if (reload>0 || ammo===0 || (ammo<=1 && strategy!=='aggressive'))
+      return {kind:'cover',reason:'กระสุนใกล้หมด/กำลังรีโหลด → รักษาที่กำบัง'};
+    if (!foeVisible)
+      return {kind:'flank',reason:'มองไม่เห็นคู่ต่อสู้ → อ้อมหามุมยิง'};
+    if (distance<range*.91)
+      return {kind:'engage',reason:'มองเห็นศัตรูในระยะ → เลื่อนตำแหน่งแล้วยิง'};
+    return {kind:'advance',reason:'อยู่นอกระยะยิง → เดินเข้าหาเป้าหมาย'};
+  }
+
+  /** Avoid arbitrarily awarding a win at the match time limit on tied HP. */
+  function resolveWinner(blueHp,redHp,tolerance=.5) {
+    if (Math.abs(blueHp-redHp)<=tolerance) return 'draw';
+    return blueHp>redHp?'blue':'red';
+  }
+
+  return Object.freeze({edgeExposure,edgeCost,pathCost,shouldShortcut,findCover,decideIntent,resolveWinner});
+});
+
+</script>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore;
+const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog')};
+let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0},frameCount=0;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
+const colors={blue:'#4dcfff',red:'#ff638d'};
+const layouts={
+ ruins:[[.23,.12,.10,.27],[.47,.05,.11,.23],[.64,.33,.10,.22],[.33,.48,.18,.10],[.12,.60,.15,.105],[.55,.71,.17,.12],[.78,.69,.09,.12]],
+ lanes:[[.22,.15,.095,.33],[.22,.62,.095,.19],[.43,.05,.12,.24],[.43,.40,.12,.22],[.43,.76,.12,.19],[.70,.19,.10,.29],[.70,.62,.10,.24]],
+ open:[[.30,.31,.11,.16],[.56,.47,.13,.13],[.48,.13,.075,.11],[.19,.69,.09,.095],[.78,.73,.075,.09]]
+};
+function resize(){let r=stage.getBoundingClientRect();const oldW=W,oldH=H;W=Math.max(240,r.width);H=Math.max(230,r.height);S=Math.min(W,H);R=clamp(S*.027,7.5,17);STEP=clamp(S*.068,18,40);const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(!bots.length)return;
+  // A change of screen orientation rebuilds the world safely, preserving the current match score.
+  if(Math.abs(oldW-W)>3||Math.abs(oldH-H)>3){setupRound();if(phase==='running'){showNotice('หน้าจอเปลี่ยนขนาด — เริ่มตำแหน่งในสนามใหม่เพื่อให้คำนวณตรงกัน');}else{phase='ready';showOverlay('⚔️','พร้อมให้บอตดวลกัน!','กดเริ่มดวลเพื่อทดลอง RRT และการต่อสู้');}}
+}
+function buildWalls(){walls=(layouts[ui.map.value]||layouts.ruins).map(([x,y,w,h],i)=>({x:x*W,y:y*H,w:w*W,h:h*H,id:'b'+i,manual:false}));for(const w of extraWalls)walls.push(w);}
+function spawnBot(team,x,y){return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0};}
+function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0};frameCount=0;updateHUD();}
+function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
+function hideOverlay(){ui.overlay.classList.add('hidden');}
+function showNotice(text){ui.notice.textContent=text;}
+function log(message,team){const div=document.createElement('div');div.textContent=`${formatTime(elapsed)}  ${message}`;div.style.borderLeftColor=team?colors[team]:'#527c9e';ui.log.prepend(div);while(ui.log.children.length>7)ui.log.lastElementChild.remove();}
+function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
+function updateControls(){ui.start.textContent=phase==='ended'?'▶ รอบต่อไป':phase==='paused'?'▶ เล่นต่อ':phase==='running'?'▶ กำลังดวล':'▶ เริ่มดวล';ui.start.disabled=phase==='running';ui.pause.disabled=phase==='ready'||phase==='ended';ui.pause.textContent=phase==='paused'?'▶ เล่นต่อ':'⏸ หยุด';ui.dot.classList.toggle('on',phase==='running');ui.live.textContent=({ready:'ยังไม่เริ่ม',running:'กำลังต่อสู้',paused:'หยุดชั่วคราว',ended:'จบรอบแล้ว'})[phase];ui.wall.classList.toggle('active',tool==='wall');ui.order.classList.toggle('active',tool==='order');stage.classList.toggle('editing',tool!=='none');}
+function startGame(){if(phase==='ended'){round++;setupRound();phase='running';log('เริ่มรอบที่ '+round);}
+ else if(phase==='ready'){phase='running';log('บอตทั้งสองออกปฏิบัติการ เริ่มค้นหาเส้นทาง RRT');}
+ else if(phase==='paused'){phase='running';log('เล่นต่อ');}hideOverlay();updateControls();}
+function pauseGame(){if(phase==='running'){phase='paused';showOverlay('⏸️','หยุดชั่วคราว','กด “เล่นต่อ” เพื่อให้บอตกลับมาค้นหาเส้นทางและต่อสู้');}else if(phase==='paused'){phase='running';hideOverlay();}updateControls();}
+function resetGame(){round=1;scores={blue:0,red:0};phase='ready';setupRound();ui.log.innerHTML='';log('รีเซ็ตเกมและคะแนนทั้งหมด');showOverlay('⚔️','พร้อมให้บอตดวลกัน!','กด “เริ่มดวล” แล้วชมการตัดสินใจและเส้นทาง RRT ของทั้งสองตัว');showNotice('รีเซ็ตเรียบร้อย — กดเริ่มดวล');updateControls();}
+function insideRect(p,r){return p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;}
+function freePoint(p,margin=R){if(p.x<margin+2||p.x>W-margin-2||p.y<margin+2||p.y>H-margin-2)return false;for(const w of walls){if(insideRect(p,{x:w.x-margin,y:w.y-margin,w:w.w+2*margin,h:w.h+2*margin}))return false;}return true;}
+// Segment-AABB sweep. The rectangle is expanded by the character radius, so we check the WHOLE move, not only q_new.
+function intersectsSegmentRect(a,b,r){let t0=0,t1=1,dx=b.x-a.x,dy=b.y-a.y;const vals=[[-dx,a.x-r.x],[dx,r.x+r.w-a.x],[-dy,a.y-r.y],[dy,r.y+r.h-a.y]];for(const [p,q] of vals){if(Math.abs(p)<1e-9){if(q<0)return false;}else{const t=q/p;if(p<0){if(t>t1)return false;if(t>t0)t0=t;}else{if(t<t0)return false;if(t<t1)t1=t;}}}return true;}
+function blocked(a,b,margin=R){if(!freePoint(a,margin)||!freePoint(b,margin))return true;for(const w of walls){if(intersectsSegmentRect(a,b,{x:w.x-margin,y:w.y-margin,w:w.w+2*margin,h:w.h+2*margin}))return true;}return false;}
+function clearSight(a,b){return !blocked(a,b,2.0);}
+function between(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy;if(den<1e-12)return dist(p,a);const u=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/den,0,1);return Math.hypot(p.x-a.x-u*dx,p.y-a.y-u*dy);}
+function opponent(bot){return bots[bot.team==='blue'?1:0];}
+
+function botStyle(bot){return ui[bot.team+'Style'].value;}
+function botRisk(bot){return clamp(Number(ui.risk.value)+(botStyle(bot)==='cautious'?22:botStyle(bot)==='aggressive'?-28:0),0,100);}
+function riskSight(a,b){return clearSight(a,b);}
+function fallbackPoint(bot,away){const foe=opponent(bot);let best=null,score=Infinity;
+ for(let i=0;i<28;i++){const angle=rand(-Math.PI,Math.PI),rad=rand(S*.10,S*.36),p={x:clamp(bot.x+Math.cos(angle)*rad,R+4,W-R-4),y:clamp(bot.y+Math.sin(angle)*rad,R+4,H-R-4)};
+  if(!freePoint(p,R+2))continue;
+  const dd=dist(bot,p),ed=dist(p,foe),v=clearSight(p,foe);
+  const s=dd*.65+(away? (v?S*.32:0)+Math.max(0,S*.23-ed)*1.2 : (v?0:S*.14)+Math.abs(ed-bot.preferred)*.6);
+  if(s<score){score=s;best=p;}
+ }
+ return best||copy(bot);
+}
+function setIntent(bot,intent){if(bot.intent===intent.kind){bot.reason=intent.reason;return false;}
+ bot.intent=intent.kind;bot.reason=intent.reason;bot.thinkingCount++;
+ if(intent.kind==='flank')stats.flanks++;
+ if(['retreat','cover'].includes(intent.kind))stats.covers++;
+ const names={retreat:'ถอย',cover:'หาที่กำบัง',flank:'อ้อมโจมตี',engage:'โจมตี',advance:'เข้าประชิด',order:'คำสั่งผู้เล่น'};
+ if(bot.thinkingCount<3||['retreat','cover','order'].includes(intent.kind))log((bot.team==='blue'?'BLUE':'RED')+' → '+(names[intent.kind]||intent.kind),bot.team);
+ return true;
+}
+function currentIntent(bot){const foe=opponent(bot);
+ if(bot.manual&&bot.team==='blue')return {kind:'order',reason:'ได้รับคำสั่งผู้เล่น → เดินไปจุดที่กำหนด'};
+ return core.decideIntent({hp:bot.hp,maxHp:bot.maxHp,ammo:bot.ammo,reload:bot.reload,foeVisible:clearSight(bot,foe),distance:dist(bot,foe),range:bot.range,strategy:botStyle(bot)});
+}
+
+function chooseGoal(bot){
+ const foe=opponent(bot),d=dist(bot,foe),kind=bot.intent;
+ if(bot.manual&&bot.team==='blue')return copy(bot.manual);
+ bot.coverPoint=null;
+ if(kind==='cover'||kind==='retreat'){
+   const cover=core.findCover(bot,foe,walls,p=>freePoint(p,R+1),clearSight,{w:W,h:H},R+3,S);
+   if(cover){bot.coverPoint=copy(cover);return cover;}
+   return fallbackPoint(bot,true);
+ }
+ const desired=bot.preferred*(botStyle(bot)==='aggressive'?.90:botStyle(bot)==='cautious'?1.18:1);
+ const bearing=Math.atan2(bot.y-foe.y,bot.x-foe.x),sight=clearSight(bot,foe),ideas=[];
+ const perp=bot.strafe*Math.PI/2,strafeDist=clamp(S*.19,35,125);
+ if(kind==='engage'&&sight){
+   const a=bearing+perp;
+   ideas.push({x:bot.x+Math.cos(a)*strafeDist,y:bot.y+Math.sin(a)*strafeDist,bonus:-S*.28});
+   ideas.push({x:bot.x-Math.cos(a)*strafeDist,y:bot.y-Math.sin(a)*strafeDist,bonus:-S*.10});
+ }
+ // Flank: consider positions around the opponent, with actual line-of-sight validation.
+ const offsets=kind==='flank'?[-2.3,-1.7,-1.15,-.7,0,.7,1.15,1.7,2.3,Math.PI]:[-1.6,-1.05,-.55,0,.55,1.05,1.6,Math.PI];
+ for(const off of offsets)for(const m of [1,.77]){
+   const a=bearing+off,r=desired*m;
+   ideas.push({x:foe.x+Math.cos(a)*r,y:foe.y+Math.sin(a)*r,bonus:0});
+ }
+ let choice=null,score=Infinity;
+ for(const p0 of ideas){const p={x:clamp(p0.x,R+4,W-R-4),y:clamp(p0.y,R+4,H-R-4)};
+  if(!freePoint(p,R+3))continue;
+  const travel=dist(bot,p),enemyDist=dist(p,foe),visible=clearSight(p,foe);
+  let cost=travel*.52+Math.abs(enemyDist-desired)*.51+(visible?0:S*.42)+(p0.bonus||0);
+  if(kind==='flank'&&visible)cost-=S*.11;
+  if(botStyle(bot)==='cautious'&&visible)cost+=S*.11;
+  if(enemyDist<R*3)cost+=S*.30;
+  if(travel<S*.07)cost+=S*.20;
+  if(cost<score){score=cost;choice=p;}
+ }
+ return choice||fallbackPoint(bot,false);
+}
+function beginPlan(bot,target,reason='ปรับตำแหน่ง'){
+ if(!freePoint(target,R+1))return false;
+ const had=!!bot.goal||!!bot.planner||bot.path.length>0;
+ const foe=opponent(bot),risk=botRisk(bot),goal=copy(target);
+ bot.planner={goal,nodes:[{x:bot.x,y:bot.y,parent:-1,cost:0}],tries:0,rejected:0,max:1850,risk,foeSnapshot:copy(foe),firstGoalTry:-1,bestGoal:-1,bestCost:Infinity};
+ bot.goal=goal;bot.path=[];bot.way=0;bot.agePlan=0;bot.treeAge=0;bot.hold=false;
+ bot.mode=reason==='คำสั่ง'?'ตามคำสั่ง':'RRT: '+({retreat:'ถอย',cover:'เข้าที่กำบัง',flank:'อ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เข้าประชิด'}[bot.intent]||'วางแผน');
+ bot.planCooldown=0;bot.planCount++;stats.plans++;
+ if(had){stats.replans++;if(reason==='กำแพง')log((bot.team==='blue'?'BLUE':'RED')+' กำแพงเปลี่ยน → วางแผนใหม่',bot.team);}
+ return true;
+}
+function smoothRoute(points,foe,risk){
+ if(!ui.smooth.checked||points.length<3)return points;
+ const out=[points[0]];let i=0;
+ while(i<points.length-1){
+  let chosen=i+1;
+  for(let j=points.length-1;j>i+1;j--){
+   if(blocked(points[i],points[j],R+1))continue;
+   const direct=core.edgeCost(points[i],points[j],foe,riskSight,risk,S);
+   const original=core.pathCost(points.slice(i,j+1),foe,riskSight,risk,S);
+   if(direct<=original*1.015){chosen=j;break;}
+  }
+  out.push(points[chosen]);i=chosen;
+ }
+ return out;
+}
+function finishPlan(bot,idx){const plan=bot.planner;let pts=[],k=idx;
+ while(k>=0){const n=plan.nodes[k];pts.push({x:n.x,y:n.y});k=n.parent;}
+ pts.reverse();pts=smoothRoute(pts,opponent(bot),plan.risk);
+ bot.path=pts.slice(1);bot.way=0;bot.tree=plan.nodes;bot.treeAge=0;bot.planner=null;
+ bot.agePlan=0;bot.failedPlans=0;bot.thinkCooldown=rand(.65,.85);
+ bot.weightedCost=core.pathCost(pts,opponent(bot),riskSight,plan.risk,S);
+ let exposed=0,length=0;for(let i=1;i<pts.length;i++){
+   const edgeLen=dist(pts[i-1],pts[i]);length+=edgeLen;
+   exposed+=edgeLen*core.edgeExposure(pts[i-1],pts[i],opponent(bot),riskSight,S);
+ }
+ bot.pathRisk=length>0?Math.round(exposed/length*100):0;
+ bot.mode=({retreat:'ถอยเข้าที่กำบัง',cover:'มุ่งสู่ที่กำบัง',flank:'กำลังอ้อมโจมตี',engage:'เปลี่ยนมุมยิง',advance:'เคลื่อนเข้าหาศัตรู',order:'ตามคำสั่ง'}[bot.intent]||'เดินตาม RRT');
+}
+function runPlanner(bot,budget){const p=bot.planner;if(!p)return;
+ const risk=p.risk,foe=p.foeSnapshot,nearLimit=STEP*1.95,nearLimit2=nearLimit*nearLimit;
+ for(let it=0;it<budget;it++){
+  p.tries++;
+  const sample=Math.random()<Number(ui.bias.value)/100?p.goal:{x:rand(R+2,W-R-2),y:rand(R+2,H-R-2)};
+  let nearest=-1,best=Infinity;
+  for(let i=0;i<p.nodes.length;i++){const n=p.nodes[i];if(n.terminal)continue;const dd=(n.x-sample.x)**2+(n.y-sample.y)**2;if(dd<best){best=dd;nearest=i;}}
+  if(nearest<0)break;
+  const n=p.nodes[nearest],len=Math.sqrt(best);if(len<.01)continue;
+  const step=Math.min(STEP,len),q={x:n.x+(sample.x-n.x)*step/len,y:n.y+(sample.y-n.y)*step/len};
+  if(blocked(n,q,R+1)){p.rejected++;stats.rejected++;continue;}
+  let parent=nearest,cost=n.cost+core.edgeCost(n,q,foe,riskSight,risk,S);
+  // RRT-style random exploration with cost-aware local parent selection, NOT full RRT* rewiring.
+  if(risk>0){let candidates=[];
+    for(let j=0;j<p.nodes.length;j++){
+      if(j===nearest)continue;const pp=p.nodes[j];if(pp.terminal)continue;
+      const d2=(pp.x-q.x)**2+(pp.y-q.y)**2;
+      if(d2>nearLimit2)continue;
+      if(pp.cost+Math.sqrt(d2)>=cost*.995)continue;
+      candidates.push({j,d2});
+    }
+    candidates.sort((a,b)=>(p.nodes[a.j].cost+Math.sqrt(a.d2))-(p.nodes[b.j].cost+Math.sqrt(b.d2)));
+    for(const c of candidates.slice(0,10)){
+      const pp=p.nodes[c.j];
+      const candidateCost=pp.cost+core.edgeCost(pp,q,foe,riskSight,risk,S);
+      if(candidateCost<cost&&!blocked(pp,q,R+1)){cost=candidateCost;parent=c.j;}
+    }
+  }
+  p.nodes.push({...q,parent,cost});stats.nodes++;
+  const id=p.nodes.length-1;
+  if(dist(q,p.goal)<=STEP*1.45&&!blocked(q,p.goal,R+1)){
+    const terminalCost=cost+core.edgeCost(q,p.goal,foe,riskSight,risk,S);
+    if(terminalCost<p.bestCost){p.nodes.push({...p.goal,parent:id,cost:terminalCost,terminal:true});stats.nodes++;p.bestGoal=p.nodes.length-1;p.bestCost=terminalCost;}
+    if(p.firstGoalTry<0)p.firstGoalTry=p.tries;
+    if(risk<15||p.tries-p.firstGoalTry>Math.min(260,90+risk*1.6)){finishPlan(bot,p.bestGoal);return;}
+  }
+  if(p.bestGoal>=0 && p.firstGoalTry>=0 && p.tries-p.firstGoalTry>Math.min(260,90+risk*1.6)){
+    finishPlan(bot,p.bestGoal);return;
+  }
+  if(p.tries>=p.max){
+    if(p.bestGoal>=0){finishPlan(bot,p.bestGoal);return;}
+    bot.tree=p.nodes;bot.treeAge=0;bot.planner=null;bot.path=[];bot.goal=null;bot.failedPlans++;
+    bot.planCooldown=.4+Math.min(1.2,bot.failedPlans*.25);bot.mode='หาเส้นทางไม่พบ';
+    bot.reason='ไม่พบเส้นทางถึงจุดหมาย → ลองเป้าหมายใหม่';
+    if(bot.failedPlans===1||bot.failedPlans%3===0)log((bot.team==='blue'?'BLUE':'RED')+' หาเส้นทางไม่สำเร็จ ลองแผนใหม่',bot.team);
+    return;
+  }
+ }
+}
+function findThreatDodge(bot,dt){bot.dodgeCooldown=Math.max(0,bot.dodgeCooldown-dt);if(bot.dodgeCooldown>0||bot.dodgeTimer>0||bot.hp<=0)return;
+  for(const shot of bullets){if(shot.team===bot.team)continue;let rx=bot.x-shot.x,ry=bot.y-shot.y,v2=shot.vx**2+shot.vy**2;let t=(rx*shot.vx+ry*shot.vy)/v2;if(t<.07||t>.37)continue;let cx=shot.x+shot.vx*t,cy=shot.y+shot.vy*t;if(Math.hypot(cx-bot.x,cy-bot.y)>R*1.5)continue;
+    let u={x:-shot.vy/Math.sqrt(v2),y:shot.vx/Math.sqrt(v2)};const scale=S*.16;let b1={x:bot.x+u.x*scale,y:bot.y+u.y*scale};let b2={x:bot.x-u.x*scale,y:bot.y-u.y*scale};if(!freePoint(b1,R+1)&&!freePoint(b2,R+1))return;if(!freePoint(b1,R+1))u={x:-u.x,y:-u.y};
+    bot.dodgeVec=u;bot.dodgeTimer=.24;bot.dodgeCooldown=1.65;bot.mode='หลบกระสุน';burst(bot.x,bot.y,colors[bot.team],4,3);return;
+  }
+}
+function moveBot(bot,dt){if(bot.planner||!bot.path.length)return;
+  while(bot.way<bot.path.length&&dist(bot,bot.path[bot.way])<Math.max(3.5,R*.34))bot.way++;
+  if(bot.way>=bot.path.length){bot.path=[];bot.way=0;bot.goal=null;bot.thinkCooldown=.12;return;}
+  let q=bot.path[bot.way],dx=q.x-bot.x,dy=q.y-bot.y,d=Math.hypot(dx,dy),step=Math.min(d,bot.moveSpeed*S*dt);
+  let next={x:bot.x+(dx/d)*step,y:bot.y+(dy/d)*step},foe=opponent(bot);
+  if(dist(next,foe)<R*2+2){bot.mode='รักษาระยะ';bot.path=[];bot.goal=null;bot.thinkCooldown=.25;return;}
+  if(blocked(bot,next,R+.5)){bot.path=[];bot.goal=null;bot.planner=null;bot.thinkCooldown=0;bot.planCooldown=.05;bot.mode='กำแพงขวาง!';return;}
+  bot.x=next.x;bot.y=next.y;bot.steps++;
+  if(bot.manual&&dist(bot,bot.manual)<R*1.75){bot.manual=null;log('BLUE ไปถึงตำแหน่งที่คุณสั่ง',bot.team);}
+}
+function dodgeMove(bot,dt){if(bot.dodgeTimer<=0)return false;const d=bot.dodgeVec,step=bot.moveSpeed*S*dt*1.8,next={x:bot.x+d.x*step,y:bot.y+d.y*step},foe=opponent(bot);
+ bot.dodgeTimer=Math.max(0,bot.dodgeTimer-dt);if(freePoint(next,R+1)&&dist(next,foe)>R*2+2&&!blocked(bot,next,R+.5)){bot.x=next.x;bot.y=next.y;}else bot.dodgeTimer=0;
+ if(bot.dodgeTimer<=0){bot.path=[];bot.goal=null;bot.thinkCooldown=.04;}return true;
+}
+function shoot(bot){const foe=opponent(bot),d=dist(bot,foe);if(bot.hp<=0||foe.hp<=0||d>bot.range||!clearSight(bot,foe)||bot.cool>0||bot.reload>0)return;
+ if(bot.ammo<=0){bot.reload=1.3;bot.mode='บรรจุกระสุน';return;}
+ const spread=(1-bot.aim)*.35;const ang=Math.atan2(foe.y-bot.y,foe.x-bot.x)+rand(-spread,spread);
+ const sx=bot.x+Math.cos(ang)*(R+3),sy=bot.y+Math.sin(ang)*(R+3),spd=S*1.35;
+ bullets.push({x:sx,y:sy,px:sx,py:sy,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,team:bot.team,ttl:1.6});bot.ammo--;bot.cool=bot.baseFire*rand(.9,1.12);bot.fireFlash=.11;bot.mode='กำลังยิง';burst(sx,sy,colors[bot.team],4,2);
+ if(bot.ammo===0){bot.reload=1.35;bot.mode='กำลังรีโหลด';}
+}
+function burst(x,y,color,count=9,spread=3){for(let i=0;i<count;i++){const a=rand(-Math.PI,Math.PI),v=rand(18,86)*spread/3,life=rand(.18,.48);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life,total:life,color});}}
+function endRound(winner){
+ phase='ended';const draw=winner==='draw';if(!draw)scores[winner]++;
+ updateControls();const winLabel=draw?'เสมอ':winner==='blue'?'BLUE 🔷':'RED 🔺';
+ log(draw?'ทั้งสองฝ่ายเสมอกัน!':winLabel+' ชนะรอบนี้!',draw?null:winner);
+ showNotice(draw?'จบรอบ — เสมอ! กด “รอบต่อไป”':('จบเกม — '+winLabel+' ชนะ! กด “รอบต่อไป”'));
+ showOverlay(draw?'🤝':winner==='blue'?'🏆🔷':'🏆🔺',draw?'ผลการแข่งขัน: เสมอ':winLabel+' ชนะ!',
+  'RRT วางแผนเดินหลบสิ่งกีดขวาง และ Tactical Rules เลือกบุก ถอย หรือหาที่กำบัง',
+  'กด “รอบต่อไป” เพื่อเริ่มแมตช์ใหม่');scoreDelay=2.5;
+}
+// Return the first time within this frame (0..1) that a bullet would touch a wall.
+function firstWallHit(a,b,margin=1.8){let earliest=Infinity;
+  for(const w of walls){const x0=w.x-margin,y0=w.y-margin,x1=w.x+w.w+margin,y1=w.y+w.h+margin;
+    let entry=0,exit=1;const dx=b.x-a.x,dy=b.y-a.y;
+    for(const [pos,vel,min,max] of [[a.x,dx,x0,x1],[a.y,dy,y0,y1]]){
+      if(Math.abs(vel)<1e-9){if(pos<min||pos>max){entry=Infinity;break;}}
+      else{let t0=(min-pos)/vel,t1=(max-pos)/vel;if(t0>t1){const tmp=t0;t0=t1;t1=tmp;}entry=Math.max(entry,t0);exit=Math.min(exit,t1);if(entry>exit)break;}
+    }
+    if(entry<=exit&&entry>=0&&entry<=1)earliest=Math.min(earliest,entry);
+  }
+  return earliest;
+}
+// Solve swept segment-circle contact instead of checking only the bullet endpoint.
+function firstFighterHit(a,b,c,r){const dx=b.x-a.x,dy=b.y-a.y,fx=a.x-c.x,fy=a.y-c.y,A=dx*dx+dy*dy;
+ if(A<1e-8)return Math.hypot(fx,fy)<=r?0:Infinity;
+ const C=fx*fx+fy*fy-r*r;if(C<=0)return 0;
+ const B=2*(fx*dx+fy*dy),disc=B*B-4*A*C;if(disc<0)return Infinity;
+ const t=(-B-Math.sqrt(disc))/(2*A);return t>=0&&t<=1?t:Infinity;
+}
+function projectiles(dt){for(let k=bullets.length-1;k>=0;k--){const shot=bullets[k];shot.px=shot.x;shot.py=shot.y;
+    const nx=shot.x+shot.vx*dt,ny=shot.y+shot.vy*dt,old={x:shot.x,y:shot.y},next={x:nx,y:ny};shot.ttl-=dt;
+    const victim=bots.find(b=>b.team!==shot.team),wallT=firstWallHit(old,next,1.8);
+    const fighterT=victim.hp>0?firstFighterHit(old,next,victim,R*.96):Infinity;
+    if(fighterT<=wallT&&fighterT!==Infinity){
+      const impact={x:old.x+(nx-old.x)*fighterT,y:old.y+(ny-old.y)*fighterT};
+      victim.hp=Math.max(0,victim.hp-rand(8.5,12.5));victim.hitFlash=.22;stats.hits++;
+      burst(impact.x,impact.y,colors[victim.team],12,3);bullets.splice(k,1);
+      if(victim.hp<=0){endRound(shot.team);break;}continue;
+    }
+    if(wallT!==Infinity||nx<0||nx>W||ny<0||ny>H){
+      const impact=wallT!==Infinity?{x:old.x+(nx-old.x)*wallT,y:old.y+(ny-old.y)*wallT}:next;
+      burst(impact.x,impact.y,'#ffc880',4,2);bullets.splice(k,1);continue;
+    }
+    if(shot.ttl<=0)bullets.splice(k,1);else{shot.x=nx;shot.y=ny;}
+  }}
+function checkPlanning(bot,dt){if(bot.hp<=0)return;
+ bot.planCooldown=Math.max(0,bot.planCooldown-dt);bot.thinkCooldown-=dt;bot.agePlan+=dt;bot.treeAge+=dt;
+ bot.fireFlash=Math.max(0,bot.fireFlash-dt);bot.hitFlash=Math.max(0,bot.hitFlash-dt);
+ if(bot.reload>0){bot.reload=Math.max(0,bot.reload-dt);
+   if(bot.reload===0){bot.ammo=bot.maxAmmo;bot.mode='รีโหลดเสร็จ';bot.thinkCooldown=0;}
+ }else{bot.cool=Math.max(0,bot.cool-dt);
+   if(bot.ammo<=0||(bot.ammo===1&&!clearSight(bot,opponent(bot)))){
+    bot.reload=1.35;bot.mode='รีโหลด';
+   }
+ }
+ findThreatDodge(bot,dt);
+ if(bot.dodgeTimer>0)return;
+ if(bot.planner)return;
+ if(bot.thinkCooldown<=0&&bot.planCooldown<=0){
+  const choice=currentIntent(bot),changed=setIntent(bot,choice);
+  const shouldPlan=changed||!bot.goal||!bot.path.length||bot.agePlan>4.8;
+  if(shouldPlan){
+   const target=chooseGoal(bot);
+   if(['cover','retreat'].includes(bot.intent)&&bot.coverPoint&&dist(bot,bot.coverPoint)<R*1.65&&!clearSight(bot,opponent(bot))){
+      bot.hold=true;bot.path=[];bot.goal=null;bot.planCooldown=.42;
+      bot.mode=bot.reload>0?'ซ่อนตัวระหว่างรีโหลด':'อยู่หลังที่กำบัง';
+   }else if(freePoint(target,R+1)&&dist(bot,target)>R*.9){
+      beginPlan(bot,target,bot.intent==='order'?'คำสั่ง':'ปรับตำแหน่ง');
+   }else{bot.planCooldown=.35;}
+  }
+  bot.thinkCooldown=changed?.34:rand(.67,.95);
+ }
+}
+function loopStep(dt){if(phase!=='running')return;elapsed+=dt;
+ // Search and movement happen independently for both agents.
+ for(const bot of bots)checkPlanning(bot,dt);
+ for(const bot of bots)if(bot.planner)runPlanner(bot,28);
+ for(const bot of bots){if(!dodgeMove(bot,dt))moveBot(bot,dt);}
+ for(const bot of bots)shoot(bot);
+ projectiles(dt);
+ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-2*dt);p.vy*=Math.max(0,1-2*dt);if(p.life<=0)particles.splice(i,1);}
+ // Safety stop; a match cannot run forever if the fighters never obtain a firing line.
+ if(elapsed>150&&phase==='running'){const leader=core.resolveWinner(bots[0].hp,bots[1].hp);endRound(leader);showNotice('หมดเวลา 150 วินาที — '+(leader==='draw'?'ทั้งสองฝ่ายเสมอกัน':'ผู้มีพลังชีวิตมากกว่าชนะ'));}
+}
+function drawGrid(){ctx.fillStyle='#071729';ctx.fillRect(0,0,W,H);const s=Math.max(20,S*.055);ctx.save();ctx.strokeStyle='#28446549';ctx.lineWidth=.65;ctx.beginPath();for(let x=0;x<=W;x+=s){ctx.moveTo(x,0);ctx.lineTo(x,H);}for(let y=0;y<=H;y+=s){ctx.moveTo(0,y);ctx.lineTo(W,y);}ctx.stroke();ctx.strokeStyle='#47799e30';ctx.lineWidth=1;ctx.strokeRect(7,7,W-14,H-14);ctx.restore();const g=ctx.createRadialGradient(W*.5,H*.45,20,W*.5,H*.45,Math.max(W,H)*.8);g.addColorStop(0,'#153c4a25');g.addColorStop(1,'#02091136');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+function wallDraw(w){ctx.save();ctx.shadowBlur=12;ctx.shadowColor=w.manual?'#fac16c60':'#ff477340';ctx.fillStyle=w.manual?'#5f402cb5':'#61253fb9';ctx.strokeStyle=w.manual?'#ffd079':'#ef698a';ctx.lineWidth=2;ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeRect(w.x,w.y,w.w,w.h);ctx.shadowBlur=0;ctx.strokeStyle=w.manual?'#fdd69255':'#e7708a55';ctx.lineWidth=1;let gap=Math.max(10,S*.04);ctx.beginPath();for(let k=-w.h;k<w.w;k+=gap){let x0=Math.max(0,k),y0=Math.max(0,-k),x1=Math.min(w.w,k+w.h),y1=Math.min(w.h,w.h-k);ctx.moveTo(w.x+x0,w.y+y0);ctx.lineTo(w.x+x1,w.y+y1);}ctx.stroke();ctx.restore();}
+function drawTree(bot){if(!ui.tree.checked)return;const nodes=bot.planner?bot.planner.nodes:bot.tree;if(!nodes||nodes.length<2)return;const opacity=bot.planner? .48:Math.max(.08,.30-bot.treeAge*.035);ctx.save();ctx.globalAlpha=opacity;ctx.strokeStyle=colors[bot.team];ctx.lineWidth=Math.max(.65,S*.0025);ctx.beginPath();const stride=nodes.length>900?3:nodes.length>450?2:1;for(let i=1;i<nodes.length;i+=stride){const n=nodes[i],p=nodes[n.parent];if(!p)continue;ctx.moveTo(p.x,p.y);ctx.lineTo(n.x,n.y);}ctx.stroke();ctx.restore();if(bot.planner){const target=bot.planner.goal;ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1.2;ctx.strokeStyle=colors[bot.team];ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(target.x,target.y,R*.85,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+function drawPath(bot){
+ if(!ui.path.checked||!bot.path.length||bot.way>=bot.path.length)return;
+ let from={x:bot.x,y:bot.y};const foe=opponent(bot);
+ ctx.save();ctx.lineWidth=Math.max(2,S*.008);ctx.lineCap='round';ctx.lineJoin='round';
+ for(let j=bot.way;j<bot.path.length;j++){
+  const to=bot.path[j],v=core.edgeExposure(from,to,foe,riskSight,S),risky=ui.showThreat.checked&&v>.50;
+  ctx.strokeStyle=risky?'#ffb36b':bot.team==='blue'?'#82ffca':'#ffce92';
+  ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=7;
+  ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();from=to;
+ }
+ ctx.shadowBlur=0;ctx.fillStyle=bot.team==='blue'?'#82ffca':'#ffd098';
+ for(let j=bot.way;j<bot.path.length;j++){ctx.beginPath();ctx.arc(bot.path[j].x,bot.path[j].y,2.8,0,Math.PI*2);ctx.fill();}ctx.restore();
+}
+function drawTactics(){if(!ui.showThreat.checked)return;
+ for(const b of bots){
+   if(!b.coverPoint||!['cover','retreat'].includes(b.intent))continue;
+   ctx.save();ctx.strokeStyle=b.team==='blue'?'#85eafc':'#ff9bb7';ctx.lineWidth=1.4;ctx.setLineDash([3,5]);
+   ctx.beginPath();ctx.arc(b.coverPoint.x,b.coverPoint.y,R*.9,0,Math.PI*2);ctx.stroke();
+   ctx.setLineDash([]);ctx.fillStyle=ctx.strokeStyle;ctx.textAlign='center';ctx.font='700 10px system-ui';
+   ctx.fillText('COVER',b.coverPoint.x,b.coverPoint.y-R-6);ctx.restore();
+ }
+}
+function drawFighter(bot){const foe=opponent(bot),a=Math.atan2(foe.y-bot.y,foe.x-bot.x),color=colors[bot.team];ctx.save();ctx.translate(bot.x,bot.y);ctx.rotate(a);ctx.shadowBlur=bot.hitFlash?25:13;ctx.shadowColor=bot.hitFlash?'#ffffff':color;ctx.fillStyle=bot.hitFlash?'#ffffff':bot.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(R*.25,-R*.38);ctx.lineTo(R*.95,0);ctx.lineTo(R*.25,R*.38);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#e7faff';ctx.beginPath();ctx.arc(-R*.21,-R*.22,R*.16,0,Math.PI*2);ctx.arc(-R*.21,R*.22,R*.16,0,Math.PI*2);ctx.fill();if(bot.fireFlash>0){ctx.fillStyle='#ffe5ac';ctx.beginPath();ctx.arc(R*1.33,0,R*.42,0,Math.PI*2);ctx.fill();}ctx.restore();ctx.save();ctx.fillStyle='#ddebff';ctx.textAlign='center';ctx.font=`800 ${clamp(S*.028,9,14)}px system-ui`;ctx.fillText(bot.team==='blue'?'BLUE':'RED',bot.x,bot.y-R-9);ctx.restore();const w=R*2.5,h=3;ctx.fillStyle='#15283b';ctx.fillRect(bot.x-w/2,bot.y+R+6,w,h);ctx.fillStyle=color;ctx.fillRect(bot.x-w/2,bot.y+R+6,w*bot.hp/bot.maxHp,h);if(bot.dodgeTimer>0){ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.beginPath();ctx.arc(bot.x,bot.y,R*1.6,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+function drawShot(s){ctx.save();ctx.strokeStyle=s.team==='blue'?'#88e7ff':'#ffb3ba';ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=9;ctx.lineWidth=Math.max(2,S*.007);ctx.beginPath();ctx.moveTo(s.x-s.vx*.024,s.y-s.vy*.024);ctx.lineTo(s.x,s.y);ctx.stroke();ctx.restore();}
+function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(w);for(const b of bots)drawTree(b);for(const b of bots)drawPath(b);drawTactics();for(const s of bullets)drawShot(s);for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.total);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,S*.004),0,Math.PI*2);ctx.fill();ctx.restore();}
+ if(tool==='order'&&bots[0]&&bots[0].manual){const p=bots[0].manual;ctx.save();ctx.strokeStyle='#ffdf8a';ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p.x,p.y,R*.9,0,Math.PI*2);ctx.stroke();ctx.restore();}
+ for(const b of bots)drawFighter(b);
+ ctx.fillStyle='#b6d4eb';ctx.font=`700 ${clamp(S*.026,10,13)}px system-ui`;ctx.textAlign='left';ctx.fillText('RRT TACTICAL · '+ui.map.selectedOptions[0].textContent.split('·').pop().trim(),12,H-14);
+}
+function updateHUD(){if(!bots.length)return;
+ for(const bot of bots){const id=bot.team;
+  ui[id+'Hp'].textContent=Math.ceil(bot.hp)+'/120';
+  ui[id+'Bar'].style.width=(100*bot.hp/bot.maxHp)+'%';
+  ui[id+'Mode'].textContent=bot.mode;
+  ui[id+'Ammo'].textContent=bot.reload>0?'รีโหลด '+bot.reload.toFixed(1)+'s':'กระสุน '+bot.ammo+'/6';
+  const intentNames={ready:'เตรียมพร้อม',retreat:'🛡️ ถอยเข้าที่กำบัง',cover:'🛡️ หาที่กำบัง',flank:'↪️ อ้อมโจมตี',engage:'🎯 เปลี่ยนมุมยิง',advance:'⚔️ เข้าประชิด',order:'☞ ทำตามคำสั่ง'};
+  ui[id+'Think'].textContent=intentNames[bot.intent]||bot.mode;
+  ui[id+'Reason'].textContent=bot.reason;
+  ui[id+'Risk'].textContent='เส้นล่าสุดเสี่ยง '+bot.pathRisk+'%';
+  ui[id+'Plans'].textContent='แผน '+bot.planCount;
+ }
+ ui.clock.textContent=formatTime(elapsed);ui.round.textContent='ROUND '+String(round).padStart(2,'0');
+ ui.score.textContent=scores.blue+' : '+scores.red;ui.nodes.textContent=stats.nodes.toLocaleString();
+ ui.plans.textContent=stats.plans+' ครั้ง';ui.rejects.textContent=stats.rejected.toLocaleString()+' ครั้ง';
+ ui.hits.textContent=stats.hits+' นัด';ui.coverMoves.textContent=stats.covers+' ครั้ง';
+ ui.flanks.textContent=stats.flanks+' ครั้ง';ui.replans.textContent=stats.replans+' ครั้ง';
+}
+function animation(t){let dt=last?Math.min((t-last)/1000,.052):0;last=t;if(phase==='running'){let scale=Number(ui.speed.value),n=Math.max(1,Math.ceil(dt*scale/.022));for(let i=0;i<n;i++){loopStep(dt*scale/n);if(phase!=='running')break;}}else if(phase==='ended'&&ui.auto.checked){scoreDelay-=dt;if(scoreDelay<=0){startGame();}}
+ frameCount++;draw();if(frameCount%5===0||phase!=='running')updateHUD();requestAnimationFrame(animation);}
+function handleTap(e){const rect=canvas.getBoundingClientRect(),p={x:e.clientX-rect.left,y:e.clientY-rect.top};if(p.x<0||p.y<0||p.x>=W||p.y>=H)return;
+ if(tool==='wall'){
+  let ww=Math.min(W*.11,S*.20),hh=Math.min(H*.13,S*.16),wall={x:clamp(p.x-ww/2,1,W-ww-1),y:clamp(p.y-hh/2,1,H-hh-1),w:ww,h:hh,manual:true};
+  if(extraWalls.length>=12){showNotice('เพิ่มกำแพงได้สูงสุด 12 ชิ้น ลบกำแพงที่เพิ่มก่อน');return;}
+  if(bots.some(b=>insideRect(b,{x:wall.x-R*2,y:wall.y-R*2,w:ww+4*R,h:hh+4*R}))){showNotice('วางกำแพงตรงตัวละครไม่ได้ — ลองจุดอื่น');return;}
+  for(const w of walls)if(!(wall.x> w.x+w.w+R||wall.x+wall.w< w.x-R||wall.y> w.y+w.h+R||wall.y+wall.h< w.y-R)){showNotice('กำแพงชนกำแพงเดิม — ลองพื้นที่ว่าง');return;}
+  extraWalls.push(wall);buildWalls();for(const b of bots){b.path=[];b.planner=null;b.tree=[];b.goal=null;b.coverPoint=null;b.thinkCooldown=.02;b.planCooldown=.01;}showNotice('เพิ่มกำแพงแล้ว: ทั้งสองบอตจะค้นหาเส้นทางใหม่');log('สร้างกำแพงใหม่ → เส้นทางเดิมถูกยกเลิก');return;
+ }
+ if(tool==='order'){
+  if(!freePoint(p,R+3)){showNotice('จุดนี้อยู่บนกำแพง กรุณาแตะจุดอื่น');return;}
+  const b=bots[0];b.manual=p;beginPlan(b,p,'คำสั่ง');showNotice('สั่ง BLUE ไปตำแหน่งใหม่ (ยังยิงศัตรูอัตโนมัติ)');log('รับคำสั่งจากผู้เล่น → BLUE เรียก RRT', 'blue');return;
+ }
+ showNotice('เลือก “แตะวางกำแพง” หรือ “สั่งตัวฟ้าเดิน” ก่อนแตะสนาม');}
+ui.start.addEventListener('click',startGame);ui.pause.addEventListener('click',pauseGame);ui.reset.addEventListener('click',resetGame);
+ui.wall.addEventListener('click',()=>{tool=tool==='wall'?'none':'wall';updateControls();showNotice(tool==='wall'?'แตะในสนามเพื่อสร้างกำแพง บอตจะหาทางใหม่':'กลับโหมดชมการแข่งขัน');});
+ui.order.addEventListener('click',()=>{tool=tool==='order'?'none':'order';updateControls();showNotice(tool==='order'?'แตะพื้นที่ว่างเพื่อสั่ง BLUE ไปจุดนั้น (ระหว่างนั้นยังสู้ได้)':'กลับโหมดชมการแข่งขัน');});
+ui.clear.addEventListener('click',()=>{if(!extraWalls.length){showNotice('ยังไม่มีกำแพงที่เพิ่มเอง');return;}extraWalls=[];buildWalls();for(const b of bots){b.planner=null;b.tree=[];b.goal=null;b.path=[];b.coverPoint=null;b.thinkCooldown=.04;}showNotice('ลบกำแพงที่เพิ่มเองทั้งหมดแล้ว');log('ลบกำแพงที่ผู้เล่นเพิ่ม');});
+ui.bias.addEventListener('input',()=>ui.biasVal.textContent=ui.bias.value+'%');
+ui.risk.addEventListener('input',()=>{ui.riskVal.textContent=ui.risk.value+'%';for(const bot of bots){bot.thinkCooldown=0;bot.agePlan=9;}});
+for(const team of ['blue','red'])ui[team+'Style'].addEventListener('change',()=>{const bot=bots.find(b=>b.team===team);if(bot){bot.thinkCooldown=0;bot.agePlan=9;}showNotice('เปลี่ยนกลยุทธ์ '+team.toUpperCase()+' แล้ว');});ui.speed.addEventListener('input',()=>ui.speedVal.textContent=Number(ui.speed.value).toFixed(2).replace(/0$/,'')+'×');
+ui.map.addEventListener('change',()=>{resetGame();showNotice('เปลี่ยนสนามแล้ว — กดเริ่มดวล');});ui.smooth.addEventListener('change',()=>{for(const b of bots){if(b.planner)continue;if(b.path.length){b.goal=null;b.path=[];b.thinkCooldown=.01;}}showNotice(ui.smooth.checked?'เปิด Path Smoothing รอบใหม่':'ปิด Path Smoothing รอบใหม่');});
+canvas.addEventListener('pointerdown',handleTap);
+window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();phase==='running'||phase==='paused'?pauseGame():startGame();}if(e.key==='r'||e.key==='R')resetGame();});
+window.addEventListener('resize',()=>resize());
+// Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
+window.__rrtArenaDebug={
+ getState:()=>({phase,round,scores:{...scores},time:elapsed,stats:{...stats},bots:bots.map(b=>({team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,reload:b.reload,mode:b.mode,intent:b.intent,reason:b.reason,strategy:botStyle(b),riskWeight:botRisk(b),pathRisk:b.pathRisk,coverPoint:b.coverPoint,planCount:b.planCount,planning:!!b.planner,pathLength:b.path.length,way:b.way,dodge:b.dodgeTimer>0})),bullets:bullets.length,walls:walls.length,manualWalls:extraWalls.length}),
+ advance:(seconds)=>{for(let s=0;s<seconds*60&&phase==='running';s++)loopStep(1/60);updateHUD();draw();},
+ validate:()=>({fightersFree:bots.every(b=>freePoint(b,R*.95)),waypointsClear:bots.every(b=>{let p=copy(b);for(let k=b.way;k<b.path.length;k++){const q=b.path[k];if(blocked(p,q,R*.9))return false;p=q;}return true;})}),
+ tools:()=>Object.keys(core),
+ force:(team,values)=>{const bot=bots.find(b=>b.team===team);if(!bot)return false;for(const k of ['hp','ammo','reload','thinkCooldown','planCooldown'])if(Number.isFinite(values[k]))bot[k]=values[k];if('x' in values&&'y' in values&&freePoint(values,R*1.01)){bot.x=values.x;bot.y=values.y;bot.path=[];bot.planner=null;bot.goal=null;bot.thinkCooldown=0;}return true;},
+ freePoint:(p)=>freePoint(p,R+1),
+ sight:(p,q)=>clearSight(p,q)
+};
+resize();setupRound();updateControls();showOverlay('⚔️','พร้อมให้บอตดวลกัน!','กด “เริ่มดวล” เพื่อดูบอตวางแผนเส้นทาง RRT และสู้กันแบบอัตโนมัติ');requestAnimationFrame(animation);
+})();
+</script>
+</body></html>
