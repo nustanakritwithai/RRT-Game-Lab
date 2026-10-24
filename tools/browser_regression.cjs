@@ -143,14 +143,14 @@ async function main(){
    return {mode:state.team.mode,count:state.team.count,alive:state.team.alive,blues:state.team.blues,
     memories:state.team.memorySeparated,radioSent:state.team.radioSent,stable,valid,
     allFinite:state.team.blues.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),
-    plans:state.team.blues.map(b=>b.planCount),scroll:layout().scroll,activeSamples:aliveSamples};
+    plans:state.team.blues.map(b=>b.planCount),scroll:layout().scroll,activeSamples:aliveSamples,initialLayout:shape,finalLayout:layout()};
   },{layoutSrc:'('+layout.toString()+')'});
   check(duo.mode==='independent'&&duo.count===2&&duo.blues.map(b=>b.id).join('/')==='B1/B2',
    'duo independent: two ORIGINAL BLUE agents with distinct IDs');
   check(duo.memories&&duo.radioSent===0,'duo independent: isolated per-BLUE memories, no team radio');
   check(duo.plans.every(n=>n>0)&&duo.allFinite&&duo.valid,
    'duo independent: both used RRT and obeyed collisions ('+duo.plans.join('/')+' plans)');
-  check(duo.stable&&duo.scroll<=0,'duo independent: fixed mobile HUD and no horizontal scroll');
+  check(duo.stable&&duo.scroll<=0,'duo independent: fixed mobile HUD and no horizontal scroll, first='+JSON.stringify(duo.initialLayout)+' last='+JSON.stringify(duo.finalLayout));
 
   // Cooperative mode adds *only* bounded visible sightings; physics, weapons and BLUE unchanged.
   await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop');
