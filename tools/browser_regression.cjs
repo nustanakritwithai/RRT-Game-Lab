@@ -183,6 +183,52 @@ async function main(){
   });
   check(survivor.phase==='running'&&survivor.teamAlive===1&&survivor.survivors[0]==='B2'&&survivor.enemies>0,
    'duo survival: B2 continues after B1 is eliminated');
+  // A melee attacker must be able to damage B2 directly, without touching B1.
+  await page.goto(base+sep+'mode=multi&blue=2&enemy=melee');
+  const meleeB2=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();
+   const s=md.getState(),b1=s.team.blues[0],b2=s.team.blues[1];
+   const target=s.targets.find(t=>t.team!=='ranged');
+   const rect=document.querySelector('#stage').getBoundingClientRect();
+   const radius=Math.max(7.5,Math.min(17,Math.min(rect.width,rect.height)*.027));
+   let didPlace=false,gotHit=false,zeroDamageB1=true;
+   if(target&&b2)for(let k=0;k<16&&!gotHit;k++){
+    const ang=k*Math.PI*2/16;
+    const p={x:b2.x+Math.cos(ang)*radius*2.1,y:b2.y+Math.sin(ang)*radius*2.1};
+    if(!d.freePoint(p)||!d.sight(p,b2)||Math.hypot(p.x-b1.x,p.y-b1.y)<radius*2.9)continue;
+    if(!md.forceTarget(target.id,p))continue;didPlace=true;
+    const before=md.getState().team.blues;
+    md.simulateStrike(target.id);
+    const after=md.getState().team.blues;
+    gotHit=after[1].hp<before[1].hp;
+    zeroDamageB1=after[0].hp===before[0].hp;
+   }
+   d.advance(3);
+   const after=md.getState();
+   return {mode:after.team.mode,didPlace,gotHit,zeroDamageB1,
+    valid:d.validate().fightersFree&&d.validate().waypointsClear,
+    plans:after.team.blues.map(b=>b.planCount)};
+  });
+  check(meleeB2.mode==='independent'&&meleeB2.didPlace&&meleeB2.gotHit&&meleeB2.zeroDamageB1,
+   'duo melee: real close-range enemy chooses B2 without hurting distant B1');
+  check(meleeB2.valid,'duo melee: both agents keep valid positions after melee contact');
+
+  // Mixed wave keeps simple melee and ranged enemies present while team radio is active.
+  await page.goto(base+sep+'mode=multi&blue=2&team=coop&enemy=mixed');
+  const mixedDuo=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();d.advance(8);
+   const s=md.getState(),v=d.validate();
+   return {mode:s.team.mode,blueCount:s.team.count,
+    ranged:s.targets.filter(t=>t.team==='ranged').length,
+    melee:s.targets.filter(t=>t.team!=='ranged').length,
+    valid:v.fightersFree&&v.waypointsClear,
+    finite:s.team.blues.every(b=>[b.x,b.y,b.hp].every(Number.isFinite))};
+  });
+  check(mixedDuo.mode==='cooperative'&&mixedDuo.blueCount===2&&mixedDuo.ranged>0&&mixedDuo.melee>0,
+   'duo mixed: both simple enemy types and both original BLUEs present');
+  check(mixedDuo.valid&&mixedDuo.finite,'duo mixed: finite collision-free physics and routes');
   check(errors.length===0,'no page errors '+errors.join(' | '));
   await ctx.close();
  }
