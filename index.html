@@ -1664,13 +1664,21 @@ function multiProjectiles(dt){
  for(let k=bullets.length-1;k>=0;k--){
   const shot=bullets[k];shot.px=shot.x;shot.py=shot.y;shot.ttl-=dt;
   const old={x:shot.x,y:shot.y},next={x:old.x+shot.vx*dt,y:old.y+shot.vy*dt};
-  const wallT=firstWallHit(old,next,1.8);let best=null,impactT=wallT;
+  const wallT=firstWallHit(old,next,1.8);
+  let teammateT=Infinity;
+  // Friendly shots do not inflict damage; they still stop at a teammate's body.
+  if(teamDuo())for(const mate of livingBlues()){
+   if(mate.id===shot.ownerId)continue;
+   teammateT=Math.min(teammateT,teamCore.segmentCircleTime(old,next,mate,R*.78+1.8));
+  }
+  let best=null,impactT=Math.min(wallT,teammateT);
   for(const t of multi.targets){if(!t.active)continue;const tHit=firstFighterHit(old,next,t,R*.78);if(tHit<impactT){impactT=tHit;best=t;}}
   if(best){const impact={x:old.x+(next.x-old.x)*impactT,y:old.y+(next.y-old.y)*impactT};
    best.hp=Math.max(0,best.hp-(multi.melee?rand(16,21):rand(10,14)));best.hitFlash=.15;stats.hits++;burst(impact.x,impact.y,'#ffc978',9,2);bullets.splice(k,1);
    if(best.hp<=0){best.active=false;best.respawnAt=multi.melee?Infinity:elapsed+4.3;multi.eliminated++;log(best.id+' ถูก BLUE ยิงออกจากสนาม ('+multi.eliminated+')','blue');delete multi.tracks[best.id];if(multi.manualFocus===best.id)multi.manualFocus=null;multi.sensorAt=-1;}
    continue;
   }
+  if(teammateT<wallT){team.blockedFriendlyShots++;bullets.splice(k,1);continue;}
   if(wallT!==Infinity||next.x<0||next.x>W||next.y<0||next.y>H||shot.ttl<=0){bullets.splice(k,1);continue;}
   shot.x=next.x;shot.y=next.y;
  }
@@ -1698,12 +1706,12 @@ function finishMultiWave(outcome){
  if(phase!=='running')return;scoreDelay=2.5;
  phase='ended';finalResult=outcome.winner;
  if(outcome.winner==='blue')scores.blue++;else scores.red++;
- multi.waveHistory.push({winner:outcome.winner,enemyMode:multi.enemyMode,count:multi.targets.length,kills:multi.eliminated,damage:Math.round(multi.damageTaken),rangedShots:multi.rangedFired,rangedHits:multi.rangedHits,seconds:Number(elapsed.toFixed(1)),difficulty:multi.difficulty});
+ multi.waveHistory.push({winner:outcome.winner,teamMode:team.mode,blueHp:team.blues.map(b=>Math.round(b.hp)),blockedFriendlyShots:team.blockedFriendlyShots,enemyMode:multi.enemyMode,count:multi.targets.length,kills:multi.eliminated,damage:Math.round(multi.damageTaken),rangedShots:multi.rangedFired,rangedHits:multi.rangedHits,seconds:Number(elapsed.toFixed(1)),difficulty:multi.difficulty});
  snapshot();updateReplayUI();updateControls();
  const won=outcome.winner==='blue';
  log((won?'🏆 BLUE ชนะ':'💥 BLUE แพ้')+' '+({melee:'ฝูงประชิด',ranged:'ฝูงยิงระยะไกล',mixed:'ฝูงผสม'}[multi.enemyMode])+' · '+outcome.reason,won?'blue':'red');
  showNotice(outcome.reason+' — กดรอบต่อไปเพื่อทดสอบซ้ำ');
- showOverlay(won?'🏆':'💥',won?'BLUE ระยะไกลชนะ!':'ศัตรูชนะ!',outcome.reason,'กำจัด '+multi.eliminated+'/'+multi.targets.length+' · BLUE เหลือ '+Math.ceil(bots[0].hp)+' HP · '+formatTime(elapsed));
+ showOverlay(won?'🏆':'💥',won?'BLUE ทีมชนะ!':'ศัตรูชนะ!',outcome.reason,'กำจัด '+multi.eliminated+'/'+multi.targets.length+' · BLUE รอด '+teamCore.teamMetrics(team.blues).alive+'/'+team.blues.length+' · '+formatTime(elapsed));
 }
 function meleeOnlyTracks(){return Object.fromEntries(Object.entries(multi.tracks).filter(([id,t])=>multi.targets.some(e=>e.id===id&&e.active&&e.team!=='ranged')));}
 function visibleMeleeTracks(){return Object.fromEntries(Object.entries(meleeOnlyTracks()).filter(([id,t])=>t.status==='visible'));}
