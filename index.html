@@ -2866,7 +2866,7 @@ function chooseGoal(bot){
   }
   const route=coopCore.findClearLane(bot,foe,radioTeammates,{
    width:W,height:H,scale:S,radius:R+2,ownRange:bot.range,
-   free:p=>freePoint(p,R+2)&&(duel2Active()?duel2PositionSafe(bot,p):teamFriendClear(bot,p)),
+   free:p=>freePoint(p,R+2)&&(duel2Active()?radioTeammates.every(m=>dist(p,m)>R*2.25):teamFriendClear(bot,p)),
    direct:(a,b)=>!blocked(a,b,R+1)&&
     (duel2Active()?radioTeammates.every(m=>coopCore.segmentCircleTime(a,b,m,R*2.05)===Infinity):
      team.blues.every(m=>m===bot||m.hp<=0||coopCore.segmentCircleTime(a,b,m,R*2.05)===Infinity)),
