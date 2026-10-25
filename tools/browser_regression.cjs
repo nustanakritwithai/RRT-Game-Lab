@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.11/.test(duel.title),'title shows V0.6.11: '+duel.title);
+  check(/RRT ARENA 06\.12/.test(duel.title),'title shows V0.6.12: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -184,6 +184,47 @@ async function main(){
   });
   check(advisor.blocked==='B2'&&advisor.clearWhenBehind&&advisor.split==='T02',
    'cooperative lane safety and visible target split work inside LIVE browser');
+
+  // V0.6.12 — sensor tracks and PRIVATE memory must not inherit radio messages.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop&seed=77');
+  const privateRadio=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   const initial=md.getState();let maxInbox=0,maxClaims=0,maxSent=0,maxDelivered=0,isolated=true;
+   document.getElementById('start').click();
+   for(let i=0;i<35&&d.getState().phase==='running';i++){
+    d.advance(.35);const st=md.getState();
+    maxSent=Math.max(maxSent,st.team.radioSent);
+    maxDelivered=Math.max(maxDelivered,st.team.radioDelivered);
+    for(const b of st.team.blues){
+     maxInbox=Math.max(maxInbox,b.radioSightingIds?.length||0);
+     maxClaims=Math.max(maxClaims,Object.keys(b.radioClaims||{}).length);
+     isolated=isolated&&Array.isArray(b.localTrackIds)&&Array.isArray(b.radioSightingIds)&&
+      st.team.memorySeparated&&b.localTrackIds.every(id=>/^T\d+/.test(id));
+    }
+   }
+   const after=md.getState();
+   return {mode:after.team.mode,seed:initial.team.rngSeed,sent:maxSent,delivered:maxDelivered,
+    inbox:maxInbox,claims:maxClaims,isolated,agents:after.team.blues.map(b=>b.id)};
+  });
+  check(privateRadio.mode==='cooperative'&&privateRadio.seed===77&&privateRadio.isolated&&
+        privateRadio.agents.join('/')==='B1/B2','private radio: B1 and B2 have distinct sensor tracks/inboxes and keyed seed');
+  check(privateRadio.sent>0&&privateRadio.delivered>0&&(privateRadio.inbox>0||privateRadio.claims>0),
+        'radio delivery populates ONLY transient inbox ('+privateRadio.inbox+' sightings, '+privateRadio.claims+' claims)');
+
+  // Same seed + same enemy settings must generate the same WORLD regardless of radio policy.
+  const initialWorld=async(teamValue)=>{
+   await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2'+
+    (teamValue==='cooperative'?'&team=coop':'')+'&seed=311');
+   return page.evaluate(()=>{
+    const s=window.__rrtMultiDebug.getState();
+    return {seed:s.team.rngSeed,enemies:s.targets.map(t=>[t.id,Number(t.x.toFixed(5)),Number(t.y.toFixed(5)),t.kind]),
+     blues:s.team.blues.map(b=>[b.id,Number(b.x.toFixed(5)),Number(b.y.toFixed(5))])};
+   });
+  };
+  const firstWorld=await initialWorld('independent');
+  const secondWorld=await initialWorld('cooperative');
+  check(firstWorld.seed===311&&JSON.stringify(firstWorld)===JSON.stringify(secondWorld),
+        'private RNG: cooperative radio does not alter seeded spawn world or initial B1/B2 positions');
 
   // Killing B1 cannot end the match while B2 remains alive and enemies remain.
   await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2');
