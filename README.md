@@ -1,3 +1,20 @@
+# PeerMesh Lab — Decentralized Communication Simulation (1 → 1,000 agents)
+
+**[เปิดเกม PeerMesh Lab](https://nustanakritwithai.github.io/RRT-Game-Lab/network-lab.html)** · [กลับไปเล่น RRT Arena](https://nustanakritwithai.github.io/RRT-Game-Lab/)
+
+PeerMesh เป็นหน้าเกมวิจัย **แยกจาก** RRT Arena เดิม ใช้ JavaScript/Canvas ทำงานได้บนมือถือโดยไม่ต้องติดตั้งอะไรเพิ่ม และเปรียบเทียบ 4 แนวทางการแพร่ข่าวระหว่าง Agent ที่มีความจำส่วนตัว: **Flooding, Gossip, Fanout, Anti-Entropy**. ปรับ Agent ตั้งแต่ 10–1,000 ตัว, Range, Packet Loss, Latency, การเคลื่อนที่, จำนวน Tick, Seed และฉากข้อมูลซ้ำ/ขัดแย้งกันได้
+
+- **ทดลอง:** เลือกสถานการณ์ → Start / Pause / Step / Reset. แตะจุด Agent เพื่อดูสถานะและต้นทางหลักฐานในเครื่องนั้น. ปรับค่าจะรีเซ็ตการทดลองใหม่.
+- **Benchmark:** กด *เทียบ 4 วิธี* ให้เล่นด้วย Seed, agent count, topology, packet loss, latency เหมือนกัน (protocol ต่างกัน) แล้วเปรียบเทียบ Coverage, Transmission count, Duplicates, Dropped messages, P90 arrival tick, estimated payload bytes. ปุ่ม Export ดาวน์โหลด replay JSON จาก simulation ปัจจุบัน.
+- **Dedup/ความถูกต้อง:** retransmit/relay ของต้นทางเดียวกันไม่เพิ่ม independent-source count. 1 พยาน = UNKNOWN, หลายพยานอิสระเห็นเหมือนกัน = CORROBORATED, หลายพยานอิสระที่ขัดแย้ง = CONFLICT. CORROBORATED **ไม่ใช่การยืนยัน Ground Truth**.
+- **Architecture:** `network_lab_core.js` เป็น deterministic discrete-time simulation; หน่วยความจำ Agent แต่ละตัวเป็น `Map` ของตัวเอง ไม่มี shared decision state. ตัวประมวลผลกลางของ *เกมจำลอง* ใช้นัดเวลา packet และคำนวณคะแนนเท่านั้น ไม่ใช่ผู้บังคับบัญชาหรือ consensus oracle. ทุก Agent ปัจจุบันใช้ protocol ตามกฎ ไม่ใช่การเรียก LLM 1,000 ตัวจริง.
+- **Research limits:** ที่นี่เป็น single-process simulation ไม่ใช่เครือข่ายอินเทอร์เน็ตจริง; ไม่มีการพิสูจน์ตัวตน, Byzantine consensus หรือการจัดการผู้ส่งที่จงใจปลอมแปลง; Seed เดียวเป็นการเปรียบเทียบเชิงสำรวจ ไม่ใช่หลักฐานเชิงสถิติ. การนับ Bytes คือ approximation ของ packet payload ไม่รวม overhead จริง.
+- **Validation:** `node --test network_lab_core.test.cjs` และ `node tools/network_lab_browser.cjs` (ต้องมี Playwright + Chromium). Browser smoke ตรวจหน้าจอ 320/393/1365px, ปุ่มหลัก, กรณี Conflict, Compare และ JSON download.
+
+**Pages requirement:** workflow `.github/workflows/deploy-pages.yml` ต้องส่งทั้ง `network-lab.html`, `network_lab_core.js`, `network_lab_ui.js` ขึ้น Pages; ห้าม deploy เพียง `index.html` เพราะจะทำให้หน้า PeerMesh 404.
+
+---
+
 ## V0.6.14 — Distributed Evidence & Provenance Lab
 
 **Research question:** How should independent BLUE agents judge overlapping and contradictory radio reports without a leader or shared truth table?
