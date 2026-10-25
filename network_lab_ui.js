@@ -14,10 +14,21 @@
  const canvas=$('mesh-canvas'),ctx=canvas.getContext('2d');
  const chart=$('coverage-chart'),ch=chart.getContext('2d');
  const compact=new Intl.NumberFormat('th-TH',{maximumFractionDigits:0});
- const palette={unknown:'#526a83',informed:'#53cfff',corroborated:'#61e5b5',conflict:'#ff7897',source:'#ffcb72'};
+ const palette={unknown:'#526a83',informed:'#53cfff',rumor:'#53cfff',verifying:'#ffc66d',
+  corroborated:'#61e5b5',found:'#61e5b5',refuted:'#ac96f9',
+  conflict:'#ff7897',source:'#ffcb72'};
  let sim=null,playing=false,comparing=false,frameId=0,lastFrame=0,selected=0,comparisonRows=[];
  let comparisonIteration=0;
  const pretty=n=>compact.format(n);
+ const isWater=()=>sim&&sim.config.scenario.startsWith('water-');
+ const labelsTh={
+  UNKNOWN:'ยังไม่ทราบข่าว',RUMOR_ONLY:'ได้รับข่าวลือ (ยังไม่ได้ตรวจ)',
+  VERIFYING:'กำลังตรวจสอบ / หลักฐานยังไม่พอ',
+  WATER_FOUND:'ยืนยันพบน้ำจากผู้สำรวจ ≥2 คน',
+  NO_WATER:'ตรวจไม่พบน้ำจากผู้สำรวจ ≥2 คน',
+  DISPUTED:'ผลตรวจภาคสนามขัดแย้ง',
+  CORROBORATED:'หลักฐานหลายต้นทางตรงกัน',CONFLICT:'หลักฐานขัดแย้ง'
+ };
  function settings(){
   return {count:Number($('node-count').value),protocol:$('protocol').value,
    scenario:$('scenario').value,range:Number($('range').value),
@@ -98,11 +109,21 @@
   note('เดินหน้า 1 tick · จำนวนการรับส่งเปลี่ยนตาม Delay และ Packet Loss');
  }
  function statusOf(agent){
+  const v=sim.state(agent.id);
+  if(isWater()){
+   switch(v.status){
+    case 'WATER_FOUND':return 'found';
+    case 'NO_WATER':return 'refuted';
+    case 'DISPUTED':return 'conflict';
+    case 'VERIFYING':return 'verifying';
+    case 'RUMOR_ONLY':return agent.id===0?'source':'rumor';
+    default:return 'unknown';
+   }
+  }
   if(agent.id===0)return 'source';
-  if(agent.reports.size===0)return 'unknown';
-  if(agent.reports.size===1)return 'informed';
-  const variants=new Set(agent.reports.values());
-  return variants.size>1?'conflict':'corroborated';
+  if(v.status==='CONFLICT')return 'conflict';
+  if(v.status==='CORROBORATED')return 'corroborated';
+  return agent.reports.size?'informed':'unknown';
  }
  function drawWorld(){
   if(!ctx)return;
@@ -115,6 +136,27 @@
   for(let x=0;x<=w;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
   for(let y=0;y<=h;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
   const size=sim.agents.length;
+  if(isWater()){
+   const site=sim.evaluation().site;
+   // The UI can show the rumored coordinates; agent decision code uses its
+   // own received rumor packet and field inspection, never this canvas.
+   ctx.save();
+   ctx.setLineDash([5,7]);ctx.strokeStyle='rgba(255,198,109,.15)';ctx.lineWidth=1;
+   for(const a of sim.agents){
+    if(a.isScout&&a.seen.has('r0')&&!a.inspected){
+     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(site.x,site.y);ctx.stroke();
+    }
+   }
+   ctx.setLineDash([]);
+   const pulse=3*Math.sin(sim.tick*.24);
+   ctx.beginPath();ctx.arc(site.x,site.y,21+pulse,0,Math.PI*2);
+   ctx.strokeStyle='rgba(255,199,102,.45)';ctx.lineWidth=2;ctx.stroke();
+   ctx.beginPath();ctx.arc(site.x,site.y,11,0,Math.PI*2);
+   ctx.fillStyle='#d1a45d';ctx.fill();
+   ctx.font='bold 12px system-ui,sans-serif';ctx.fillStyle='#ffdfaa';
+   ctx.textAlign='center';ctx.fillText('จุดข่าวลือ 💧',site.x,site.y-32);
+   ctx.restore();
+  }
   // A trail is visualization-only. The transport does not inspect canvas or this list.
   for(const edge of sim.trace){
    if(edge.tick<sim.tick-3)continue;
@@ -129,9 +171,13 @@
    const state=statusOf(a);
    ctx.beginPath();ctx.arc(a.x,a.y,radius,0,Math.PI*2);
    ctx.fillStyle=palette[state];ctx.fill();
-   if(state==='source'){
+   if(a.id===0){
     ctx.beginPath();ctx.arc(a.x,a.y,radius+6,0,Math.PI*2);
     ctx.strokeStyle='#ffd184';ctx.lineWidth=1.9;ctx.stroke();
+   }
+   if(isWater()&&a.isScout&&a.seen.has('r0')&&!a.inspected){
+    ctx.beginPath();ctx.arc(a.x,a.y,radius+4,0,Math.PI*2);
+    ctx.strokeStyle='#ffc66d';ctx.lineWidth=1.5;ctx.stroke();
    }
   }
   const a=sim.agents[selected];
@@ -174,12 +220,26 @@
   if(!a)return;
   const title=document.createElement('strong');title.textContent='Agent #'+a.id;
   const p=document.createElement('p');
-  p.textContent=s.status+' · '+s.independentSources+' แหล่งอิสระ · '+(s.hasPrimary?'ได้รับข่าวต้นทาง':'ยังไม่ได้ข่าวต้นทาง');
+  p.textContent=(labelsTh[s.status]||s.status)+' · '+s.independentSources+
+   ' แหล่งต้นทาง · '+(s.hasPrimary?'ได้รับข่าวต้นทาง':'ยังไม่ได้ข่าวต้นทาง');
   const list=document.createElement('div');
-  list.textContent=a.reports.size===0?'ยังไม่มีหลักฐาน':('หลักฐานในความจำ: '+[...a.reports].map(([id,value])=>'#'+id+' → '+value).join(' · '));
+  const seen=[...a.evidence.entries()].map(([origin,e])=>{
+   const kind=e.kind==='inspection'?'สำรวจจริง':e.kind==='rumor'?'ข่าวลือ':'ข้ออ้าง';
+   const value=isWater()?(e.value==='A'?'พบน้ำ':'ไม่พบน้ำ'):'ข้อมูล '+e.value;
+   return '#'+origin+' '+kind+' → '+value;
+  });
+  list.textContent=seen.length?'หลักฐานในความจำ: '+seen.join(' · '):'ยังไม่มีหลักฐาน';
   const tail=document.createElement('p');tail.className='hint';
-  tail.textContent='ส่งผ่านกี่ทอดไม่เพิ่มคะแนนพยาน หากมีแหล่งต้นทางเดียว';
-  panel.append(title,p,list,tail);
+  if(isWater()){
+   const inspect=document.createElement('p');
+   inspect.textContent='การสำรวจพื้นที่: พบน้ำ '+s.inspections.water+' · ไม่พบน้ำ '+
+    s.inspections.dry+' · '+(s.inspected?'ตัวนี้ตรวจแล้ว':s.scouting?'ตัวนี้กำลังเดินทาง':'ตัวนี้ไม่ได้รับหน้าที่สำรวจ');
+   tail.textContent='นับเฉพาะผู้สำรวจที่เป็นต้นทางอิสระ: การส่งข่าวซ้ำไม่ใช่การตรวจแหล่งน้ำ';
+   panel.append(title,p,inspect,list,tail);
+  }else{
+   tail.textContent='ส่งผ่านกี่ทอดไม่เพิ่มคะแนนพยาน หากมีแหล่งต้นทางเดียว';
+   panel.append(title,p,list,tail);
+  }
  }
  function refresh(){
   if(!sim)return;
@@ -188,8 +248,28 @@
   $('m-coverage').textContent=m.coveragePct.toFixed(1)+'%';
   $('m-transmissions').textContent=pretty(m.transmissions);
   $('m-duplicates').textContent=pretty(m.duplicates);
-  $('m-agree').textContent=pretty(m.corroborated);
-  $('m-conflict').textContent=pretty(m.conflicted);
+  const water=isWater();
+  $('m-agree-label').textContent=water?'ยืนยันพบแหล่งน้ำ':'ยืนยันตรงกัน';
+  $('m-conflict-label').textContent=water?'ยืนยันไม่พบน้ำ':'ข้อมูลขัดแย้ง';
+  $('m-agree-sub').textContent=water?'ผู้สำรวจอิสระ ≥2 ราย':'≥2 ต้นทางอิสระ';
+  $('m-conflict-sub').textContent=water?'ผู้สำรวจอิสระ ≥2 ราย':'ความเห็น A และ B ไม่ตรงกัน';
+  $('m-agree').textContent=pretty(water?m.verifiedWater:m.corroborated);
+  $('m-conflict').textContent=pretty(water?m.refutedRumor:m.conflicted);
+  $('water-summary').style.display=water?'flex':'none';
+  $('water-legend').style.display=water?'flex':'none';
+  $('classic-legend').style.display=water?'flex':'none';
+  $('scene-pill').textContent=water?'RUMOR → SCOUT → VERIFY · NO CENTRAL LEADER':'LOCAL DECISIONS · NO CENTRAL LEADER';
+  if(water){
+   const world=sim.evaluation();
+   $('water-case-label').textContent='โลกจำลอง: '+(world.waterExists?'มีน้ำจริง':'ไม่มีน้ำจริง')+
+    ' · ปล่อยข่าวลือว่า “ตรงนี้มีน้ำ”';
+   $('water-explainer').textContent='ผู้ทดลองเลือกความจริงของโลกไว้ แต่ Agent ต้องไปสำรวจพิกัดด้วยตนเอง ไม่มีสมองกลางให้คำตอบ';
+   $('water-progress').textContent='ตรวจพื้นที่แล้ว '+m.fieldInspections+
+    ' · กำลังไปตรวจ '+m.scoutsEnRoute+' · ได้ยินข่าวแต่ยังไม่ยืนยัน '+m.rumorOnly;
+   $('water-result').textContent='ยืนยันพบ '+m.verifiedWater+' · ยืนยันไม่พบ '+
+    m.refutedRumor+' · รอหลักฐาน '+m.verifying+' · ขัดแย้ง '+m.disputed+
+    ' · ตำแหน่ง ('+world.site.x+', '+world.site.y+')';
+  }
   $('tick-count').textContent='Tick '+m.tick;
   drawWorld();drawChart();inspect();setLive(playing);
  }
