@@ -10,8 +10,9 @@
  const finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
- const targetId=id=>typeof id==='string'&&/^T\d{1,3}$/.test(id);
- const validAgent=id=>id==='B1'||id==='B2';
+ const targetId=id=>typeof id==='string'&&/^(?:T\d{1,3}|[BR][12])$/.test(id);
+ const validAgent=id=>/^[BR][12]$/.test(String(id));
+ const teammates=(a,b)=>validAgent(a)&&validAgent(b)&&a!==b&&a[0]===b[0];
  const emptyInbox=()=>({bids:{},responses:{}});
  function prune(inbox,now){
   const bids={},responses={};
@@ -28,7 +29,7 @@
   if(!validAgent(owner)||!Number.isFinite(now))return next;
   for(const m of messages||[]){
    if(!m||m.receiver!==owner||!validAgent(m.sender)||m.sender===owner||
-    !targetId(m.targetId)||!Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
+    !teammates(m.sender,owner)||!targetId(m.targetId)||!Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
     !Number.isFinite(m.expiresAt)||m.seenAt>now||m.deliverAt>now||m.expiresAt<=now)continue;
    if(m.type==='BID'){
     if(m.source!=='own_sensor'||!Number.isFinite(m.quality)||m.quality<0||m.quality>1)continue;
@@ -59,7 +60,7 @@
  function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400}={}){
   const original=radio||{queue:[],lastSent:{}},queue=(original.queue||[]).slice(),lastSent={...(original.lastSent||{})};
   const local=tracks?.[selectedId];
-  if(!finite(from)||!finite(to)||!validAgent(from.id)||!validAgent(to.id)||from.id===to.id||
+  if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||
    !Number.isFinite(now)||!targetId(selectedId)||!finite(local)||local.status!=='visible'||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
   const key='BID:'+from.id+'>'+to.id;
@@ -72,8 +73,7 @@
  }
  function sendResponse(radio,from,to,target,kind,now,{range=Infinity,latency=.3,ttl=1.3,interval=.9}={}){
   const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
-  if(!finite(from)||!finite(to)||!validAgent(from.id)||!validAgent(to.id)||
-   from.id===to.id||!targetId(target)||!['ACK','NACK'].includes(kind)||!Number.isFinite(now)||
+  if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||!targetId(target)||!['ACK','NACK'].includes(kind)||!Number.isFinite(now)||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
   const key=kind+':'+from.id+'>'+to.id+':'+target;
   if(now-(lastSent[key]??-Infinity)<interval)return {queue,lastSent};
@@ -87,7 +87,7 @@
   const chosen=localTracks?.[chosenId];
   if(!finite(self)||!chosenId||!finite(chosen)||chosen.status!=='visible'||!Number.isFinite(now))return result;
   const peer=Object.values(prune(inbox,now).bids)
-   .find(b=>b.targetId===chosenId&&validAgent(b.sender)&&b.sender!==self.id);
+   .find(b=>b.targetId===chosenId&&teammates(b.sender,self.id));
   if(!peer)return result;
   result.peerId=peer.sender;
   const localBid=bidQuality(self,chosen,scale);

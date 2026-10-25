@@ -31,13 +31,16 @@ jobs:
           test -s network_lab_ui.js
           grep -q 'src="network_lab_core.js"' network-lab.html
           grep -q 'src="network_lab_ui.js"' network-lab.html
-          grep -q 'RRT ARENA 06.14' index.html
+          grep -q 'RRT ARENA 06.15' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
           grep -q 'RRTArenaPrivateRadio' index.html
           grep -q 'RRTArenaLeaderless' index.html
           grep -q 'RRTArenaEvidence' index.html
+          grep -q 'RRTArenaDuel2' index.html
+          grep -q 'id="duel2TeamMode"' index.html
+          grep -q 'id="duel2Status"' index.html
           grep -q 'id="blueEvidenceStatus"' index.html
           grep -q 'id="teamRadioLoss"' index.html
           grep -q 'id="blueTeamMode"' index.html

@@ -6,7 +6,7 @@ const fs=require('node:fs');const path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'index.html'),'utf8');
 const modules={arenaCore:'rrt_arena_v05_core.js',agentMemoryCore:'rrt_arena_memory_v061.js',guidedSampler:'rrt_arena_guided_v061.js',
  activeTacticsCore:'rrt_arena_tactics_v062.js',dynamicDefenseCore:'rrt_arena_defense_v063.js',arenaMultiCore:'rrt_arena_multi_v064.js',
- meleeWaveCore:'rrt_arena_melee_v065.js',swarmPredictCore:'rrt_arena_swarm_v066.js',rangedEnemyCore:'rrt_arena_ranged_v067.js',rangedDefenseCore:'rrt_arena_rangeddef_v068.js',blueTeamCore:'rrt_arena_team_v069.js',teamAdvisorCore:'rrt_arena_coop_v0611.js',privateRadioCore:'rrt_arena_private_radio_v0612.js',leaderlessCore:'rrt_arena_leaderless_v0613.js',evidenceCore:'rrt_arena_evidence_v0614.js'};
+ meleeWaveCore:'rrt_arena_melee_v065.js',swarmPredictCore:'rrt_arena_swarm_v066.js',rangedEnemyCore:'rrt_arena_ranged_v067.js',rangedDefenseCore:'rrt_arena_rangeddef_v068.js',blueTeamCore:'rrt_arena_team_v069.js',teamAdvisorCore:'rrt_arena_coop_v0611.js',privateRadioCore:'rrt_arena_private_radio_v0612.js',leaderlessCore:'rrt_arena_leaderless_v0613.js',evidenceCore:'rrt_arena_evidence_v0614.js',duel2Core:'rrt_arena_duel_v0615.js'};
 for(const [id,file] of Object.entries(modules)){
  test(`index.html inlines ${file} unchanged`,()=>{
   const m=html.match(new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`));
@@ -17,7 +17,7 @@ for(const [id,file] of Object.entries(modules)){
 test('predictive module loads before the game script uses it',()=>{
  assert.ok(html.indexOf('<script id="swarmPredictCore">')<html.indexOf('swarmCore=globalThis.RRTArenaSwarm'));
 });
-test('page advertises the V0.6.14 build',()=>assert.match(html,/<title>RRT ARENA 06\.14/));
+test('page advertises the V0.6.15 build',()=>assert.match(html,/<title>RRT ARENA 06\.15/));
 
 const vm=require('node:vm');
 test('all standalone inline scripts parse as JavaScript',()=>{
@@ -47,4 +47,9 @@ test('per-BLUE evidence ledgers are isolated and process delivered radio',()=>{
 test('the radio evidence resolver is not a fire authorization pathway',()=>{
  const shot=html.slice(html.indexOf('function shoot(bot){'),html.indexOf('function burst('));
  assert.doesNotMatch(shot,/evidenceCore|evidenceLedger|radioInbox/);
+});
+
+test('2v2 policy module loads before the four-fighter gameplay loop',()=>{
+ assert.ok(html.indexOf('<script id="duel2Core">')<html.indexOf('duel2Core=globalThis.RRTArenaDuel2'));
+ assert.match(html,/function loopDuel2Step\(dt\)/);
 });

@@ -31,11 +31,108 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.14/.test(duel.title),'title shows V0.6.13: '+duel.title);
+  check(/RRT ARENA 06\.15/.test(duel.title),'title shows V0.6.15: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
   check(duel.scroll<=0,'duel: no horizontal scroll');
+  // V0.6.15: 2v2 uses four identical latest BLUE-version combat brains,
+  // with independent sensing, private memory, and the same weapon stats.
+  await page.goto(base+sep+'mode=duel2&seed=83');
+  const duel2=await page.evaluate(()=>{
+   const d=window.__rrtDuel2Debug,engine=window.__rrtArenaDebug;
+   const start=d.getState(),stage=document.getElementById('stage');
+   const before=stage.getBoundingClientRect(),initialHeight=before.height,initialTop=before.top;
+   document.getElementById('start').click();d.advance(10);
+   const after=d.getState(),validate=engine.validate();
+   const end=stage.getBoundingClientRect();
+   return {start,after,validate,openPanel:!document.getElementById('duel2Panel').hidden,
+    dropdown:document.getElementById('scenarioMode').value,
+    hud:document.getElementById('duel2Status').textContent,
+    blueHp:document.getElementById('blueHp').textContent,
+    redHp:document.getElementById('redHp').textContent,
+    scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+    stable:Math.abs(initialHeight-end.height)<1&&Math.abs(initialTop-end.top)<1};
+  });
+  const roster=duel2.start.fighters,live=duel2.after.fighters;
+  check(duel2.start.scenario==='duel2'&&duel2.dropdown==='duel2'&&duel2.openPanel&&
+   roster.map(b=>b.id).join('/')==='B1/R1/B2/R2','duel2: four agents and proper visible mode control');
+  check(roster.every(b=>b.memoryCount===2&&b.memoryUnique),
+   'duel2: four separate 2-target PrivateMemory sets, no shared teammate registry');
+  check(roster.every(b=>JSON.stringify(b.stats)===JSON.stringify(roster[0].stats))&&
+    roster.every(b=>b.capabilities.rangedDefense&&b.capabilities.keepMoving),
+   'duel2: RED R1/R2 and BLUE B1/B2 have identical latest BLUE combat stats and defense');
+  check(live.every(b=>[b.x,b.y,b.hp,b.ammo].every(Number.isFinite))&&
+   ['blue','red'].every(color=>live.some(b=>b.team===color&&b.planCount>0))&&duel2.validate.fightersFree&&duel2.validate.waypointsClear,
+   'duel2: four-fighter RRT ran collision-safe at '+w+'px');
+  check(duel2.blueHp.includes('/240')&&duel2.redHp.includes('/240')&&
+   duel2.hud.includes('B ')&&duel2.hud.includes('R ')&&duel2.stable&&duel2.scroll<=0,
+   'duel2: aggregate 240 HP/team and stable mobile HUD without horizontal scroll');
+
+  // Same-team packets are delivered or lost through the existing radio transport,
+  // never mapped to ground-truth target tracks or authorization for fire.
+  await page.goto(base+sep+'mode=duel2&dteam=coop&loss=100&seed=83');
+  const noRadio=await page.evaluate(()=>{
+   const d=window.__rrtDuel2Debug;
+   document.getElementById('mapSelect').value='open';
+   document.getElementById('mapSelect').dispatchEvent(new Event('change',{bubbles:true}));
+   document.getElementById('start').click();d.advance(12);
+   return d.getState();
+  });
+  check(noRadio.mode==='cooperative'&&noRadio.packetLoss===100&&
+   noRadio.radio.delivered===0&&noRadio.radio.dropped===noRadio.radio.sent&&
+   noRadio.fighters.every(b=>b.received.length===0),
+   'duel2: 100% packet loss gives zero remote sightings to either team');
+  check(noRadio.fighters.some(b=>b.planCount>0)&&
+   noRadio.fighters.some(b=>b.shots>0),
+   'duel2: four latest-version agents retain independent RRT and shooting with no radio');
+
+  // Zero loss must deliver a verifiable peer report and BID on BOTH sides.
+  // This proves real cooperative operation, not merely independent fallback.
+  await page.goto(base+sep+'mode=duel2&dteam=coop&loss=0&seed=83');
+  const radioUp=await page.evaluate(()=>{
+   const d=window.__rrtDuel2Debug;
+   document.getElementById('mapSelect').value='open';
+   document.getElementById('mapSelect').dispatchEvent(new Event('change',{bubbles:true}));
+   document.getElementById('start').click();d.advance(6);
+   return d.getState();
+  });
+  console.log('DUEL2 COOP '+JSON.stringify({radio:radioUp.radio,
+   endpoints:radioUp.fighters.map(b=>({id:b.id,received:b.received,
+    bids:b.receivedBids,visible:b.visible,shots:b.shots}))}));
+  check(radioUp.mode==='cooperative'&&radioUp.packetLoss===0&&
+   radioUp.radio.sent>0&&radioUp.radio.delivered>0&&radioUp.radio.dropped===0,
+   'duel2: lossless radio actually delivers P2P packets');
+  check(['blue','red'].every(color=>radioUp.fighters.some(b=>
+    b.team===color&&b.received.length>0&&b.evidence>0)),
+   'duel2: BOTH BLUE and RED agents actually ingest delivered peer sightings');
+  check(radioUp.fighters.every(b=>b.receivedBids.every(id=>id[0]===b.id[0])),
+   'duel2: BID messages remain within each team with no cross-team memory leakage');
+
+  // Exact end condition: R1 KO alone cannot end match; R1 and R2 KO does.
+  await page.goto(base+sep+'mode=duel2&seed=713');
+  const win=await page.evaluate(()=>{
+   const d=window.__rrtDuel2Debug,button=document.getElementById('start');
+   d.forceHp('R1',0);button.click();d.advance(.25);
+   const partial=d.getState();
+   d.forceHp('R2',0);d.advance(.25);
+   const ended=d.getState();
+   return {partial:partial.phase,after:ended.phase,winner:ended.winner};
+  });
+  check(win.partial==='running'&&win.after==='ended'&&win.winner==='blue',
+   'duel2: teammate survives first KO, winner declared only after whole team eliminated');
+
+  // 2v2 must not break the old duel or multi-target mode controls.
+  const switched=await page.evaluate(()=>{
+   const sel=document.getElementById('scenarioMode');
+   sel.value='duel';sel.dispatchEvent(new Event('change',{bubbles:true}));
+   const duelCount=window.__rrtArenaDebug.getState().bots.length;
+   sel.value='duel2';sel.dispatchEvent(new Event('change',{bubbles:true}));
+   return {duelCount,teamCount:window.__rrtDuel2Debug.getState().fighters.length,
+    visible:!document.getElementById('duel2Panel').hidden};
+  });
+  check(switched.duelCount===2&&switched.teamCount===4&&switched.visible,
+   'duel2: user can switch 1v1 ↔ 2v2 without refreshing or corrupting world');
   // Multi-target tracking (melee off) must never damage BLUE.
   await page.goto(base+sep+'mode=multi');
   const track=await page.evaluate(()=>{const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;md.setMelee(false);document.getElementById('start').click();d.advance(20);const s=md.getState();return {hp:s.blue.hp,melee:s.melee,finite:true,known:Object.keys(s.tracks).length,v:d.validate(),phase:d.getState().phase};});
