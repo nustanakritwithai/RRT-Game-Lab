@@ -1689,12 +1689,24 @@ multiUI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?t
 multiUI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
 let scenario=new URLSearchParams(location.search).get('mode')==='multi'?'multi':'duel';
 let multi={count:8,targets:[],tracks:{},brains:{},focus:null,manualFocus:null,eliminated:0,sensorAt:-1,seed:0,sharedBrain:null,melee:true,difficulty:'balanced',meleeHits:0,damageTaken:0,microMoves:0,lastKiteAt:-20,kites:0,waveHistory:[],matchId:0,kiteEnabled:true,predictive:true,forecast:null,decision:null,pendingEvade:false,lastPreemptAt:-20,preempts:0,routeCuts:0,planFailures:0,enemyMode:'melee',rangedShots:[],rangedFired:0,rangedHits:0,rangedDamage:0,rangedDefense:true,mobile:true,bridgeSteps:0,jinks:0,cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,coverMoves:0,coverReroutes:0,standoffs:0};
-let team={mode:'solo',blues:[],secondary:null,radio:teamCore.newRadio(),radioSent:0,radioDelivered:0,heldFire:0,laneMoves:0,focusSplits:0,focusSamples:0,focusOverlap:0,shotsFired:{B1:0,B2:0}};
+let team={mode:'solo',blues:[],secondary:null,radio:teamCore.newRadio(),radioSent:0,radioDelivered:0,radioDropped:0,bidsSent:0,bidsReceived:0,negotiatedYields:0,peerAcks:0,heldFire:0,laneMoves:0,focusSplits:0,focusSamples:0,focusOverlap:0,shotsFired:{B1:0,B2:0}};
 const rngStreams=commsCore.createStreams(benchmarkSeed);
 function withRngStream(name,fn){
  const old=Math.random;
  Math.random=()=>rngStreams.next(name);
  try{return fn();}finally{Math.random=old;}
+}
+// Transport operates on outgoing packets only; never makes a tactical decision.
+function sendRadioPacket(build){
+ const before=team.radio,attempted=build(before);
+ const net=leaderless.applyNetwork(before,attempted,{
+  loss:Number(multiUI.radioLoss.value)/100,
+  delay:Number(multiUI.radioDelay.value),
+  rand:()=>rngStreams.next('radio')
+ });
+ team.radio=net.radio;team.radioSent=(team.radioSent||0)+net.sent;
+ team.radioDropped=(team.radioDropped||0)+net.dropped;
+ return net;
 }
 const multiActive=()=>scenario==='multi';
 const teamDuo=()=>multiActive()&&team.blues.length===2;
@@ -1762,9 +1774,11 @@ function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encount
 // spawnBot('blue'), currentIntent/chooseGoal/RRT/movement/shoot code.
 // Only the per-agent observation and tactical transient state are context switched.
 function setupBlueTeam(){
- const primary=bots[0];primary.id='B1';primary.radioInbox=commsCore.makeInbox();
+ const primary=bots[0];primary.id='B1';primary.radioInbox=commsCore.makeInbox();primary.bidInbox=leaderless.emptyInbox();
  team={mode:multiUI.teamMode.value,blues:[primary],secondary:null,
-  radio:teamCore.newRadio(),blockedFriendlyShots:0,radioSent:0,radioDelivered:0,heldFire:0,laneMoves:0,focusSplits:0,focusSamples:0,focusOverlap:0,shotsFired:{B1:0,B2:0}};
+  radio:teamCore.newRadio(),blockedFriendlyShots:0,radioSent:0,radioDelivered:0,radioDropped:0,
+  bidsSent:0,bidsReceived:0,negotiatedYields:0,peerAcks:0,
+  heldFire:0,laneMoves:0,focusSplits:0,focusSamples:0,focusOverlap:0,shotsFired:{B1:0,B2:0}};
  if(team.mode==='solo')return;
  const candidates=[
   {x:primary.x+R*4.3,y:primary.y},{x:primary.x,y:primary.y-R*4.3},
@@ -1776,7 +1790,7 @@ function setupBlueTeam(){
   if(freePoint(p,R+2)&&dist(p,primary)>R*3&&multi.targets.every(t=>!t.active||dist(p,t)>R*3)){pos=p;break;}}}
  if(!pos)pos=candidates.find(p=>freePoint(p,R+1))||{x:primary.x,y:primary.y-R*3};
  const secondary=spawnBot('blue',pos.x,pos.y,'B2');
- secondary.id='B2';secondary.radioInbox=commsCore.makeInbox(); // Same BLUE stats as B1; never a substitute or weaker AI.
+ secondary.id='B2';secondary.radioInbox=commsCore.makeInbox();secondary.bidInbox=leaderless.emptyInbox(); // Same BLUE stats as B1; never a substitute or weaker AI.
  for(const key of ['moveSpeed','baseFire','range','preferred','maxAmmo','ammo','aim','hp','maxHp'])
   secondary[key]=primary[key];
  secondary.strafe=1;
