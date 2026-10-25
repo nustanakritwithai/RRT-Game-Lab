@@ -108,6 +108,11 @@ async function main(){
    'duel2: BOTH BLUE and RED agents actually ingest delivered peer sightings');
   check(radioUp.fighters.every(b=>b.receivedBids.every(id=>id[0]===b.id[0])),
    'duel2: BID messages remain within each team with no cross-team memory leakage');
+  check(radioUp.radio.evidenceAccepted>0&&
+   radioUp.radio.conflicts<=Math.ceil(radioUp.radio.evidenceAccepted*.15),
+   'duel2: normal target movement does not generate mass false conflict reports on '+w+'px');
+
+
 
   // Real combat regression: local visual ally B2/R2 blocks the line of fire.
   // On both teams the original RRT must find a NEW lateral lane without radio.
