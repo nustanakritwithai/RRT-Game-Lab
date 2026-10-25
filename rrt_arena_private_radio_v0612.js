@@ -9,9 +9,9 @@
  const finite=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  const clone=v=>({...v});
- function makeInbox(){return {sightings:{},claims:{}};}
+ function makeInbox(){return {sightings:{},claims:{},poses:{}};}
  function prune(inbox,now,{ttl=3.5}={}){
-  const sightings={},claims={};
+  const sightings={},claims={},poses={};
   for(const [id,m] of Object.entries(inbox?.sightings||{})){
    if(Number.isFinite(m.seenAt)&&m.seenAt<=now&&now-m.seenAt<=ttl&&
       Number.isFinite(m.expiresAt)&&m.expiresAt>=now&&finite(m))sightings[id]=clone(m);
@@ -20,16 +20,32 @@
    if(Number.isFinite(m.seenAt)&&m.seenAt<=now&&now-m.seenAt<=ttl&&
       Number.isFinite(m.expiresAt)&&m.expiresAt>=now)claims[id]=clone(m);
   }
-  return {sightings,claims};
+  for(const [id,m] of Object.entries(inbox?.poses||{})){
+   if(Number.isFinite(m.seenAt)&&m.seenAt<=now&&
+      Number.isFinite(m.expiresAt)&&m.expiresAt>=now&&finite(m))poses[id]=clone(m);
+  }
+  return {sightings,claims,poses};
  }
  function ingest(inbox,messages,now,{owner=null,ttl=3.5}={}){
   const state=prune(inbox,now,{ttl});
   for(const m of messages||[]){
    if(!m||m.receiver!==owner||!['B1','B2'].includes(m.sender)||m.sender===owner||
-    typeof m.targetId!=='string'||!/^T\d{1,3}$/.test(m.targetId)||
     !Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
     now<m.deliverAt||m.seenAt>now||now-m.seenAt>ttl)continue;
    const type=m.type||'SIGHTING';
+   // POSE is a first-person radio packet describing the sender's own position.
+   // It MUST be received before it may affect teammate tactical decisions.
+   if(type==='POSE'){
+    const expiresAt=Math.min(Number.isFinite(m.expiresAt)?m.expiresAt:Infinity,m.seenAt+.75);
+    if(m.source!=='own_position'||!finite(m)||expiresAt<now||
+       (m.sender!== 'B1'&&m.sender!=='B2'))continue;
+    const old=state.poses[m.sender];
+    if(old&&old.seenAt>m.seenAt)continue;
+    state.poses[m.sender]={id:m.sender,x:m.x,y:m.y,hp:Number.isFinite(m.hp)?Math.max(0,m.hp):120,
+      source:'radio',seenAt:m.seenAt,receivedAt:now,expiresAt};
+    continue;
+   }
+   if(typeof m.targetId!=='string'||!/^T\d{1,3}$/.test(m.targetId))continue;
    if(type==='TARGET_CLAIM'){
     const expiresAt=Math.min(Number.isFinite(m.expiresAt)?m.expiresAt:Infinity,m.seenAt+ttl);
     if(expiresAt<now)continue;
@@ -65,6 +81,24 @@
   lastSent[key]=now;
   return {queue:queue.slice(-240),lastSent};
  }
+ function sendPose(radio,from,to,now,{range=Infinity,latency=.30,interval=.25,ttl=.75}={}){
+  const src=radio||{queue:[],lastSent:{}},queue=(src.queue||[]).slice(),lastSent={...(src.lastSent||{})};
+  if(!finite(from)||!finite(to)||!['B1','B2'].includes(from.id)||!['B1','B2'].includes(to.id)||
+   from.id===to.id||from.hp<=0||to.hp<=0||!Number.isFinite(now)||distance(from,to)>range)
+   return {queue,lastSent};
+  const key='pose:'+from.id+'>'+to.id;
+  if(now-(lastSent[key]??-Infinity)<interval)return {queue,lastSent};
+  queue.push({type:'POSE',source:'own_position',sender:from.id,receiver:to.id,
+   x:from.x,y:from.y,hp:from.hp,seenAt:now,deliverAt:now+Math.max(0,latency),
+   expiresAt:now+Math.max(0,ttl)});
+  lastSent[key]=now;
+  return {queue:queue.slice(-240),lastSent};
+ }
+ function peerPositions(inbox,now){
+  return Object.values(inbox?.poses||{}).filter(m=>finite(m)&&m.seenAt<=now&&m.expiresAt>=now)
+   .map(m=>({id:m.id,x:m.x,y:m.y,hp:m.hp,reportedAt:m.seenAt,age:Math.max(0,now-m.seenAt)}))
+   .sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+ }
  function radioExploreGoal(inbox,self,now,{ttl=3.5,free=()=>false}={}){
   if(!finite(self))return null;
   const active=Object.values(inbox?.sightings||{}).filter(m=>
@@ -95,5 +129,5 @@
   reseed(seed);
   return Object.freeze({next,reseed,getSeed:()=>base});
  }
- return Object.freeze({makeInbox,prune,ingest,peerClaim,sendClaim,radioExploreGoal,createStreams});
+ return Object.freeze({makeInbox,prune,ingest,peerClaim,sendClaim,sendPose,peerPositions,radioExploreGoal,createStreams});
 });
