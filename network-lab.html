@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081523">
+<meta name="description" content="PeerMesh Lab: Interactive 1–1000 agent decentralized communication simulator. Compare flooding, gossip, fanout and anti-entropy with reproducible seeds.">
+<title>PeerMesh Lab | Decentralized Agent Communication</title>
+<style>
+:root{color-scheme:dark;--bg:#07111e;--panel:#101f30;--deep:#09192a;--line:#29455d;--ink:#e7f4fc;--mute:#94aec3;--cyan:#48cfff;--mint:#5ee6b3;--gold:#ffc66d;--rose:#fe7793}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;background:radial-gradient(circle at 8% -8%,#16436b 0,transparent 38%),radial-gradient(circle at 90% 0,#332b55 0,transparent 37%),var(--bg)}
+a{color:#a8e8ff}
+button,input,select{font:inherit}
+button{cursor:pointer;touch-action:manipulation;min-height:43px}
+button:disabled{opacity:.5;cursor:wait}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+header,.shell,footer{width:min(1440px,100%);margin:auto}
+header{padding:19px 18px 13px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.brand{letter-spacing:2px;text-transform:uppercase;font-size:11px;font-weight:900;color:var(--cyan)}
+h1{font-size:clamp(28px,4.1vw,45px);margin:3px 0 2px;letter-spacing:-1.2px;line-height:1.15}
+h1 span{color:var(--mint)}
+.desc{color:var(--mute);margin:6px 0 0;max-width:730px;font-size:13px}
+.backlink{text-decoration:none;white-space:nowrap;border:1px solid #36536b;border-radius:10px;padding:9px 12px;color:#d2ebff;font-size:12px}
+.shell{padding:0 16px 26px}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:12px 0}
+.metric,.panel{background:linear-gradient(146deg,#13293d,#0a1b2b);border:1px solid var(--line);border-radius:15px}
+.metric{padding:10px 12px;min-width:0}
+.metric .label{display:block;color:var(--mute);font-size:11px}
+.metric strong{display:block;font-variant-numeric:tabular-nums;font-size:clamp(18px,2.3vw,27px);font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric small{display:block;color:#7898b0;font-size:10px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 325px;gap:12px;align-items:start}
+.panel{overflow:hidden}
+.stage-head,.section-head{padding:12px 14px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.stage-head strong,.section-head strong{font-size:14px}
+.subtle{font-size:11px;color:var(--mute)}
+.stage-head .live{display:flex;gap:7px;align-items:center}
+.light{width:8px;height:8px;border-radius:50%;background:#8597a7}
+.light.on{background:var(--mint);box-shadow:0 0 15px var(--mint)}
+.canvas-wrap{position:relative;background:#041321;overflow:hidden;border-block:1px solid #264056}
+#mesh-canvas{display:block;width:100%;height:auto;aspect-ratio:1000/620;touch-action:pan-y;cursor:crosshair}
+.canvas-pill{position:absolute;top:12px;left:12px;border:1px solid #385b77;background:#091e32de;padding:5px 10px;border-radius:99px;font-size:10px;color:#b4dafa;pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:13px;padding:10px 14px;font-size:11px;color:var(--mute)}
+.key{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;background:#4b667d}
+.key.source{background:#f3b86d}.key.informed{background:#48cfff}.key.corroborated{background:#5ee6b3}.key.conflict{background:#ff7991}
+.actionbar{padding:11px 12px;display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid #213e56}
+.btn{border:1px solid #45617a;border-radius:10px;background:#18354c;color:#e0f5ff;padding:9px 14px;font-weight:750;font-size:12px}
+.btn:hover:not(:disabled){background:#25516b}
+.btn.primary{border-color:#3dc7f5;background:linear-gradient(125deg,#008bad,#2370c3);color:white}
+.btn.good{border-color:#398c7b;background:#134a43}
+#status{padding:0 14px 12px;margin:0;min-height:29px;font-size:12px;color:#c4ddeb}
+.band{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;margin-top:12px}
+.chart-holder{padding:0 14px 14px}
+#coverage-chart{display:block;width:100%;height:135px}
+#inspector{padding:0 15px 14px;font-size:12px;color:#b5cfdf;min-height:134px;overflow-wrap:anywhere}
+#inspector strong{font-size:15px;color:#f0fbff}
+.control-body{padding:0 14px 12px}
+.field{margin:0 0 13px;display:block}
+.field>span{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#cce1ef;font-size:12px;font-weight:650;margin-bottom:6px}
+.field output{color:#78ddff;font-variant-numeric:tabular-nums}
+select,input[type=number]{background:#0b1e30;color:var(--ink);border:1px solid #3c5a71;border-radius:10px;padding:9px 10px;width:100%;min-height:42px}
+input[type=range]{width:100%;accent-color:var(--cyan);height:21px;cursor:pointer}
+.checkbox{display:flex;align-items:center;gap:10px;font-weight:650;font-size:12px;margin:5px 0 14px}
+.checkbox input{width:18px;height:18px;accent-color:#40ceef}
+.hint{font-size:11px;color:#89a9bf;line-height:1.55}
+.rule{height:1px;background:#29445a;margin:14px 0}
+.compare-section{margin-top:12px;padding-bottom:13px}
+#comparison{overflow-x:auto;padding:0 12px}
+table{width:100%;border-collapse:collapse;text-align:left;font-size:12px;white-space:nowrap}
+th,td{padding:9px 10px;border-bottom:1px solid #28435a}
+th{font-weight:700;color:#9dd5eb}
+td{font-variant-numeric:tabular-nums}
+td.best{color:var(--mint);font-weight:850}
+.note{color:#94b0c5;font-size:11px;line-height:1.6;padding:2px 13px 13px}
+footer{font-size:11px;color:#819db3;padding:4px 18px 30px}
+@media(max-width:1090px){.layout{grid-template-columns:minmax(0,1fr) 285px}.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){header{padding:13px 12px 8px}h1{font-size:30px}.shell{padding:0 10px 20px}.layout{grid-template-columns:minmax(0,1fr)}.metrics{gap:7px}.metric{padding:8px 10px}.band{grid-template-columns:1fr 1fr}.control-body{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}.control-body .wide{grid-column:1/-1}}
+@media(max-width:520px){header{align-items:flex-start}.backlink{padding:7px 9px;font-size:10px}.desc{font-size:11px}.metrics{grid-template-columns:repeat(3,1fr)}.metric .label{font-size:10px}.metric strong{font-size:19px}.metric small{font-size:9px}.stage-head{padding:10px 11px}.stage-head strong{font-size:12px}#mesh-canvas{aspect-ratio:1.24}.legend{gap:9px;font-size:10px}.actionbar{padding:10px;display:grid;grid-template-columns:repeat(3,1fr)}.btn{padding:8px 6px;font-size:12px;min-height:44px}.band{grid-template-columns:1fr}.control-body{grid-template-columns:1fr 1fr;column-gap:9px}.section-head{padding:11px 12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header>
+<div>
+<div class="brand">RRT Game Lab / Network Research</div>
+<h1>PeerMesh <span>Lab</span></h1>
+<p class="desc">เกมทดลองการแพร่กระจายข้อมูลจาก 1 Agent ถึง 1,000 Agent โดยไม่มีผู้ตัดสินใจกลาง เปรียบเทียบ Protocol และตรวจสอบข้อมูลซ้ำหรือขัดแย้งกันแบบเห็นภาพ</p>
+</div>
+<a class="backlink" href="./index.html" aria-label="กลับไปเกม RRT Arena">↗ RRT Arena</a>
+</header>
+<main class="shell">
+<div id="metrics" class="metrics" aria-live="polite">
+<div class="metric"><span class="label">ข้อมูลถึง Agent</span><strong id="m-reached">1 / 300</strong><small>Origin 0 → เพื่อน</small></div>
+<div class="metric"><span class="label">Coverage</span><strong id="m-coverage">0.3%</strong><small>ได้รับข้อความต้นทาง</small></div>
+<div class="metric"><span class="label">ส่งข้อความ</span><strong id="m-transmissions">0</strong><small>จำนวนการพยายามส่ง</small></div>
+<div class="metric"><span class="label">ข้อมูลซ้ำ</span><strong id="m-duplicates">0</strong><small>รับแล้วแต่เคยเห็น</small></div>
+<div class="metric"><span class="label">ยืนยันตรงกัน</span><strong id="m-agree">0</strong><small>≥2 ต้นทางอิสระ</small></div>
+<div class="metric"><span class="label">ข้อมูลขัดแย้ง</span><strong id="m-conflict">0</strong><small>ความเห็น A และ B ไม่ตรงกัน</small></div>
+</div>
+<div class="layout">
+<div>
+<section class="panel" aria-labelledby="lab-heading">
+<div class="stage-head"><strong id="lab-heading">สนาม Agent Network · <span id="tick-count">Tick 0</span></strong><span class="subtle live"><i id="run-light" class="light"></i><span id="run-label">READY</span></span></div>
+<div class="canvas-wrap">
+<canvas id="mesh-canvas" width="1000" height="620" role="img" aria-label="แผนผัง Agent เลือกจุดเพื่อดูข้อมูลรายตัว">Canvas ไม่รองรับในเบราว์เซอร์นี้</canvas>
+<div class="canvas-pill">LOCAL DECISIONS · NO CENTRAL LEADER</div>
+</div>
+<div class="legend" aria-label="สัญลักษณ์สถานะ">
+<span><i class="key source"></i>จุดเริ่มต้น</span><span><i class="key"></i>ยังไม่ทราบ</span><span><i class="key informed"></i>ได้รับข้อมูล</span><span><i class="key corroborated"></i>หลักฐานตรงกัน</span><span><i class="key conflict"></i>หลักฐานขัดแย้ง</span>
+</div>
+<div class="actionbar" aria-label="ควบคุมการจำลอง">
+<button class="btn primary" id="start" type="button">▶ เริ่มทดลอง</button>
+<button class="btn" id="pause" type="button">⏸ หยุด</button>
+<button class="btn" id="step" type="button">▷ ทีละขั้น</button>
+<button class="btn" id="reset" type="button">↺ เริ่มใหม่</button>
+<button class="btn good" id="compare" type="button">⇄ เทียบ 4 วิธี</button>
+<button class="btn" id="export" type="button">↓ ส่งออกผล</button>
+</div>
+<p id="status" role="status" aria-live="polite">เลือกค่าทดลองแล้วกดเริ่ม · แตะ Agent เพื่อดูหลักฐานที่แต่ละตัวได้รับ</p>
+</section>
+<div class="band">
+<section class="panel"><div class="section-head"><strong>Coverage ตามเวลา</strong><span class="subtle">ข้อมูลจาก Agent 0</span></div><div class="chart-holder"><canvas id="coverage-chart" width="780" height="160" role="img" aria-label="กราฟจำนวน Agent ที่ได้รับข้อมูล"></canvas></div></section>
+<section class="panel"><div class="section-head"><strong>ข้อมูล Agent รายตัว</strong><span class="subtle">แตะจุดในสนาม</span></div><div id="inspector" aria-live="polite">เลือก Agent เพื่ออ่านข้อมูลเฉพาะเครื่องนั้น</div></section>
+</div>
+<section class="panel compare-section" aria-labelledby="compare-title">
+<div class="section-head"><strong id="compare-title">ตารางเปรียบเทียบ 4 Protocol</strong><span class="subtle" id="compare-progress">Seed เดียวกัน</span></div>
+<div id="comparison"><p class="hint">กด “เทียบ 4 วิธี” เพื่อทดลองทุก Protocol ในสภาพแวดล้อมเดียวกัน</p></div>
+<p class="note">คะแนนเป็นผลการจำลอง ไม่ใช่ผลจากเครือข่ายจริง • P90 = tick ที่ 90% ของผู้ได้รับข้อมูลครั้งแรกได้รับข้อความ (ไม่รวมผู้ที่ยังไม่ถึง) • ข้อมูลจากหลายเส้นทางที่มีต้นทางเดียวกันจะไม่กลายเป็นหลักฐานอิสระ</p>
+</section>
+</div>
+<aside class="panel">
+<div class="section-head"><strong>⚙ ตั้งค่าการทดลอง</strong><span class="subtle">สูงสุด 1,000 Agents</span></div>
+<div class="control-body">
+<label class="field"><span>จำนวน Agent <output id="node-count-value">300</output></span><select id="node-count"><option value="10">10</option><option value="50">50</option><option value="100">100</option><option value="300" selected>300</option><option value="500">500</option><option value="1000">1,000</option></select></label>
+<label class="field"><span>วิธีการสื่อสาร</span><select id="protocol"><option value="flood">Flooding — กระจายทุกเพื่อน</option><option value="gossip">Gossip — ส่งแบบสุ่ม</option><option value="fanout">Fanout — จำกัดจำนวนเพื่อน</option><option value="anti-entropy">Anti-Entropy — เปรียบเทียบรายการ</option></select></label>
+<label class="field wide"><span>สถานการณ์ข้อมูล</span><select id="scenario"><option value="single">ต้นทางเดียว — ข่าว A</option><option value="witnesses">3 แหล่งยืนยันข่าว A</option><option value="conflict">หลักฐาน A และ B ขัดแย้ง</option></select></label>
+<label class="field wide"><span>รัศมีสื่อสาร <output id="range-value">108</output></span><input id="range" type="range" min="40" max="450" step="5" value="110"></label>
+<label class="field wide"><span>Packet Loss <output id="loss-value">10%</output></span><input id="loss" type="range" min="0" max="100" step="5" value="10"></label>
+<label class="field"><span>Latency (ticks)</span><select id="latency"><option value="1">1 tick</option><option selected value="2">2 ticks</option><option value="4">4 ticks</option><option value="8">8 ticks</option></select></label>
+<label class="field"><span>การแสดงผล</span><select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+<label class="checkbox wide"><input type="checkbox" id="mobile"><span>ให้ Agent เคลื่อนที่ตลอดเวลา</span></label>
+<label class="field"><span>Seed ทำซ้ำได้</span><input id="seed" type="number" min="1" max="2147483647" step="1" value="311"></label>
+<label class="field"><span>Maximum tick</span><select id="max-ticks"><option value="80">80</option><option selected value="160">160</option><option value="240">240</option></select></label>
+<div class="wide hint">ทุกการเปลี่ยนค่าจะเริ่มสนามใหม่ โดยไม่เปลี่ยนเกม RRT Arena เดิม ทุก Agent เก็บข้อมูลของตัวเอง การตัดสิน UNKNOWN / CORROBORATED / CONFLICT อาศัยเพียงข้อความที่ได้รับ</div>
+<div class="rule wide"></div>
+<div class="wide hint"><strong style="color:#b5e9f8">ข้อจำกัด</strong> ระบบนี้เป็น Agent แบบมีกฎ ไม่ใช่ LLM ตัวจริง ไม่มีการรับรองตัวตนทางคริปโต และ CORROBORATED แปลว่าเห็นตรงกัน ไม่ได้พิสูจน์ว่าข่าวเป็นความจริง</div>
+</div>
+</aside>
+</div>
+</main>
+<footer>PeerMesh Lab · Experiment / Simulation · Built for RRT Game Lab · No central agent or shared belief memory.</footer>
+<script src="network_lab_core.js"></script>
+<script defer src="network_lab_ui.js"></script>
+</body>
+</html>
