@@ -1417,9 +1417,9 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  const finite=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  const clone=v=>({...v});
- function makeInbox(){return {sightings:{},claims:{}};}
+ function makeInbox(){return {sightings:{},claims:{},poses:{}};}
  function prune(inbox,now,{ttl=3.5}={}){
-  const sightings={},claims={};
+  const sightings={},claims={},poses={};
   for(const [id,m] of Object.entries(inbox?.sightings||{})){
    if(Number.isFinite(m.seenAt)&&m.seenAt<=now&&now-m.seenAt<=ttl&&
       Number.isFinite(m.expiresAt)&&m.expiresAt>=now&&finite(m))sightings[id]=clone(m);
@@ -1428,16 +1428,32 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
    if(Number.isFinite(m.seenAt)&&m.seenAt<=now&&now-m.seenAt<=ttl&&
       Number.isFinite(m.expiresAt)&&m.expiresAt>=now)claims[id]=clone(m);
   }
-  return {sightings,claims};
+  for(const [id,m] of Object.entries(inbox?.poses||{})){
+   if(Number.isFinite(m.seenAt)&&m.seenAt<=now&&
+      Number.isFinite(m.expiresAt)&&m.expiresAt>=now&&finite(m))poses[id]=clone(m);
+  }
+  return {sightings,claims,poses};
  }
  function ingest(inbox,messages,now,{owner=null,ttl=3.5}={}){
   const state=prune(inbox,now,{ttl});
   for(const m of messages||[]){
    if(!m||m.receiver!==owner||!['B1','B2'].includes(m.sender)||m.sender===owner||
-    typeof m.targetId!=='string'||!/^T\d{1,3}$/.test(m.targetId)||
     !Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
     now<m.deliverAt||m.seenAt>now||now-m.seenAt>ttl)continue;
    const type=m.type||'SIGHTING';
+   // POSE is a first-person radio packet describing the sender's own position.
+   // It MUST be received before it may affect teammate tactical decisions.
+   if(type==='POSE'){
+    const expiresAt=Math.min(Number.isFinite(m.expiresAt)?m.expiresAt:Infinity,m.seenAt+.75);
+    if(m.source!=='own_position'||!finite(m)||expiresAt<now||
+       (m.sender!== 'B1'&&m.sender!=='B2'))continue;
+    const old=state.poses[m.sender];
+    if(old&&old.seenAt>m.seenAt)continue;
+    state.poses[m.sender]={id:m.sender,x:m.x,y:m.y,hp:Number.isFinite(m.hp)?Math.max(0,m.hp):120,
+      source:'radio',seenAt:m.seenAt,receivedAt:now,expiresAt};
+    continue;
+   }
+   if(typeof m.targetId!=='string'||!/^T\d{1,3}$/.test(m.targetId))continue;
    if(type==='TARGET_CLAIM'){
     const expiresAt=Math.min(Number.isFinite(m.expiresAt)?m.expiresAt:Infinity,m.seenAt+ttl);
     if(expiresAt<now)continue;
@@ -1473,6 +1489,24 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   lastSent[key]=now;
   return {queue:queue.slice(-240),lastSent};
  }
+ function sendPose(radio,from,to,now,{range=Infinity,latency=.30,interval=.25,ttl=.75}={}){
+  const src=radio||{queue:[],lastSent:{}},queue=(src.queue||[]).slice(),lastSent={...(src.lastSent||{})};
+  if(!finite(from)||!finite(to)||!['B1','B2'].includes(from.id)||!['B1','B2'].includes(to.id)||
+   from.id===to.id||from.hp<=0||to.hp<=0||!Number.isFinite(now)||distance(from,to)>range)
+   return {queue,lastSent};
+  const key='pose:'+from.id+'>'+to.id;
+  if(now-(lastSent[key]??-Infinity)<interval)return {queue,lastSent};
+  queue.push({type:'POSE',source:'own_position',sender:from.id,receiver:to.id,
+   x:from.x,y:from.y,hp:from.hp,seenAt:now,deliverAt:now+Math.max(0,latency),
+   expiresAt:now+Math.max(0,ttl)});
+  lastSent[key]=now;
+  return {queue:queue.slice(-240),lastSent};
+ }
+ function peerPositions(inbox,now){
+  return Object.values(inbox?.poses||{}).filter(m=>finite(m)&&m.seenAt<=now&&m.expiresAt>=now)
+   .map(m=>({id:m.id,x:m.x,y:m.y,hp:m.hp,reportedAt:m.seenAt,age:Math.max(0,now-m.seenAt)}))
+   .sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+ }
  function radioExploreGoal(inbox,self,now,{ttl=3.5,free=()=>false}={}){
   if(!finite(self))return null;
   const active=Object.values(inbox?.sightings||{}).filter(m=>
@@ -1503,7 +1537,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   reseed(seed);
   return Object.freeze({next,reseed,getSeed:()=>base});
  }
- return Object.freeze({makeInbox,prune,ingest,peerClaim,sendClaim,radioExploreGoal,createStreams});
+ return Object.freeze({makeInbox,prune,ingest,peerClaim,sendClaim,sendPose,peerPositions,radioExploreGoal,createStreams});
 });
 </script>
 <script>
@@ -1824,6 +1858,11 @@ function senseMultiWorld(){
    team.radio=teamCore.broadcast(team.radio,blue.id,peer.id,measured.tracks,elapsed,
     {from:blue,to:peer,range:S*.95,latency:.30});
    team.radioSent+=Math.max(0,team.radio.queue.length-queueBefore);
+   // POSE: only the sender's own coordinates go into an actual delayed packet.
+   const beforePose=team.radio.queue.length;
+   team.radio=commsCore.sendPose(team.radio,blue,peer,elapsed,
+    {range:S*.95,latency:.30,interval:.25,ttl:.75});
+   team.radioSent+=Math.max(0,team.radio.queue.length-beforePose);
   }
  }
  // Each target has an independent memory brain; no transfer of secret positions.
@@ -2310,7 +2349,9 @@ function chooseGoal(bot){
  if(kind==='ranged_cover'){const g=rangedCoverGoal(bot);if(g)return g;bot.reason='ไม่พบจุดกำบังที่ดีกว่า → ใช้จุดกำบังเดิม';const c=core.findCover(bot,foe,walls,p=>freePoint(p,R+1),clearSight,{w:W,h:H},R+3,S);return c||fallbackPoint(bot,true);}
  if(kind==='ranged_hold')return copy(bot);
  if(kind==='team_lane'&&foe&&info.status==='visible'){
-  const route=coopCore.findClearLane(bot,foe,team.blues,{
+  const radioTeammates=commsCore.peerPositions(bot.radioInbox,elapsed);
+  if(!radioTeammates.length){bot.reason='รอข้อมูลตำแหน่งเพื่อนผ่านวิทยุ';return copy(bot);}
+  const route=coopCore.findClearLane(bot,foe,radioTeammates,{
    width:W,height:H,scale:S,radius:R+2,ownRange:bot.range,
    free:p=>freePoint(p,R+2)&&teamFriendClear(bot,p),
    direct:(a,b)=>!blocked(a,b,R+1)&&team.blues.every(m=>m===bot||m.hp<=0||coopCore.segmentCircleTime(a,b,m,R*2.05)===Infinity),
@@ -2548,7 +2589,11 @@ function teamLaneBlocker(bot){
  const tr=multi.focus?multi.tracks[multi.focus]:null;
  if(tr?.status!=='visible'||!bot.brain.wasVisible||!Number.isFinite(tr.x)||!Number.isFinite(tr.y))return null;
  if(dist(bot,tr)>bot.range||!clearSight(bot,tr))return null;
- const decision=coopCore.safeFireLine(bot,tr,team.blues,{radius:R*.78+1.8,aim:bot.aim});
+ const radioTeammates=commsCore.peerPositions(bot.radioInbox,elapsed);
+  // If radio is down, hold fire until teammate location is confirmed.
+  // Physics still knows real bodies to stop friendly bullets.
+  if(!radioTeammates.length)return {clear:false,blockerId:'radio_unknown',reason:'teammate_pose_missing'};
+  const decision=coopCore.safeFireLine(bot,tr,radioTeammates,{radius:R*.78+1.8,aim:bot.aim});
  return decision.clear?null:decision;
 }
 function shoot(bot){const foe=opponent(bot),d=dist(bot,foe);if(multiActive()&&(!multi.focus||multi.tracks[multi.focus]?.status!=='visible'))return;if(bot.hp<=0||foe.hp<=0||!bot.brain.wasVisible||d>bot.range||!clearSight(bot,foe)||bot.cool>0||bot.reload>0)return;
@@ -2844,7 +2889,7 @@ window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(do
 window.addEventListener('resize',()=>resize());
 // Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
 window.__rrtMultiDebug={
- getState:()=>({scenario,blueCapabilities:{predictive:blueFeatureOn('predictive'),rangedDefense:blueFeatureOn('rangedDefense'),keepMoving:blueFeatureOn('mobile')},time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,exposedTo:multi.cover?multi.cover.assessment.count:null,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),team:{mode:team.mode,count:team.blues.length,alive:teamCore.teamMetrics(team.blues).alive,rngSeed:rngStreams.getSeed(),blockedFriendlyShots:team.blockedFriendlyShots,radioQueued:team.radio.queue.length,radioSent:team.radioSent,radioDelivered:team.radioDelivered,heldFire:team.heldFire||0,laneMoves:team.laneMoves||0,focusSplits:team.focusSplits||0,focusSamples:team.focusSamples||0,focusOverlap:team.focusOverlap||0,shotsFired:{...(team.shotsFired||{})},memorySeparated:!teamDuo()||team.blues[0].brain!==team.blues[1].brain&&multi.brains!==team.secondary.brains,secondaryTracks:team.secondary?Object.keys(team.secondary.tracks).length:0,blues:team.blues.map(b=>({id:b.id,team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,radioSightingIds:Object.keys(b.radioInbox?.sightings||{}),radioClaims:{...(b.radioInbox?.claims||{})},localTrackIds:Object.keys(b.id==='B1'?multi.tracks:team.secondary?.tracks||{}),intent:b.intent,focus:b.id==='B1'?multi.focus:team.secondary?.focus,planCount:b.planCount,hasPlanner:!!b.planner,pathLength:b.path.length,memoryId:b.id,brain:b.brain?{sightings:b.brain.sightings,losses:b.brain.losses,encounters:b.brain.encounters.length}:null}))},targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
+ getState:()=>({scenario,blueCapabilities:{predictive:blueFeatureOn('predictive'),rangedDefense:blueFeatureOn('rangedDefense'),keepMoving:blueFeatureOn('mobile')},time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,exposedTo:multi.cover?multi.cover.assessment.count:null,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),team:{mode:team.mode,count:team.blues.length,alive:teamCore.teamMetrics(team.blues).alive,rngSeed:rngStreams.getSeed(),blockedFriendlyShots:team.blockedFriendlyShots,radioQueued:team.radio.queue.length,radioSent:team.radioSent,radioDelivered:team.radioDelivered,heldFire:team.heldFire||0,laneMoves:team.laneMoves||0,focusSplits:team.focusSplits||0,focusSamples:team.focusSamples||0,focusOverlap:team.focusOverlap||0,shotsFired:{...(team.shotsFired||{})},memorySeparated:!teamDuo()||team.blues[0].brain!==team.blues[1].brain&&multi.brains!==team.secondary.brains,secondaryTracks:team.secondary?Object.keys(team.secondary.tracks).length:0,blues:team.blues.map(b=>({id:b.id,team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,radioSightingIds:Object.keys(b.radioInbox?.sightings||{}),radioClaims:{...(b.radioInbox?.claims||{})},radioPoses:commsCore.peerPositions(b.radioInbox,elapsed),localTrackIds:Object.keys(b.id==='B1'?multi.tracks:team.secondary?.tracks||{}),intent:b.intent,focus:b.id==='B1'?multi.focus:team.secondary?.focus,planCount:b.planCount,hasPlanner:!!b.planner,pathLength:b.path.length,memoryId:b.id,brain:b.brain?{sightings:b.brain.sightings,losses:b.brain.losses,encounters:b.brain.encounters.length}:null}))},targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
  advance:(secs)=>{const prev=phase;phase='running';for(let i=0;i<secs*60;i++)loopStep(1/60);phase=prev;updateHUD();draw();},
  forceTarget:(id,coords)=>{const t=multi.targets.find(t=>t.id===id);if(!t||!freePoint(coords,R+1))return false;t.x=coords.x;t.y=coords.y;t.wp=null;multi.sensorAt=-1;return true;},
  forceBlue2:(coords)=>{const b=team.blues[1];if(!b||!freePoint(coords,R+1)||!teamFriendClear(b,coords))return false;b.x=coords.x;b.y=coords.y;b.path=[];b.planner=null;b.goal=null;if(team.secondary)team.secondary.sensorAt=-1;return true;},
