@@ -78,7 +78,9 @@ async function main(){
     await page.locator('#node-count').selectOption('50');
     await page.locator('#scenario').selectOption('single');
     await page.locator('#compare').click();
-    await page.waitForFunction(()=>window.__peerMeshDebug.getState().comparison.length===4,{timeout:60000});
+    await page.waitForFunction(()=>window.__peerMeshDebug.getState().comparison.length===4
+     && document.querySelectorAll('#comparison tbody tr').length===4
+     && !window.__peerMeshDebug.getState().comparing,{timeout:60000});
     const compared=await page.evaluate(()=>window.__peerMeshDebug.getState());
     assert.equal(compared.comparison.length,4,'All protocols compared');
     const rows=await page.locator('#comparison tbody tr').count();
