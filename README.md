@@ -1,3 +1,16 @@
+## V0.6.14 — Distributed Evidence & Provenance Lab
+
+**Research question:** How should independent BLUE agents judge overlapping and contradictory radio reports without a leader or shared truth table?
+
+- Each BLUE has its **own Evidence Ledger**, populated from its own visible tracks and actually delivered peer radio sightings. No read of another agent's hidden target state or private memory.
+- Evidence is keyed by sensor origin and observation ID; retransmissions or relayed copies never become independent votes. Incorrect receiver, future delivery, TTL expiry, invalid coordinates, confidence, or origin mismatch are rejected.
+- Local verdicts are **UNKNOWN** (no independent corroboration), **CONFLICT** (independent, spatially incompatible reports) or **CORROBORATED** (independent, temporally comparable reports agree). *CORROBORATED does not establish ground truth.*
+- Conflicting radio coordinates are quarantined from exploration hints; radio never authorizes shooting. BLUE tactics, HP, ammo, movement, original RRT and friendly-fire collision remain unchanged.
+- Multi-target HUD now reports evidence accepted, duplicates, conflicts and rejections. Replay JSON and the read-only `window.__rrtMultiDebug.getState().team.evidence` expose counters and per-BLUE provenance summaries.
+- **Research limits:** this is a 2-agent simulated radio transport, *not* cryptographic identity or Byzantine fault tolerance. Verifying a sender's real identity is out of scope. Stale but physically plausible reports can remain UNKNOWN.
+
+Run `node --test *.test.cjs` and `node tools/browser_regression.cjs` (Chromium) for acceptance.
+
 # RRT Arena V0.6.13 — Leaderless Communication Lab
 
 เป้าหมาย: ให้ B1 และ B2 เจรจาเลือกเป้าหมายผ่านข้อความเท่านั้น **ไม่มีหัวหน้าถาวรหรือ Shared Memory** และยังใช้ BLUE รุ่นล่าสุดที่มีวงแหวนเขียวทุกโหมด ไม่เปลี่ยน HP, ความเร็ว, กระสุน, การยิง, RRT หรือการป้องกัน
