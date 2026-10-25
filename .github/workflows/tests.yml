@@ -58,7 +58,7 @@ jobs:
     name: Chromium gameplay regression (320 / 393 / 1365)
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -72,6 +72,7 @@ jobs:
         run: |
           node tools/browser_regression.cjs
           node tools/network_lab_browser.cjs
+          node tools/benchmark_duel2_quality.cjs
       - name: Upload PeerMesh real Chromium screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -80,6 +81,14 @@ jobs:
           path: artifacts/peermesh-*.png
           if-no-files-found: ignore
           retention-days: 14
+      - name: Upload Duel2 paired-quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duel2-v0616-quality-report
+          path: benchmarks/duel2-v0616.json
+          if-no-files-found: warn
+          retention-days: 30
 
   team-benchmark:
     name: Team exploratory 12 ranged bots (${{ matrix.team }})
@@ -108,29 +117,4 @@ jobs:
         with:
           name: team-v0611-${{ matrix.team }}
           path: benchmarks/team-v0611/${{ matrix.team }}.json
-          retention-days: 30
-
-  duel-quality-benchmark:
-    name: Duel 2v2 combat quality seeds (3 modes)
-    needs: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install Playwright and Chromium
-        run: |
-          npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium
-      - name: Run reproducible paired combat QA
-        run: node tools/benchmark_duel2_quality.cjs
-      - name: Upload Duel 2v2 reproducible report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: duel2-v0616-quality-report
-          path: benchmarks/duel2-v0616.json
-          if-no-files-found: warn
           retention-days: 30
