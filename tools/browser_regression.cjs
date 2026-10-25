@@ -211,6 +211,26 @@ async function main(){
   check(privateRadio.sent>0&&privateRadio.delivered>0&&(privateRadio.inbox>0||privateRadio.claims>0),
         'radio delivery populates ONLY transient inbox ('+privateRadio.inbox+' sightings, '+privateRadio.claims+' claims)');
 
+  // Live POSE contract: B1/B2 cannot know teammate coordinates before delivery.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop&seed=129');
+  const poseWire=await page.evaluate(()=>{
+   const d=window.__rrtArenaDebug,md=window.__rrtMultiDebug;
+   const initial=md.getState().team.blues.map(b=>(b.radioPoses||[]).length);
+   document.getElementById('start').click();
+   d.advance(.13);
+   const beforeDelivery=md.getState().team.blues.map(b=>(b.radioPoses||[]).length);
+   d.advance(.65);
+   const team=md.getState().team;
+   return {initial,beforeDelivery,sent:team.radioSent,
+    peers:team.blues.map(b=>(b.radioPoses||[]).map(p=>({
+     id:p.id,age:p.age,x:p.x,y:p.y,reportedAt:p.reportedAt})))};
+  });
+  check(poseWire.initial.every(n=>n===0)&&poseWire.beforeDelivery.every(n=>n===0),
+   'POSE radio: teammate coordinates absent before actual .3s transmission latency');
+  check(poseWire.sent>0&&poseWire.peers.every(ps=>ps.length===1&&ps[0].age>=.3&&
+    ps[0].age<=.75&&Number.isFinite(ps[0].x)&&Number.isFinite(ps[0].y)),
+   'POSE radio: both BLUE agents obtain a fresh peer position from delivered packet only');
+
   // Same seed + same enemy settings must generate the same WORLD regardless of radio policy.
   const initialWorld=async(teamValue)=>{
    await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2'+
