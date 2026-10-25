@@ -1991,22 +1991,22 @@ function senseMultiWorld(){
  // Radio data stays in the BLUE-owned transient Inbox and never changes
  // target brains, lastSeen, danger hotspots or the sensor's previous tracks.
  blue.radioInbox=commsCore.prune(blue.radioInbox,elapsed,{ttl:3.5});
+ blue.bidInbox=leaderless.prune(blue.bidInbox,elapsed);
  if(team.mode==='cooperative'&&team.blues.length===2){
   const received=teamCore.receive(team.radio,blue.id,elapsed,{ttl:3.5});
   team.radio=received.radio;team.radioDelivered+=received.received.length;
   blue.radioInbox=commsCore.ingest(blue.radioInbox,received.received,elapsed,
    {owner:blue.id,ttl:3.5});
+  blue.bidInbox=leaderless.receive(blue.bidInbox,received.received,blue.id,elapsed);
+  team.bidsReceived+=received.received.filter(m=>m.type==='BID').length;
   const peer=team.blues.find(b=>b!==blue&&b.hp>0);
   if(peer){
-   const queueBefore=team.radio.queue.length;
-   team.radio=teamCore.broadcast(team.radio,blue.id,peer.id,measured.tracks,elapsed,
-    {from:blue,to:peer,range:S*.95,latency:.30});
-   team.radioSent+=Math.max(0,team.radio.queue.length-queueBefore);
-   // POSE: only the sender's own coordinates go into an actual delayed packet.
-   const beforePose=team.radio.queue.length;
-   team.radio=commsCore.sendPose(team.radio,blue,peer,elapsed,
-    {range:S*.95,latency:.30,interval:.25,ttl:.75});
-   team.radioSent+=Math.max(0,team.radio.queue.length-beforePose);
+   // Sender's own direct line-of-sight report; receiver's sensor remains private.
+   sendRadioPacket(r=>teamCore.broadcast(r,blue.id,peer.id,measured.tracks,elapsed,
+    {from:blue,to:peer,range:S*.95,latency:.30}));
+   // The transport checks true range, not the tactical advisor.
+   sendRadioPacket(r=>commsCore.sendPose(r,blue,peer,elapsed,
+    {range:S*.95,latency:.30,interval:.25,ttl:.75}));
   }
  }
  // Each target has an independent memory brain; no transfer of secret positions.
@@ -2019,15 +2019,15 @@ function senseMultiWorld(){
   if(vis&&change.event==='spotted'){mem.rememberEncounter(brain,{x:trace.x/W,y:trace.y/H},elapsed,1);log('BLUE พบ '+target.id,'blue');}
  }
  let selected=(multi.manualFocus&&multi.tracks[multi.manualFocus])?multi.tracks[multi.manualFocus]:multiCore.rank(multi.tracks,blue,elapsed,{priority:multiUI.priority.value,current:multi.focus,width:W,height:H});
- // Cooperating B2 may split the focus ONLY after receiving B1's
- // TARGET_CLAIM through delayed radio, never by reading B1's live state.
- const peerClaim=team.mode==='cooperative'&&blue.id==='B2'?
-  commsCore.peerClaim(blue.radioInbox,'B1',elapsed):null;
- if(peerClaim&&!multi.manualFocus&&selected?.id===peerClaim){
-  const option=coopCore.deconflictFocus(blue,multi.tracks,selected.id,peerClaim,
-   {now:elapsed,scale:S,maxExtraDistance:.25,criticalDistance:R*3.25});
-  if(option.changed&&multi.tracks[option.targetId]){
-   selected=multi.tracks[option.targetId];team.focusSplits++;
+ // No lead agent: both B1 and B2 compare their own observed claim with
+ // the peer's *delivered* BID. Either can yield, acknowledge or decline.
+ let resolution=null;
+ if(team.mode==='cooperative'&&teamDuo()&&!multi.manualFocus&&selected?.status==='visible'){
+  resolution=leaderless.negotiate(blue,multi.tracks,selected.id,blue.bidInbox,elapsed,
+   {scale:S,criticalDistance:R*3.25,maxExtraDistance:.25});
+  if(resolution.changed&&multi.tracks[resolution.targetId]?.status==='visible'){
+   selected=multi.tracks[resolution.targetId];
+   team.focusSplits++;team.negotiatedYields++;
   }
  }
  if(!selected&&multi.manualFocus)multi.manualFocus=null;
@@ -2045,13 +2045,23 @@ function senseMultiWorld(){
   proxy.maxHp=42;
  }else{proxy.x=W+S*3;proxy.y=H+S*3;proxy.hp=42;proxy.maxHp=42;}
  blue.seenStatus=multi.focus?selected.status:'unknown';
- if(team.mode==='cooperative'&&team.blues.length===2&&multi.focus){
+ if(team.mode==='cooperative'&&teamDuo()){
   const peer=team.blues.find(b=>b!==blue&&b.hp>0);
-  if(peer&&multi.tracks[multi.focus]?.status==='visible'){
-   const before=team.radio.queue.length;
-   team.radio=commsCore.sendClaim(team.radio,blue,peer,multi.tracks,multi.focus,elapsed,
-    {range:S*.95,latency:.30,ttl:3.5});
-   team.radioSent+=Math.max(0,team.radio.queue.length-before);
+  if(peer){
+   // Proposal contains target ID and a bounded local score only; no shared map.
+   if(multi.focus&&multi.tracks[multi.focus]?.status==='visible'){
+    const attempt=sendRadioPacket(r=>leaderless.sendBid(r,blue,peer,multi.tracks,
+     multi.focus,elapsed,{range:S*.95,latency:.30,scale:S,interval:.4}));
+    team.bidsSent+=attempt.sent;
+   }
+   if(resolution?.type&&resolution.peerId===peer.id&&resolution.previousTargetId||resolution?.type==='NACK'){
+    const responseTarget=resolution.previousTargetId||multi.focus;
+    if(responseTarget){
+     const attempt=sendRadioPacket(r=>leaderless.sendResponse(r,blue,peer,responseTarget,
+      resolution.type,elapsed,{range:S*.95,latency:.30}));
+     if(resolution.type==='ACK')team.peerAcks+=attempt.sent;
+    }
+   }
   }
  }
 }
