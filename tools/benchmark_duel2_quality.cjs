@@ -44,7 +44,7 @@ async function run(){
      if(state.phase==='ended')break;
     }
     const last=d.getState();
-    return {mode:last.mode,radioLoss:last.packetLoss,seed:initial.version,
+    return {mode:last.mode,radioLoss:last.packetLoss,sourceVersion:initial.version,
      parity,complete:last.phase==='ended',winner:last.winner,duration:last.time,
      shotsBlue:last.fighters.filter(b=>b.team==='blue').reduce((n,b)=>n+b.shots,0),
      shotsRed:last.fighters.filter(b=>b.team==='red').reduce((n,b)=>n+b.shots,0),
