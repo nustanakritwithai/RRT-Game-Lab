@@ -1695,7 +1695,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 'use strict';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const pos=p=>!!p&&finite(p.x)&&finite(p.y);
-const actor=id=>typeof id==='string'&&/^B\d{1,3}$/.test(id);
+const actor=id=>typeof id==='string'&&/^(?:B|R)\d{1,3}$/.test(id);
 const target=id=>typeof id==='string'&&/^(?:T|R)\d{1,3}$/.test(id);
 const token=id=>typeof id==='string'&&id.length>0&&id.length<=128&&/^[\w:.-]+$/.test(id);
 const dict=()=>Object.create(null);
@@ -1812,6 +1812,7 @@ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const fighter=id=>/^(?:B|R)[12]$/.test(String(id));
 const blue=id=>id==='B1'||id==='B2';
 const red=id=>id==='R1'||id==='R2';
+const sameTeam=(a,b)=>fighter(a)&&fighter(b)&&a[0]===b[0]&&a!==b;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function chooseTarget(self,tracks,current=null){
  if(!point(self))return null;
@@ -1855,16 +1856,16 @@ function makeInbox(){return {sightings:Object.create(null)};}
 function prune(inbox,now){
  const result=makeInbox();
  for(const [id,v] of Object.entries(inbox?.sightings||{}))
-  if(red(id)&&v?.expiresAt>now&&v.seenAt<=now&&point(v))result.sightings[id]={...v};
+  if(fighter(id)&&v?.expiresAt>now&&v.seenAt<=now&&point(v))result.sightings[id]={...v};
  return result;
 }
 function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3.5,interval=.65}={}){
  const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
- if(!from||!to||!blue(from.id)||!blue(to.id)||from.id===to.id||
+ if(!from||!to||!sameTeam(from.id,to.id)||
   from.hp<=0||to.hp<=0||!point(from)||!point(to)||!Number.isFinite(now)||distance(from,to)>range)
   return {queue,lastSent};
  for(const tr of Object.values(tracks||{})){
-  if(!tr||!red(tr.id)||tr.status!=='visible'||!point(tr)||!Number.isFinite(tr.lastSeen)||
+  if(!tr||!fighter(tr.id)||tr.id[0]===from.id[0]||tr.status!=='visible'||!point(tr)||!Number.isFinite(tr.lastSeen)||
     tr.lastSeen>now||now-tr.lastSeen>ttl)continue;
   const key='D2:'+from.id+'>'+to.id+':'+tr.id;
   if(now-(lastSent[key]??-Infinity)<interval)continue;
@@ -1877,10 +1878,10 @@ function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3
 }
 function receive(inbox,messages,owner,now,{ttl=3.5}={}){
  const result=prune(inbox,now);
- if(!blue(owner)||!Number.isFinite(now))return result;
+ if(!fighter(owner)||!Number.isFinite(now))return result;
  for(const m of messages||[]){
-  if(!m||m.type!=='SIGHTING'||m.source!=='own_sensor'||!blue(m.sender)||
-   m.sender===owner||m.receiver!==owner||m.originId!==m.sender||!red(m.targetId)||
+  if(!m||m.type!=='SIGHTING'||m.source!=='own_sensor'||!sameTeam(m.sender,owner)||
+   m.receiver!==owner||m.originId!==m.sender||!fighter(m.targetId)||m.targetId[0]===owner[0]||
    !point(m)||!Number.isFinite(m.confidence)||m.confidence<0||m.confidence>1||
    !Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
    !Number.isFinite(m.expiresAt)||m.deliverAt>now||m.seenAt>now||
@@ -1972,6 +1973,9 @@ function setupRound(){extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*
 function setupDuel2(){
  const blue1=bots[0],red1=bots[1];
  blue1.id='B1';red1.id='R1';
+ // Same latest BLUE stats and core policies on BOTH sides. Team color alone differs.
+ const equalKeys=['hp','maxHp','ammo','maxAmmo','cool','moveSpeed','baseFire','aim','range','preferred'];
+ for(const key of equalKeys)red1[key]=blue1[key];
  const slots=[{id:'B2',team:'blue',x:.09,y:.59},{id:'R2',team:'red',x:.91,y:.40}];
  for(const slot of slots){
   let chosen=null;
@@ -1988,7 +1992,8 @@ function setupDuel2(){
     const p={x,y};if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>R*2.75)){chosen=p;break;}
    }}
   if(!chosen)throw new Error('No collision-free spawn for duel2 '+slot.id);
-  const b=spawnBot(slot.team,chosen.x,chosen.y,slot.id);b.id=slot.id;bots.push(b);
+  const b=spawnBot('blue',chosen.x,chosen.y,slot.id);
+ b.team=slot.team;b.id=slot.id;bots.push(b);
  }
  // Individual tracks, per-opponent memories, goal planners and radio inboxes.
  for(const bot of bots){
@@ -2003,7 +2008,7 @@ function setupDuel2(){
    ui.carryMemory.checked?storedLessons[bot.id]?.encounters||[]:[]);
   bot.brain=bot.duelSearchBrain;bot.duelTargetId=null;bot.duelVisible=Object.create(null);
   bot.duelInbox=duel2Core.makeInbox();bot.evidenceLedger=evidenceCore.emptyLedger();
-  if(bot.team==='blue')bot.duelDefense={
+  bot.duelDefense={
    cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,
    coverage:rangedDef.createCoverage(W,H,10),coverageAt:-1,
    coverMoves:0,coverReroutes:0,standoffs:0,bridgeSteps:0,jinks:0};
@@ -2012,7 +2017,7 @@ function setupDuel2(){
  team={mode:duel2UI.teamMode.value,blues:bots.filter(b=>b.team==='blue'),secondary:null,
   radio:teamCore.newRadio(),radioSent:0,radioDelivered:0,radioDropped:0,
   evidenceAccepted:0,evidenceDuplicate:0,evidenceConflict:0,evidenceRejected:0,
-  blockedFriendlyShots:0,shotsFired:{B1:0,B2:0}};
+  blockedFriendlyShots:0,shotsFired:{B1:0,B2:0,R1:0,R2:0}};
 }
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
 function hideOverlay(){ui.overlay.classList.add('hidden');}
@@ -2500,6 +2505,18 @@ function rangedDefenseActive(){return blueFeatureOn('rangedDefense');}
 // Duel uses the very same ranged-defense system. RED's location enters this
 // adapter ONLY via BLUE's observation memory, never by reading RED world truth.
 function duelShooterTrack(bot){
+ if(duel2Active()){
+  // Each fighter independently tracks both opposing agents via its OWN sensor.
+  const traces={};
+  for(const [id,brain] of Object.entries(bot.duelBrains||{})){
+   const k=mem.knowledge(brain,elapsed);
+   if(!k.position||k.status==='unknown'||!Number.isFinite(k.position.x)||!Number.isFinite(k.position.y))continue;
+   traces[id]={id,x:k.position.x,y:k.position.y,kind:'hunter',
+    status:k.status==='visible'?'visible':'memory',lastSeen:elapsed-(k.age||0),
+    confidence:k.confidence,vx:0,vy:0};
+  }
+  return traces;
+ }
  const knowledge=botKnowledge(bot);
  if(!knowledge.position||knowledge.status==='unknown')return {};
  const age=Number.isFinite(knowledge.age)?knowledge.age:0;
@@ -2511,12 +2528,12 @@ function duelShooterTrack(bot){
 function rangedThreatWorld(bot){
  const tracks=multiActive()?multi.tracks:duelShooterTrack(bot);
  const shooters=rangedDef.perceiveShooters(tracks,elapsed,{memoryHorizon:6});
- const range=multiActive()?rangedCore.statsFor(multi.difficulty).rangeFraction*S:bots[1].range;
+ const range=multiActive()?rangedCore.statsFor(multi.difficulty).rangeFraction*S:duel2Active()?bot.range:bots[1].range;
  return {shooters,range,canSee:clearSight};
 }
 function rangedCoverGoal(bot){
  const w=multi.cover?.world||rangedThreatWorld(bot);multi.pendingCover=false;
- const ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):w.shooters.find(s=>s.id==='RED');
+ const ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):w.shooters.find(s=>s.id===(duel2Active()?bot.duelTargetId:'RED'));
  const focus=ft&&w.shooters.find(s=>s.id===ft.id)||null;
  const r=rangedDef.chooseFirePosition(bot,w.shooters,{focus,width:W,height:H,scale:S,radius:R+3,range:w.range,ownRange:bot.range,speed:bot.moveSpeed*S,
   canSee:w.canSee,free:p=>freePoint(p,R+3),direct:(a,b)=>!blocked(a,b,R+1),history:bot.maneuverHistory});
@@ -2528,7 +2545,7 @@ function rangedCoverGoal(bot){
 }
 function rangedDefenseCheck(blue){
  const w=rangedThreatWorld(blue);
- const a=rangedDef.assess(blue,w.shooters,{range:w.range,canSee:w.canSee,focusId:multiActive()?multi.focus:'RED',reloading:blue.reload>0,hpFraction:blue.hp/blue.maxHp});
+ const a=rangedDef.assess(blue,w.shooters,{range:w.range,canSee:w.canSee,focusId:multiActive()?multi.focus:duel2Active()?blue.duelTargetId:'RED',reloading:blue.reload>0,hpFraction:blue.hp/blue.maxHp});
  multi.cover={world:w,assessment:a};
  const moving=blue.intent==='ranged_cover'&&(!!blue.planner||blue.path.length>0);
  let routeEx=0;
@@ -2538,17 +2555,20 @@ function rangedDefenseCheck(blue){
  multi.lastCoverAt=elapsed;multi.pendingCover=true;
  if(d.reason==='route_exposed')multi.coverReroutes++;else multi.coverMoves++;
  blue.path=[];blue.planner=null;blue.goal=null;blue.thinkCooldown=0;blue.planCooldown=0;
- if(multi.coverMoves<=2||d.reason==='route_exposed'&&multi.coverReroutes<=2)log('BLUE 🛡️ '+d.label,'blue');
+ if(multi.coverMoves<=2||d.reason==='route_exposed'&&multi.coverReroutes<=2)log((duel2Active()?blue.id:'BLUE')+' 🛡️ '+d.label,blue.team);
 }
 // Keep Moving: no standing still while shooters can see BLUE. During RRT planning take normal-speed
 // steps toward the planner goal when that segment is clear; otherwise jink across the line of fire.
 function mobileActive(){return blueFeatureOn('mobile');}
 function keepMoving(blue,dt){
  const w=multi.cover?.world||rangedThreatWorld(blue),speed=blue.moveSpeed*S;
- const melee=multiActive()?Object.values(visibleMeleeTracks()):[],avoid=p=>melee.some(t=>dist(p,t)<R*3)||!teamFriendClear(blue,p)||!multiActive()&&dist(p,bots[1])<R*2.1;
+ const melee=multiActive()?Object.values(visibleMeleeTracks()):[],
+ avoid=p=>melee.some(t=>dist(p,t)<R*3)||
+  (duel2Active()?!duel2PositionSafe(blue,p):
+    !teamFriendClear(blue,p)||!multiActive()&&dist(p,bots[1])<R*2.1);
  if(blue.planner){
   const p=rangedDef.bridgeStep(blue,blue.planner.goal,dt,{speed,blocked:(a,b)=>blocked(a,b,R+1)});
-  if(p&&!avoid(p)&&teamFriendClear(blue,p)){blue.x=p.x;blue.y=p.y;blue.lastMoveAt=elapsed;multi.bridgeSteps++;return;}
+  if(p&&!avoid(p)&&(duel2Active()||teamFriendClear(blue,p))){blue.x=p.x;blue.y=p.y;blue.lastMoveAt=elapsed;multi.bridgeSteps++;return;}
  }
  blue.jinkClock=(blue.jinkClock||0)+dt;
  if(blue.jinkClock>.42){blue.jinkClock=0;blue.jinkDir=-(blue.jinkDir||1);}
@@ -2734,12 +2754,24 @@ function intersectsSegmentRect(a,b,r){let t0=0,t1=1,dx=b.x-a.x,dy=b.y-a.y;const 
 function blocked(a,b,margin=R){if(!freePoint(a,margin)||!freePoint(b,margin))return true;for(const w of walls){if(intersectsSegmentRect(a,b,{x:w.x-margin,y:w.y-margin,w:w.w+2*margin,h:w.h+2*margin}))return true;}return false;}
 function clearSight(a,b){return !blocked(a,b,2.0);}
 function between(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy;if(den<1e-12)return dist(p,a);const u=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/den,0,1);return Math.hypot(p.x-a.x-u*dx,p.y-a.y-u*dy);}
-function opponent(bot){return bots[bot.team==='blue'?1:0];}
+function opponent(bot){
+ if(duel2Active()){
+  // Tactical code receives only a locally visible/remembered opponent proxy.
+  const id=bot.duelTargetId,visible=bot.duelVisible?.[id];
+  const known=botKnowledge(bot);
+  if(visible&&id)return {id,x:visible.x,y:visible.y,hp:120,maxHp:120};
+  if(id&&known.position&&known.status!=='unknown')
+   return {id,x:known.position.x,y:known.position.y,hp:120,maxHp:120};
+  return {id:null,x:W+S*3,y:H+S*3,hp:0,maxHp:120};
+ }
+ return bots[bot.team==='blue'?1:0];
+}
 
 function botKnowledge(bot){return mem.knowledge(bot.brain,elapsed);}
 function perceivedFoe(bot){return botKnowledge(bot).position;}
 function senseWorld(){
  if(multiActive()){senseMultiWorld();return;}
+ if(duel2Active()){senseDuel2World();return;}
  for(const bot of bots){const foe=opponent(bot),visible=dist(bot,foe)<=S*1.12&&clearSight(bot,foe);
   const observation={visible,position:visible?{x:foe.x,y:foe.y}:null};
   const result=mem.updateObservation(bot.brain,observation,elapsed);
@@ -2756,7 +2788,7 @@ function senseWorld(){
   }
  }
 }
-function botStyle(bot){return ui[bot.team+'Style'].value;}
+function botStyle(bot){return ui[(duel2Active()?'blue':bot.team)+'Style'].value;}
 function botRisk(bot){return clamp(Number(ui.risk.value)+(botStyle(bot)==='cautious'?22:botStyle(bot)==='aggressive'?-28:0),0,100);}
 function riskSight(a,b){return clearSight(a,b);}
 function edgeCostFor(bot,a,b,foe,risk){
@@ -2787,11 +2819,11 @@ function setIntent(bot,intent){if(bot.intent===intent.kind){if(!(ui.activeTactic
 function currentIntent(bot){const info=botKnowledge(bot);
  if(bot.manual&&bot.team==='blue')return {kind:'order',reason:'ได้รับคำสั่งผู้เล่น → เดินไปจุดที่กำหนด'};
  if(bot.team==='blue'&&predictiveActive()&&(multi.pendingEvade||bot.intent==='swarm_evade'&&(bot.planner||bot.path.length)&&multi.decision?.reason==='hold_route'))return {kind:'swarm_evade',reason:multi.decision?.label||'เสี่ยงถูกล้อม → หลบล่วงหน้า'};
- if(bot.team==='blue'&&rangedDefenseActive()&&(multi.pendingCover||bot.intent==='ranged_cover'&&(bot.planner||bot.path.length)&&multi.coverDecision?.reason==='hold_route'))return {kind:'ranged_cover',reason:multi.coverDecision?.label||'ถูกเล็ง → หาที่กำบัง'};
+ if((bot.team==='blue'||duel2Active())&&rangedDefenseActive()&&(multi.pendingCover||bot.intent==='ranged_cover'&&(bot.planner||bot.path.length)&&multi.coverDecision?.reason==='hold_route'))return {kind:'ranged_cover',reason:multi.coverDecision?.label||'ถูกเล็ง → หาที่กำบัง'};
  if(multiActive()&&multi.melee&&multi.kiteEnabled&&bot.team==='blue'&&meleeCore.assessThreat(bot,visibleMeleeTracks(),{scale:S,ammo:bot.ammo}).kite)return {kind:'swarm_kite',reason:'ประชิดหลายตัว → เคลื่อนถอยเพื่อรักษาระยะยิง'};
  if(teamLaneBlocker(bot))return {kind:'team_lane',reason:'เพื่อนอยู่ในแนวยิง → เปลี่ยนมุมยิงโดยใช้ RRT'};
  // Against shooters: fire from a spot only the engaged target can see; otherwise pick a fire position by exposure.
- if(bot.team==='blue'&&rangedDefenseActive()&&multi.cover){const a=multi.cover.assessment,ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):rangedThreatWorld(bot).shooters.find(s=>s.id==='RED');
+ if((bot.team==='blue'||duel2Active())&&rangedDefenseActive()&&multi.cover){const a=multi.cover.assessment,ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):rangedThreatWorld(bot).shooters.find(s=>s.id===(duel2Active()?bot.duelTargetId:'RED'));
   if(ft&&ft.status==='visible'&&rangedDef.SHOOTER_KINDS.includes(ft.kind)){
    const canHit=dist(bot,ft)<=bot.range&&clearSight(bot,ft);
    if(canHit&&a.others===0&&!(bot.reload>0))return {kind:'ranged_hold',reason:'ถูกเล็งเพียงเป้าที่กำลังยิง → ยืนยิงจากจุดนี้'};
@@ -2802,7 +2834,7 @@ function currentIntent(bot){const info=botKnowledge(bot);
   hasKnownPosition:!!info.position,exposureAge:elapsed-bot.lastExposedAt,stationaryFor:elapsed-bot.lastMoveAt,
   moving:!!bot.planner||bot.path.length>0,underFire:elapsed-bot.lastDamageAt<1.7,
   reloading:bot.reload>0,ammo:bot.ammo,hpFraction:bot.hp/bot.maxHp,
-  opponentHpFraction:info.status==='visible'?opponent(bot).hp/opponent(bot).maxHp:null,
+  opponentHpFraction:duel2Active()?null:info.status==='visible'?opponent(bot).hp/opponent(bot).maxHp:null,
   visible:info.status==='visible'});
  if(exposure.relocate)return {kind:'evade',reason:exposure.reason==='under_fire'?'ถูกยิงและเปิดเผยตำแหน่ง → เปลี่ยนที่ทันที':'ศัตรูน่าจะรู้ตำแหน่ง → ย้ายเพื่อได้เปรียบ'};
  if(bot.reload>0||bot.ammo===0)return {kind:'cover',reason:'กำลังรีโหลด → หาจุดปลอดภัย'};
@@ -2870,13 +2902,20 @@ function chooseGoal(bot){
    bot.reason='ยังไม่มีตำแหน่งโจมตีที่เหมาะสม → ทดลองจุดสำรอง';
  }
 
- if(kind==='search'&&bot.team==='blue'&&rangedDefenseActive()&&multi.coverage){
+ if(kind==='search'&&(bot.team==='blue'||duel2Active())&&rangedDefenseActive()&&multi.coverage){
   const g=rangedDef.exploreGoal(multi.coverage,bot,elapsed,{free:p=>freePoint(p,R+2)});
   if(g&&dist(bot,g)>R*2){bot.reason='ค้นหาพื้นที่ที่ยังไม่ได้มองนานที่สุด';return g;}
  }
  if(kind==='search'||!foe){
   // A reported enemy is a time-limited exploration hint, NOT a private
   // memory update and NEVER permission to fire through obstructed sight.
+  if(duel2Active()&&team.mode==='cooperative'){
+   const goal=duel2Core.exploreGoal(bot.duelInbox,bot,elapsed,p=>freePoint(p,R+2));
+   if(goal&&dist(bot,goal)>R*2){
+    bot.reason='กำลังตรวจจุดที่เพื่อนรายงานทางวิทยุ (ยังยิงไม่ได้)';
+    return goal;
+   }
+  }
   if(multiActive()&&team.mode==='cooperative'&&bot.team==='blue'){
    const goal=commsCore.radioExploreGoal(bot.radioInbox,bot,elapsed,
     {ttl:3.5,free:p=>freePoint(p,R+2)});
@@ -3045,13 +3084,13 @@ function moveBot(bot,dt){if(bot.planner||!bot.path.length)return;
   if(bot.way>=bot.path.length){bot.path=[];bot.way=0;bot.goal=null;bot.thinkCooldown=.12;return;}
   let q=bot.path[bot.way],dx=q.x-bot.x,dy=q.y-bot.y,d=Math.hypot(dx,dy),step=Math.min(d,bot.moveSpeed*S*dt);
   let next={x:bot.x+(dx/d)*step,y:bot.y+(dy/d)*step},foe=opponent(bot);
-  if((multiActive()?(!teamFriendClear(bot,next)||!multi.melee&&multi.targets.some(t=>t.active&&dist(next,t)<R*1.85)):dist(next,foe)<R*2+2)){bot.mode='รักษาระยะ';bot.path=[];bot.goal=null;bot.thinkCooldown=.25;return;}
+  if((duel2Active()?!duel2PositionSafe(bot,next):multiActive()?(!teamFriendClear(bot,next)||!multi.melee&&multi.targets.some(t=>t.active&&dist(next,t)<R*1.85)):dist(next,foe)<R*2+2)){bot.mode='รักษาระยะ';bot.path=[];bot.goal=null;bot.thinkCooldown=.25;return;}
   if(blocked(bot,next,R+.5)){bot.path=[];bot.goal=null;bot.planner=null;bot.thinkCooldown=0;bot.planCooldown=.05;bot.mode='กำแพงขวาง!';return;}
   bot.x=next.x;bot.y=next.y;bot.steps++;if(step>0.005)bot.lastMoveAt=elapsed;
   if(bot.manual&&dist(bot,bot.manual)<R*1.75){bot.manual=null;log('BLUE ไปถึงตำแหน่งที่คุณสั่ง',bot.team);}
 }
 function dodgeMove(bot,dt){if(bot.dodgeTimer<=0)return false;const d=bot.dodgeVec,step=bot.moveSpeed*S*dt*1.8,next={x:bot.x+d.x*step,y:bot.y+d.y*step},foe=opponent(bot);
- bot.dodgeTimer=Math.max(0,bot.dodgeTimer-dt);if(freePoint(next,R+1)&&(multiActive()?(teamFriendClear(bot,next)&&(!multi.melee&&multi.targets.every(t=>!t.active||dist(next,t)>R*2)||multi.melee)):dist(next,foe)>R*2+2)&&!blocked(bot,next,R+.5)){bot.x=next.x;bot.y=next.y;if(step>0.005)bot.lastMoveAt=elapsed;}else bot.dodgeTimer=0;
+ bot.dodgeTimer=Math.max(0,bot.dodgeTimer-dt);if(freePoint(next,R+1)&&(duel2Active()?duel2PositionSafe(bot,next):multiActive()?(teamFriendClear(bot,next)&&(!multi.melee&&multi.targets.every(t=>!t.active||dist(next,t)>R*2)||multi.melee)):dist(next,foe)>R*2+2)&&!blocked(bot,next,R+.5)){bot.x=next.x;bot.y=next.y;if(step>0.005)bot.lastMoveAt=elapsed;}else bot.dodgeTimer=0;
  if(bot.dodgeTimer<=0){bot.path=[];bot.goal=null;bot.thinkCooldown=.04;}return true;
 }
 // Only own real observed target tracks enter this team fire-lane decision.
