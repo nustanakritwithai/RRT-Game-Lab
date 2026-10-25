@@ -44,3 +44,25 @@ test('Duel2 evidence checks movement using public arena-scale speed, not fixed d
  assert.match(sense,/maxDistance:R\*2\.5/);
  assert.match(sense,/maxSpeed:bot\.moveSpeed\*S\*1\.8/);
 });
+
+const Evidence=require('./rrt_arena_evidence_v0614.js');
+function movingLedger(peerX){
+ const local=Evidence.ingestLocal(Evidence.emptyLedger(),
+  {id:'R1',status:'visible',x:100,y:100,lastSeen:1},'B1',2);
+ assert.equal(local.status,'ACCEPTED');
+ const remote=Evidence.ingest(local.ledger,{
+  source:'own_sensor',sender:'B2',receiver:'B1',originId:'B2',
+  targetId:'R1',observationId:'b2-sighting',messageId:'message-2',
+  x:peerX,y:100,confidence:.8,observedAt:1.4,deliverAt:1.7,expiresAt:4.5
+ },'B1',2);
+ assert.equal(remote.status,'ACCEPTED');
+ return remote.ledger;
+}
+test('viewport-scaled evidence accepts physically plausible target movement',()=>{
+ assert.equal(Evidence.evaluate(movingLedger(180),'R1',2,
+  {maxDistance:40,maxSpeed:250,maxSkew:.8}).status,'CORROBORATED');
+});
+test('viewport-scaled evidence still flags simultaneous impossible location jumps',()=>{
+ assert.equal(Evidence.evaluate(movingLedger(600),'R1',2,
+  {maxDistance:40,maxSpeed:250,maxSkew:.8}).status,'CONFLICT');
+});
