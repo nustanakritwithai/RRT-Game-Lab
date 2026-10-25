@@ -100,3 +100,14 @@ test('no evidence, and a single source, always preserve UNKNOWN',()=>{
  a=insert(a.ledger,msg({messageId:'m2',observationId:'obs2',observedAt:1.2,deliverAt:1.4}));
  assert.equal(E.evaluate(a.ledger,'T1',2).status,'UNKNOWN');
 });
+
+test('RED firsthand SIGHTING of BLUE B1 is accepted by RED R2 evidence ledger',()=>{
+ const wire=E.fromSighting({type:'SIGHTING',source:'own_sensor',
+  sender:'R1',receiver:'R2',targetId:'B1',x:100,y:200,
+  confidence:1,seenAt:1,deliverAt:1.3,expiresAt:4.5});
+ assert.ok(wire);
+ const r=E.ingest(E.emptyLedger(),wire,'R2',1.5);
+ assert.equal(r.status,'ACCEPTED');
+ assert.equal(E.evaluate(r.ledger,'B1',1.5).status,'UNKNOWN');
+ assert.equal(E.ingest(E.emptyLedger(),wire,'B2',1.5).status,'INVALID');
+});
