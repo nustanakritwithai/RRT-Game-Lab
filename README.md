@@ -1,3 +1,26 @@
+# PeerMesh Lab V1.1 — ข่าวลือเรื่องแหล่งน้ำ: มีจริง / ไม่มีจริง
+
+**[เปิดทดลองบนเว็บ](https://nustanakritwithai.github.io/RRT-Game-Lab/network-lab.html)**
+
+สถานการณ์: Agent #0 ปล่อยข่าวลือว่า *มีแหล่งน้ำที่พิกัด (500, 310)*. ผู้ทดลองตั้งค่าความจริงของโลกจำลองได้สองทาง (**water-true**, **water-false**); Agent ทุกตัวเริ่มต้นโดย **ไม่ทราบ** สถานะจริง และไม่มี world-truth field ใน private memory. ผู้สำรวจบางตัวจะเดินไปตามพิกัดที่ได้รับจริงจากเครือข่าย แล้วตรวจว่าพื้นที่นั้นมีน้ำหรือไม่มีน้ำด้วยตนเอง. ผลตรวจภาคสนามกลายเป็นรายงานของ origin ผู้สำรวจ และถูกส่งผ่าน Flooding / Gossip / Fanout / Anti-Entropy เช่นเดียวกับข่าวลือ.
+
+**ไม่ใช่ระบบเสียงข้างมากจากข้อความซ้ำ**: การส่งต่อข่าวลือ 1,000 รอบยังนับเป็นข่าวลือจากเพียง 1 ต้นทางเท่านั้น. ต้องมีรายงานตรวจจริงจาก ≥2 ต้นทางอิสระที่ตรงกันจึงให้ผลยืนยันในการจำลอง.
+
+| สถานะ | ความหมาย | สีบนแผนที่ |
+|---|---|---|
+| RUMOR_ONLY | ได้ยินว่ามีแหล่งน้ำ แต่ยังไม่มีใครรายงานการตรวจจริง | ฟ้า |
+| VERIFYING | มีรายงานตรวจจริงเพียง 1 ต้นทาง ยังไม่พอ | เหลือง |
+| WATER_FOUND | ผู้สำรวจจริงอย่างน้อย 2 ต้นทางตรงกันว่าพบน้ำ | เขียว |
+| NO_WATER | ผู้สำรวจจริงอย่างน้อย 2 ต้นทางตรงกันว่าไม่พบน้ำ | ม่วง |
+| DISPUTED | ผลตรวจจริงสองฝ่ายขัดแย้ง; ไม่สรุปมั่ว ๆ | แดง |
+| UNKNOWN | ยังไม่ได้รับข่าวลือ/หลักฐาน | เทา |
+
+**Test matrix**: Node deterministic regression เดิม + 7 กรณี water verification รวม true / false, 100% loss, relay dedup, 1 scout, 1,000 nodes seeded. Chromium จำลองมือถือ 320/393px และเดสก์ท็อป 1365px; ตรวจสถานะเขียวเมื่อมีน้ำจริง, ม่วงเมื่อไม่มีน้ำจริง และ reset state เมื่อเปลี่ยนสถานการณ์.
+
+**ข้อจำกัด**: การมีน้ำหรือไม่มีน้ำเป็น *ค่าความจริงเฉพาะโลกจำลอง* ไม่ใช่ข้อมูลภูมิศาสตร์จริง; เลือก true/false เพื่อทดสอบผลการสื่อสาร. ผู้ทดลองและตัว evaluator อ่านค่าได้ แต่ agent consensus อ่านไม่ได้. ยังไม่มีการยืนยันตัวตนด้วยลายเซ็นดิจิทัล, การป้องกันข้อความโจมตีแบบ Byzantine หรือการพิสูจน์ว่าพยานเป็นอิสระในโลกจริง; อินพุตการสำรวจสร้างโดย sensor emulator ที่ซื่อสัตย์ของเกม. ไม่มีการเรียก LLM จริง.
+
+---
+
 # RRT ARENA V0.6.15 — Duel 2v2 (Four Identical BLUE-Version Agents)
 
 This release adds **Duel 2v2** to the original 1v1 / BLUE-vs-swarm menu. BLUE **B1/B2** and RED **R1/R2** use the same latest BLUE-version mechanics: Memory-Guided RRT, Tactical Positioning, Predictive/Ranged Defense where relevant, Keep Moving, bounded Private Memory, local perception, P2P radio and Evidence ledger. RED does **not** use the older weaker 1v1 RED combat stats inside the 2v2 scenario.
