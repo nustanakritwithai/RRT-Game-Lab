@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.15/.test(duel.title),'title shows V0.6.15: '+duel.title);
+  check(/RRT ARENA 06\.16/.test(duel.title),'title shows V0.6.16: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -108,6 +108,50 @@ async function main(){
    'duel2: BOTH BLUE and RED agents actually ingest delivered peer sightings');
   check(radioUp.fighters.every(b=>b.receivedBids.every(id=>id[0]===b.id[0])),
    'duel2: BID messages remain within each team with no cross-team memory leakage');
+  check(radioUp.radio.evidenceAccepted>0&&
+   radioUp.radio.conflicts<=Math.ceil(radioUp.radio.evidenceAccepted*.15),
+   'duel2: normal target movement does not generate mass false conflict reports on '+w+'px');
+
+
+
+  // Real combat regression: local visual ally B2/R2 blocks the line of fire.
+  // On both teams the original RRT must find a NEW lateral lane without radio.
+  for(const side of ['blue','red']){
+   await page.goto(base+sep+'mode=duel2&seed=511');
+   const lane=await page.evaluate(side=>{
+    const $=id=>document.getElementById(id),d=window.__rrtDuel2Debug,
+     engine=window.__rrtArenaDebug;
+    $('mapSelect').value='open';$('mapSelect').dispatchEvent(new Event('change',{bubbles:true}));
+    // Isolate the RRT lane chooser from ranged-defense jinks; identical switches
+    // are applied to both teams only inside this reproducible test fixture.
+    $('multiRangedDefense').checked=false;
+    $('multiMobile').checked=false;
+    const rect=$('stage').getBoundingClientRect(),S=Math.min(rect.width,rect.height),
+     R=Math.max(7.5,Math.min(17,S*.027));
+    const id=side==='blue'?'B1':'R1',mate=side==='blue'?'B2':'R2',
+     enemy=side==='blue'?'R1':'B1',out=side==='blue'?'R2':'B2',
+     startX=side==='blue'?R*4:rect.width-R*4,step=side==='blue'?1:-1,y=R*2.5;
+    const me={x:startX,y},ally={x:startX+step*R*4,y},
+     target={x:startX+step*S*.32,y};
+    const valid=engine.freePoint(me)&&engine.freePoint(ally)&&
+     engine.freePoint(target)&&engine.sight(me,target);
+    d.forceHp(out,0);
+    const arranged=valid&&d.forcePosition(id,me)&&d.forcePosition(mate,ally)&&
+     d.forcePosition(enemy,target);
+    if(!arranged)return {arranged,valid,side};
+    $('start').click();d.advance(3);
+    const result=d.getState(),fighter=result.fighters.find(b=>b.id===id);
+    return {arranged,side,laneMoves:result.laneMoves,heldFire:result.heldFire,
+     visible:fighter.visible,selected:fighter.target,planCount:fighter.planCount,
+     start:me,end:{x:fighter.x,y:fighter.y},R,
+     radioSent:result.radio.sent,phase:result.phase};
+   },side);
+   check(lane.arranged&&lane.selected===(side==='blue'?'R1':'B1')&&
+    lane.laneMoves>0&&lane.planCount>0,
+    'duel2 '+side+': blocked fire lane triggered an independently planned RRT reposition '+JSON.stringify(lane));
+   check(lane.arranged&&lane.radioSent===0&&lane.phase!=='ready',
+    'duel2 '+side+': lane movement relies on own teammate vision with radio disabled');
+  }
 
   // Exact end condition: R1 KO alone cannot end match; R1 and R2 KO does.
   await page.goto(base+sep+'mode=duel2&seed=713');
