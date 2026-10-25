@@ -1,3 +1,17 @@
+# RRT ARENA V0.6.15 — Duel 2v2 (Four Identical BLUE-Version Agents)
+
+This release adds **Duel 2v2** to the original 1v1 / BLUE-vs-swarm menu. BLUE **B1/B2** and RED **R1/R2** use the same latest BLUE-version mechanics: Memory-Guided RRT, Tactical Positioning, Predictive/Ranged Defense where relevant, Keep Moving, bounded Private Memory, local perception, P2P radio and Evidence ledger. RED does **not** use the older weaker 1v1 RED combat stats inside the 2v2 scenario.
+
+- **Modes:** 1v1 Duel (unchanged), 2v2 Duel (new), and the original Solo/Independent/Cooperative swarm lab (unchanged). Use `?mode=duel2` to enter the team arena.
+- **2v2 controls:** `?mode=duel2&dteam=coop&loss=50&delay=0.3&seed=83` enables symmetrical no-leader P2P on both sides; Independent mode disables peer information sharing. Loss and delay use the original separate radio RNG and queue. Both teams use identical communication policy.
+- **Perception privacy:** each fighter owns two opponent memories plus a search memory, local sighting records and a private Evidence Ledger. No world-space enemy position or another agent's planning state enters target-selection decisions. Radio offers optional search hints; shooting still needs direct personal sight.
+- **Combat parity:** all 4 agents run the same RRT and tactical loop, weapon ranges, HP, movement/fire and defenses; no buffs for simulated team performance. Physics resolves swept bullet/wall/friendly collisions; teammate hits stop bullets without HP damage.
+- **End condition:** all two members of one side eliminated; simultaneous KO is draw. At 150 s, compare total remaining team HP.
+- **Mobile:** team HP aggregation (0–240), ammo and agent focus with fixed-height HUD, no horizontal scrolling. Replay JSON exports B1/B2/R1/R2, individual stats and radio fault telemetry.
+- **Research:** performance comparisons remain simulated; CI smoke benchmarks cannot establish causal improvements without paired 100–200-seed controlled experiments.
+
+**Acceptance:** `node --test *.test.cjs`, `node tools/browser_regression.cjs` (320/393/1365 px including 2v2), independent/cooperative seeded smoke runs, GitHub Pages deployment PASS and public live readback. Production version must be confirmed from the public site, not inferred from GitHub code.
+
 ## V0.6.14 — Distributed Evidence & Provenance Lab
 
 **Research question:** How should independent BLUE agents judge overlapping and contradictory radio reports without a leader or shared truth table?
