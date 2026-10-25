@@ -19,7 +19,7 @@ test('B2 coordination reads a delivered TARGET_CLAIM, never B1 coordinator state
  assert.doesNotMatch(sense,/team\.primaryFocus/);
 });
 test('radio coordinates are ONLY an exploration hint and cannot authorize firing',()=>{
- const planning=block('function chooseGoal(bot){','function edgeCostFor');
+ const planning=block('function chooseGoal(bot){','function beginPlan(');
  assert.match(planning,/commsCore\.radioExploreGoal\(bot\.radioInbox/);
  const shot=block('function shoot(bot){','function burst(');
  assert.match(shot,/multi\.tracks\[multi\.focus\]\?\.status!=='visible'/);
