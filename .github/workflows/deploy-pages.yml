@@ -26,13 +26,15 @@ jobs:
       - name: Validate entry point
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.14' index.html
+          grep -q 'RRT ARENA 06.15' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
           grep -q 'RRTArenaPrivateRadio' index.html
           grep -q 'RRTArenaLeaderless' index.html
           grep -q 'RRTArenaEvidence' index.html
+          grep -q 'RRTArenaDuel2' index.html
+          grep -q 'id="duel2Status"' index.html
           grep -q 'id="blueEvidenceStatus"' index.html
           grep -q 'id="teamRadioLoss"' index.html
           grep -q 'id="blueTeamMode"' index.html
