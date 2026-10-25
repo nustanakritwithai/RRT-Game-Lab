@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.13/.test(duel.title),'title shows V0.6.13: '+duel.title);
+  check(/RRT ARENA 06\.14/.test(duel.title),'title shows V0.6.13: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -250,6 +250,18 @@ async function main(){
   check(p2p.bidsSent>0&&p2p.bidsReceived>0&&p2p.delivered>0&&p2p.drop===0&&p2p.valid,
     'leaderless: bids sent/received via real radio queues, no dropped packet in baseline');
 
+  // V0.6.14 evidence integration: delivered packets create two private ledgers.
+  const proof=await page.evaluate(()=>{
+   const s=window.__rrtMultiDebug.getState();
+   return {accepted:s.team.evidence.accepted,duplicates:s.team.evidence.duplicates,
+    blues:s.team.blues.map(b=>({id:b.id,observations:b.evidence.observations,
+     origins:b.evidence.distinctOrigins})),
+    hud:document.getElementById('blueEvidenceStatus')?.textContent};
+  });
+  check(proof.accepted>0&&proof.blues.length===2&&
+    proof.blues.every(b=>b.observations>0&&b.origins.includes(b.id))&&
+    /หลักฐานวิทยุ/.test(proof.hud),
+   'evidence: B1/B2 keep their first-hand evidence and delivered peer reports separately');
   await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop&loss=100&seed=83');
   const radioDown=await page.evaluate(()=>{
    const d=window.__rrtArenaDebug,md=window.__rrtMultiDebug;
