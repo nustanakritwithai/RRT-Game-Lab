@@ -63,7 +63,7 @@ async function main(){
     roster.every(b=>b.capabilities.rangedDefense&&b.capabilities.keepMoving),
    'duel2: RED R1/R2 and BLUE B1/B2 have identical latest BLUE combat stats and defense');
   check(live.every(b=>[b.x,b.y,b.hp,b.ammo].every(Number.isFinite))&&
-   live.some(b=>b.planCount>0)&&duel2.validate.fightersFree&&duel2.validate.waypointsClear,
+   ['blue','red'].every(color=>live.some(b=>b.team===color&&b.planCount>0))&&duel2.validate.fightersFree&&duel2.validate.waypointsClear,
    'duel2: four-fighter RRT ran collision-safe at '+w+'px');
   check(duel2.blueHp.includes('/240')&&duel2.redHp.includes('/240')&&
    duel2.hud.includes('B ')&&duel2.hud.includes('R ')&&duel2.stable&&duel2.scroll<=0,
@@ -86,6 +86,28 @@ async function main(){
   check(noRadio.fighters.some(b=>b.planCount>0)&&
    noRadio.fighters.some(b=>b.shots>0),
    'duel2: four latest-version agents retain independent RRT and shooting with no radio');
+
+  // Zero loss must deliver a verifiable peer report and BID on BOTH sides.
+  // This proves real cooperative operation, not merely independent fallback.
+  await page.goto(base+sep+'mode=duel2&dteam=coop&loss=0&seed=83');
+  const radioUp=await page.evaluate(()=>{
+   const d=window.__rrtDuel2Debug;
+   document.getElementById('mapSelect').value='open';
+   document.getElementById('mapSelect').dispatchEvent(new Event('change',{bubbles:true}));
+   document.getElementById('start').click();d.advance(6);
+   return d.getState();
+  });
+  console.log('DUEL2 COOP '+JSON.stringify({radio:radioUp.radio,
+   endpoints:radioUp.fighters.map(b=>({id:b.id,received:b.received,
+    bids:b.receivedBids,visible:b.visible,shots:b.shots}))}));
+  check(radioUp.mode==='cooperative'&&radioUp.packetLoss===0&&
+   radioUp.radio.sent>0&&radioUp.radio.delivered>0&&radioUp.radio.dropped===0,
+   'duel2: lossless radio actually delivers P2P packets');
+  check(['blue','red'].every(color=>radioUp.fighters.some(b=>
+    b.team===color&&b.received.length>0&&b.evidence>0)),
+   'duel2: BOTH BLUE and RED agents actually ingest delivered peer sightings');
+  check(radioUp.fighters.every(b=>b.receivedBids.every(id=>id[0]===b.id[0])),
+   'duel2: BID messages remain within each team with no cross-team memory leakage');
 
   // Exact end condition: R1 KO alone cannot end match; R1 and R2 KO does.
   await page.goto(base+sep+'mode=duel2&seed=713');
