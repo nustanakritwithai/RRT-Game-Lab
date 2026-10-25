@@ -9,6 +9,7 @@
  *     --kite on --predictive on [--enemy melee|ranged|mixed] [--rangedDefense on|off] [--mobile on|off]
  *     [--file index.html] [--jobs 4] [--out result.json]
  *
+ * V0.6.12 calls the live game's private-stream reseed hook before each match.
  * Same seed + same flags + same viewport => same match. Enemy stats and BLUE stats are
  * never modified by the harness; it only toggles the strategy switches exposed in the UI.
  */
@@ -53,6 +54,7 @@ async function runOne(page,url,opts,seed){
     if(opts.rangedDefense!==undefined)setCheck('multiRangedDefense',opts.rangedDefense==='on');
     if(opts.mobile!==undefined)setCheck('multiMobile',opts.mobile==='on');
     window.__reseed(seed);
+    if(window.__rrtMultiDebug?.reseed&&!window.__rrtMultiDebug.reseed(seed))throw new Error('Unable to reseed private streams');
     $('reset').click();
     $('start').click();
     const dbg=window.__rrtArenaDebug,md=window.__rrtMultiDebug;

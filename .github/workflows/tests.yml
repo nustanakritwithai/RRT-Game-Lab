@@ -17,16 +17,17 @@ jobs:
           node-version: '22'
       - name: Test original BLUE agent, multi-target sensor, melee-wave tactics and predictive swarm defense
         run: |
-          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs
+          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs rrt_arena_private_radio_v0612.test.cjs rrt_arena_private_runtime_v0612.test.cjs
       - name: Verify benchmark script syntax
         run: node --check tools/benchmark_swarm.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.11' index.html
+          grep -q 'RRT ARENA 06.12' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
+          grep -q 'RRTArenaPrivateRadio' index.html
           grep -q 'id="blueTeamMode"' index.html
           grep -q 'RRTArenaMulti' index.html
           grep -q 'RRTArenaMelee' index.html
