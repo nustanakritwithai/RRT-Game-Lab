@@ -3729,6 +3729,16 @@ window.__rrtDuel2Debug={
  forceHp:(id,hp)=>{const b=duel2Active()?bots.find(x=>x.id===id):null;
   if(!b||!Number.isFinite(hp)||hp<0||hp>b.maxHp)return false;
   b.hp=hp;if(!hp){b.path=[];b.planner=null;}return true;},
+ // Inspection harness accepts collision-validated fixtures ONLY before a round starts.
+ forcePosition:(id,point)=>{
+  const b=duel2Active()?bots.find(x=>x.id===id):null;
+  if(!b||phase==='running'||!point||!Number.isFinite(point.x)||!Number.isFinite(point.y)||
+   !freePoint(point,R+2)||bots.some(other=>other!==b&&other.hp>0&&dist(other,point)<R*2.3))
+   return false;
+  b.x=point.x;b.y=point.y;b.planner=null;b.goal=null;b.path=[];b.way=0;
+  b.thinkCooldown=0;b.planCooldown=0;duel2SenseAt=-1;
+  return true;
+ },
  advance:seconds=>{if(!duel2Active()||!Number.isFinite(seconds)||seconds<0||seconds>150)return false;
   const previous=phase;phase='running';
   for(let i=0;i<Math.round(seconds*60)&&phase==='running';i++)loopStep(1/60);
