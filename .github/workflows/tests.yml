@@ -18,6 +18,14 @@ jobs:
       - name: Test original BLUE agent, multi-target sensor, melee-wave tactics and predictive swarm defense
         run: |
           node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs rrt_arena_private_radio_v0612.test.cjs rrt_arena_private_runtime_v0612.test.cjs rrt_arena_leaderless_v0613.test.cjs rrt_arena_evidence_v0614.test.cjs
+      - name: Run PeerMesh deterministic simulation tests (1–1000 agents)
+        run: node --test network_lab_core.test.cjs
+      - name: Validate PeerMesh browser UI and smoke-test syntax
+        run: |
+          node --check network_lab_core.js
+          node --check network_lab_ui.js
+          node --check tools/network_lab_browser.cjs
+          test -s network-lab.html
       - name: Verify benchmark script syntax
         run: node --check tools/benchmark_swarm.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
@@ -56,7 +64,17 @@ jobs:
       - name: Install Chromium runtime
         run: npx playwright install --with-deps chromium
       - name: Run duel, tracking, melee, ranged, and mixed browser tests
-        run: node tools/browser_regression.cjs
+        run: |
+          node tools/browser_regression.cjs
+          node tools/network_lab_browser.cjs
+      - name: Upload PeerMesh real Chromium screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peermesh-chromium-screenshots
+          path: artifacts/peermesh-*.png
+          if-no-files-found: ignore
+          retention-days: 14
 
   team-benchmark:
     name: Team exploratory 12 ranged bots (${{ matrix.team }})
