@@ -3658,6 +3658,41 @@ canvas.addEventListener('pointerdown',handleTap);
 window.addEventListener('keydown',e=>{if(['INPUT','SELECT','BUTTON'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();phase==='running'||phase==='paused'?pauseGame():startGame();}if(e.key==='r'||e.key==='R')resetGame();});
 window.addEventListener('resize',()=>resize());
 // Inspection harness for reproducible functional checks; read-only snapshot of the live simulation.
+// Read-only inspection of the real 2v2 match; controlled HP forcing is test-only.
+window.__rrtDuel2Debug={
+ getState:()=>{
+  const members=duel2Active()?bots:[];
+  return {scenario,phase,time:elapsed,version:document.title,
+   mode:team.mode,packetLoss:Number(duel2UI.radioLoss.value),
+   delay:Number(duel2UI.radioDelay.value),winner:finalResult,
+   fighters:members.map(b=>({id:b.id,team:b.team,hp:b.hp,ammo:b.ammo,
+    x:b.x,y:b.y,planCount:b.planCount,intent:b.intent,
+    target:b.duelTargetId,visible:Object.keys(b.duelVisible||{}),
+    received:Object.keys(b.duelInbox?.sightings||{}),
+    memoryCount:Object.keys(b.duelBrains||{}).length,
+    memoryUnique:members.every(other=>b===other||b.duelBrains!==other.duelBrains),
+    evidence:Object.keys(b.evidenceLedger?.observations||{}).length,
+    capabilities:{predictive:blueFeatureOn('predictive'),
+     rangedDefense:rangedDefenseActive(),keepMoving:mobileActive()},
+    stats:{hp:b.maxHp,ammo:b.maxAmmo,speed:b.moveSpeed,fire:b.baseFire,range:b.range,aim:b.aim},
+    shots:team.shotsFired?.[b.id]||0})),
+   radio:{sent:team.radioSent||0,delivered:team.radioDelivered||0,dropped:team.radioDropped||0,
+    queued:team.radio?.queue?.length||0,bids:team.bidsSent||0,
+    acks:team.peerAcks||0,negotiations:team.negotiatedYields||0,
+    evidenceAccepted:team.evidenceAccepted||0,conflicts:team.evidenceConflict||0},
+   blockedFriendly:duel2FriendlyBlocks,bullets:bullets.length,score:{...scores}};
+ },
+ setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative'].includes(mode))return false;
+  duel2UI.teamMode.value=mode;resetGame();return true;},
+ forceHp:(id,hp)=>{const b=duel2Active()?bots.find(x=>x.id===id):null;
+  if(!b||!Number.isFinite(hp)||hp<0||hp>b.maxHp)return false;
+  b.hp=hp;if(!hp){b.path=[];b.planner=null;}return true;},
+ advance:seconds=>{if(!duel2Active()||!Number.isFinite(seconds)||seconds<0||seconds>150)return false;
+  const previous=phase;phase='running';
+  for(let i=0;i<Math.round(seconds*60)&&phase==='running';i++)loopStep(1/60);
+  if(phase==='running')phase=previous;
+  updateHUD();draw();return true;}
+};
 window.__rrtMultiDebug={
  getState:()=>({scenario,blueCapabilities:{predictive:blueFeatureOn('predictive'),rangedDefense:blueFeatureOn('rangedDefense'),keepMoving:blueFeatureOn('mobile')},time:elapsed,phase,focus:multi.focus,manualFocus:multi.manualFocus,eliminated:multi.eliminated,melee:multi.melee,enemyMode:multi.enemyMode,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,rangedActiveShots:multi.rangedShots.length,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,exposedTo:multi.cover?multi.cover.assessment.count:null,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,forecast:multi.forecast?{level:multi.forecast.map.level,risk:multi.forecast.map.risk,inbound:multi.forecast.map.inbound,gap:{...multi.forecast.map.gap},threats:multi.forecast.threats.length}:null,seed:benchmarkSeed,blueIntent:bots[0]?.intent,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,waveHistory:multi.waveHistory.slice(),team:{mode:team.mode,count:team.blues.length,alive:teamCore.teamMetrics(team.blues).alive,rngSeed:rngStreams.getSeed(),blockedFriendlyShots:team.blockedFriendlyShots,radioQueued:team.radio.queue.length,radioSent:team.radioSent,radioDelivered:team.radioDelivered,radioDropped:team.radioDropped||0,bidsSent:team.bidsSent||0,bidsReceived:team.bidsReceived||0,negotiatedYields:team.negotiatedYields||0,peerAcks:team.peerAcks||0,evidence:{accepted:team.evidenceAccepted||0,duplicates:team.evidenceDuplicate||0,conflicts:team.evidenceConflict||0,rejected:team.evidenceRejected||0},radioLossPct:Number(multiUI.radioLoss.value),radioExtraDelay:Number(multiUI.radioDelay.value),heldFire:team.heldFire||0,laneMoves:team.laneMoves||0,focusSplits:team.focusSplits||0,focusSamples:team.focusSamples||0,focusOverlap:team.focusOverlap||0,shotsFired:{...(team.shotsFired||{})},memorySeparated:!teamDuo()||team.blues[0].brain!==team.blues[1].brain&&multi.brains!==team.secondary.brains,secondaryTracks:team.secondary?Object.keys(team.secondary.tracks).length:0,blues:team.blues.map(b=>({id:b.id,team:b.team,x:b.x,y:b.y,hp:b.hp,ammo:b.ammo,radioSightingIds:Object.keys(b.radioInbox?.sightings||{}),radioClaims:{...(b.radioInbox?.claims||{})},radioPoses:commsCore.peerPositions(b.radioInbox,elapsed),receivedBids:leaderless.prune(b.bidInbox,elapsed).bids,evidence:{observations:Object.keys(b.evidenceLedger?.observations||{}).length,distinctOrigins:[...new Set(Object.values(b.evidenceLedger?.observations||{}).map(e=>e.originId))],verdicts:Object.fromEntries([...new Set(Object.values(b.evidenceLedger?.observations||{}).map(e=>e.targetId))].map(id=>[id,evidenceCore.evaluate(b.evidenceLedger,id,elapsed).status]))},receivedNegotiations:leaderless.prune(b.bidInbox,elapsed).responses,localTrackIds:Object.keys(b.id==='B1'?multi.tracks:team.secondary?.tracks||{}),intent:b.intent,focus:b.id==='B1'?multi.focus:team.secondary?.focus,planCount:b.planCount,hasPlanner:!!b.planner,pathLength:b.path.length,memoryId:b.id,brain:b.brain?{sightings:b.brain.sightings,losses:b.brain.losses,encounters:b.brain.encounters.length}:null}))},targets:multi.targets.map(t=>({id:t.id,x:t.x,y:t.y,kind:t.kind,team:t.team,role:t.role,ammo:t.ammo,track:t.track?{...t.track}:null,hp:t.hp,active:t.active,nextAttackAt:t.nextAttackAt})),tracks:JSON.parse(JSON.stringify(multi.tracks)),blue:{x:bots[0]?.x,y:bots[0]?.y,planCount:bots[0]?.planCount,hp:bots[0]?.hp,ammo:bots[0]?.ammo,brain:multi.focus?multi.brains[multi.focus]:null},coreSameBlue:bots[0]&&bots[0].team==='blue'&&typeof currentIntent==='function'&&typeof beginPlan==='function'&&typeof runPlanner==='function'}),
  advance:(secs)=>{const prev=phase;phase='running';for(let i=0;i<secs*60;i++)loopStep(1/60);phase=prev;updateHUD();draw();},
