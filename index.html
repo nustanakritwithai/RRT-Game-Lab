@@ -2017,6 +2017,7 @@ function setupDuel2(){
  team={mode:duel2UI.teamMode.value,blues:bots.filter(b=>b.team==='blue'),secondary:null,
   radio:teamCore.newRadio(),radioSent:0,radioDelivered:0,radioDropped:0,
   evidenceAccepted:0,evidenceDuplicate:0,evidenceConflict:0,evidenceRejected:0,
+  bidsSent:0,bidsReceived:0,negotiatedYields:0,peerAcks:0,heldFire:0,laneMoves:0,
   blockedFriendlyShots:0,shotsFired:{B1:0,B2:0,R1:0,R2:0}};
 }
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
@@ -2050,15 +2051,15 @@ function toggleReplay(force){
  updateReplayUI();draw();
 }
 function exportReplay(){if(!timeline.length)return;
- const data={format:'RRT-Arena-sampled-state',version:'0.6.14',evidenceChannel:{accepted:team.evidenceAccepted||0,duplicates:team.evidenceDuplicate||0,conflicts:team.evidenceConflict||0,rejected:team.evidenceRejected||0},radioChannel:{lossPct:Number(multiUI.radioLoss.value),extraDelay:Number(multiUI.radioDelay.value),sent:team.radioSent||0,delivered:team.radioDelivered||0,dropped:team.radioDropped||0,bidsSent:team.bidsSent||0,bidsReceived:team.bidsReceived||0,negotiatedYields:team.negotiatedYields||0,acks:team.peerAcks||0},teamCoordination:{heldFire:team.heldFire||0,laneMoves:team.laneMoves||0,focusSplitActions:team.focusSplits||0,focusSamples:team.focusSamples||0,focusOverlap:team.focusOverlap||0,shotsFired:team.shotsFired||{}},teamMode:team.mode,teamRoster:team.blues.map(b=>({id:b.id,hp:b.hp,ammo:b.ammo,plans:b.planCount,alive:b.hp>0})),blockedFriendlyShots:team.blockedFriendlyShots,radioPackets:team.radio?.queue?.length||0,rngBase:rngStreams.getSeed(),privateRadioOnly:true,seed:benchmarkSeed,activeTactics:ui.activeTactics.checked,activeDefense:ui.activeDefense.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,multiWave:multiActive()?{enabled:multi.melee,enemyMode:multi.enemyMode,rangedDefenseEnabled:multi.rangedDefense,keepMovingEnabled:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictiveEnabled:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,count:multi.targets.length,eliminated:multi.eliminated,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,winHistory:multi.waveHistory.slice()}:null,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
+ const data={format:'RRT-Arena-sampled-state',version:'0.6.15',duel2:duel2Active()?{mode:team.mode,alive:{blue:bots.filter(b=>b.team==='blue'&&b.hp>0).length,red:bots.filter(b=>b.team==='red'&&b.hp>0).length},friendlyBlocks:duel2FriendlyBlocks}:null,evidenceChannel:{accepted:team.evidenceAccepted||0,duplicates:team.evidenceDuplicate||0,conflicts:team.evidenceConflict||0,rejected:team.evidenceRejected||0},radioChannel:{lossPct:Number((duel2Active()?duel2UI.radioLoss:multiUI.radioLoss).value),extraDelay:Number((duel2Active()?duel2UI.radioDelay:multiUI.radioDelay).value),sent:team.radioSent||0,delivered:team.radioDelivered||0,dropped:team.radioDropped||0,bidsSent:team.bidsSent||0,bidsReceived:team.bidsReceived||0,negotiatedYields:team.negotiatedYields||0,acks:team.peerAcks||0},teamCoordination:{heldFire:team.heldFire||0,laneMoves:team.laneMoves||0,focusSplitActions:team.focusSplits||0,focusSamples:team.focusSamples||0,focusOverlap:team.focusOverlap||0,shotsFired:team.shotsFired||{}},teamMode:team.mode,teamRoster:(duel2Active()?bots:team.blues).map(b=>({id:b.id,team:b.team,hp:b.hp,ammo:b.ammo,plans:b.planCount,alive:b.hp>0})),blockedFriendlyShots:team.blockedFriendlyShots,radioPackets:team.radio?.queue?.length||0,rngBase:rngStreams.getSeed(),privateRadioOnly:true,seed:benchmarkSeed,activeTactics:ui.activeTactics.checked,activeDefense:ui.activeDefense.checked,maneuvers:{...stats.maneuvers},guidedSampling:{focus:Number(ui.focus.value),goalBias:Number(ui.bias.value),counts:{...stats.samples}},samplingSeconds:.25,notDeterministic:true,map:ui.map.value,round,winner:finalResult,score:{...scores},duration:elapsed,multiWave:multiActive()?{enabled:multi.melee,enemyMode:multi.enemyMode,rangedDefenseEnabled:multi.rangedDefense,keepMovingEnabled:multi.mobile,bridgeSteps:multi.bridgeSteps,jinks:multi.jinks,coverMoves:multi.coverMoves,coverReroutes:multi.coverReroutes,standoffs:multi.standoffs,rangedFired:multi.rangedFired,rangedHits:multi.rangedHits,rangedDamage:multi.rangedDamage,difficulty:multi.difficulty,kiteEnabled:multi.kiteEnabled,predictiveEnabled:multi.predictive,preempts:multi.preempts,routeCuts:multi.routeCuts,planFailures:multi.planFailures,count:multi.targets.length,eliminated:multi.eliminated,meleeHits:multi.meleeHits,damageTaken:multi.damageTaken,microMoves:multi.microMoves,kites:multi.kites,winHistory:multi.waveHistory.slice()}:null,events:events.slice(),frames:timeline.slice(),lessons:bots.map(b=>({team:b.team,sightings:b.brain.sightings,lost:b.brain.losses,danger:b.brain.danger.map(v=>({...v})),encounters:b.brain.encounters.map(v=>({...v}))}))};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='rrt-arena-v0614-round-'+round+'-replay.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ a.href=url;a.download='rrt-arena-v0615-round-'+round+'-replay.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
  showNotice('บันทึก Replay JSON แล้ว (ภาพสถานะ ไม่ใช่วิดีโอ)');
 }
 function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
-function updateControls(){ui.start.textContent=phase==='ended'?'▶ รอบต่อไป':phase==='paused'?'▶ เล่นต่อ':phase==='running'?'▶ กำลังดวล':'▶ เริ่มดวล';ui.start.disabled=phase==='running';if(multiActive()){multiUI.plus.disabled=multiUI.minus.disabled=multi.melee&&phase==='running';multiUI.preset.disabled=multi.melee&&phase==='running';multiUI.teamMode.disabled=phase==='running';}ui.pause.disabled=phase==='ready'||phase==='ended';ui.pause.textContent=phase==='paused'?'▶ เล่นต่อ':'⏸ หยุด';ui.dot.classList.toggle('on',phase==='running');ui.live.textContent=({ready:'ยังไม่เริ่ม',running:'กำลังต่อสู้',paused:'หยุดชั่วคราว',ended:'จบรอบแล้ว'})[phase];ui.wall.classList.toggle('active',tool==='wall');ui.order.classList.toggle('active',tool==='order');stage.classList.toggle('editing',tool!=='none');}
+function updateControls(){ui.start.textContent=phase==='ended'?'▶ รอบต่อไป':phase==='paused'?'▶ เล่นต่อ':phase==='running'?'▶ กำลังดวล':'▶ เริ่มดวล';ui.start.disabled=phase==='running';duel2UI.teamMode.disabled=duel2Active()&&phase==='running';if(multiActive()){multiUI.plus.disabled=multiUI.minus.disabled=multi.melee&&phase==='running';multiUI.preset.disabled=multi.melee&&phase==='running';multiUI.teamMode.disabled=phase==='running';}ui.pause.disabled=phase==='ready'||phase==='ended';ui.pause.textContent=phase==='paused'?'▶ เล่นต่อ':'⏸ หยุด';ui.dot.classList.toggle('on',phase==='running');ui.live.textContent=({ready:'ยังไม่เริ่ม',running:'กำลังต่อสู้',paused:'หยุดชั่วคราว',ended:'จบรอบแล้ว'})[phase];ui.wall.classList.toggle('active',tool==='wall');ui.order.classList.toggle('active',tool==='order');stage.classList.toggle('editing',tool!=='none');}
 function startGame(){if(phase==='ended'){round++;setupRound();phase='running';log('เริ่มรอบที่ '+round);}
- else if(phase==='ready'){phase='running';log('บอตทั้งสองออกปฏิบัติการ เริ่มค้นหาเส้นทาง RRT');}
+ else if(phase==='ready'){phase='running';log(duel2Active()?'B1/B2 ปะทะ R1/R2 · เริ่มดวล 2 ต่อ 2':'บอตทั้งสองออกปฏิบัติการ เริ่มค้นหาเส้นทาง RRT');}
  else if(phase==='paused'){phase='running';log('เล่นต่อ');}hideOverlay();updateControls();}
 function pauseGame(){if(phase==='running'){phase='paused';showOverlay('⏸️','หยุดชั่วคราว','กด “เล่นต่อ” เพื่อให้บอตกลับมาค้นหาเส้นทางและต่อสู้');}else if(phase==='paused'){phase='running';hideOverlay();}updateControls();}
 function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]},B1:{danger:[],encounters:[]},B2:{danger:[],encounters:[]},R1:{danger:[],encounters:[]},R2:{danger:[],encounters:[]}};round=1;scores={blue:0,red:0};phase='ready';setupRound();ui.log.innerHTML='';log('รีเซ็ตเกมและคะแนนทั้งหมด');showOverlay('⚔️',multiActive()?'BLUE ตัวเดิมกับหลายเป้าหมาย':'พร้อมให้บอตดวลกัน!',multiActive()?'BLUE ยิงระยะไกลปะทะบอตประชิดหลายตัว มีผลแพ้ชนะชัดเจน':'กด “เริ่มดวล” แล้วชมการตัดสินใจและเส้นทาง RRT ของทั้งสองตัว');showNotice('รีเซ็ตเรียบร้อย — กดเริ่มทดลอง');updateControls();}
@@ -3125,7 +3126,7 @@ function shoot(bot){const foe=opponent(bot),d=dist(bot,foe);if(multiActive()&&(!
 function burst(x,y,color,count=9,spread=3){for(let i=0;i<count;i++){const a=rand(-Math.PI,Math.PI),v=rand(18,86)*spread/3,life=rand(.18,.48);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life,total:life,color});}}
 function endRound(winner){
  phase='ended';finalResult=winner;
- for(const bot of bots)storedLessons[bot.team]=ui.carryMemory.checked?{danger:mem.preserveLessons(bot.brain,elapsed),encounters:mem.preserveEncounters(bot.brain,elapsed)}:{danger:[],encounters:[]};
+ for(const bot of bots)storedLessons[duel2Active()?bot.id:bot.team]=ui.carryMemory.checked?{danger:mem.preserveLessons(bot.brain,elapsed),encounters:mem.preserveEncounters(bot.brain,elapsed)}:{danger:[],encounters:[]};
  snapshot();updateReplayUI();const draw=winner==='draw';if(!draw)scores[winner]++;
  updateControls();const winLabel=draw?'เสมอ':winner==='blue'?'BLUE 🔷':'RED 🔺';
  log(draw?'ทั้งสองฝ่ายเสมอกัน!':winLabel+' ชนะรอบนี้!',draw?null:winner);
@@ -3486,8 +3487,33 @@ function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(
  if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else if(duel2Active()){for(const b of bots)drawBlueCapabilityRing(b);for(const b of bots)if(b.hp>0)drawFighter(b);}else{drawBlueCapabilityRing(bots[0]);for(const b of bots)drawFighter(b);}
  ctx.fillStyle='#b6d4eb';ctx.font=`700 ${clamp(S*.026,10,13)}px system-ui`;ctx.textAlign='left';ctx.fillText('RRT TACTICAL · '+ui.map.selectedOptions[0].textContent.split('·').pop().trim(),12,H-14);
 }
+function updateDuel2HUD(){
+ const teams=['blue','red'];
+ for(const color of teams){
+  const members=bots.filter(b=>b.team===color),alive=members.filter(b=>b.hp>0);
+  const hp=members.reduce((n,b)=>n+Math.max(0,b.hp),0);
+  const ammo=members.reduce((n,b)=>n+b.ammo,0);
+  const lead=alive[0]||members[0],memInfo=botKnowledge(lead);
+  ui[color+'Hp'].textContent=Math.ceil(hp)+'/240';
+  ui[color+'Bar'].style.width=(100*hp/240)+'%';
+  ui[color+'Mode'].textContent=alive.length+'/2 ยังสู้ · '+lead.mode;
+  ui[color+'Think'].textContent='RRT '+members.reduce((n,b)=>n+b.planCount,0)+' แผน';
+  ui[color+'Ammo'].textContent='กระสุนรวม '+ammo+'/12';
+  ui[color+'Reason'].textContent=members.map(b=>b.id+': '+(b.hp>0?b.intent:'OUT')).join(' | ');
+  ui[color+'Risk'].textContent='ความจำส่วนตัว '+members.length+' ชุด';
+  ui[color+'Plans'].textContent='เป้าหมาย '+members.map(b=>b.duelTargetId||'?').join('/');
+  ui[color+'Memory'].textContent='มองเห็นเอง '+members.reduce((n,b)=>n+Object.keys(b.duelVisible||{}).length,0)+
+   ' · จุดเสี่ยง '+members.reduce((n,b)=>n+(b.brain?.danger.length||0),0);
+ }
+ const blueAlive=bots.filter(b=>b.team==='blue'&&b.hp>0).length,
+  redAlive=bots.filter(b=>b.team==='red'&&b.hp>0).length;
+ duel2UI.status.textContent='B '+blueAlive+'/2 · R '+redAlive+'/2 · '+
+  (team.mode==='cooperative'?'📡 P2P':'อิสระ')+
+  ' · ส่ง '+(team.radioSent||0)+' · ถึง '+(team.radioDelivered||0)+
+  ' · หลุด '+(team.radioDropped||0)+' · ขัดแย้ง '+(team.evidenceConflict||0);
+}
 function updateHUD(){if(!bots.length)return;
- for(const bot of (multiActive()?[bots[0]]:bots)){const id=bot.team;
+ if(duel2Active())updateDuel2HUD();else for(const bot of (multiActive()?[bots[0]]:bots)){const id=bot.team;
   ui[id+'Hp'].textContent=Math.ceil(bot.hp)+'/120';
   ui[id+'Bar'].style.width=(100*bot.hp/bot.maxHp)+'%';
   ui[id+'Mode'].textContent=bot.mode;ui[id+'Mode'].title=bot.mode;
@@ -3549,12 +3575,32 @@ ui.activeTactics.addEventListener('change',()=>{for(const b of bots){b.tactic=nu
 ui.risk.addEventListener('input',()=>{ui.riskVal.textContent=ui.risk.value+'%';for(const bot of bots){bot.thinkCooldown=0;bot.agePlan=9;}});
 for(const team of ['blue','red'])ui[team+'Style'].addEventListener('change',()=>{const bot=bots.find(b=>b.team===team);if(bot){bot.thinkCooldown=0;bot.agePlan=9;}showNotice('เปลี่ยนกลยุทธ์ '+team.toUpperCase()+' แล้ว');});ui.speed.addEventListener('input',()=>ui.speedVal.textContent=Number(ui.speed.value).toFixed(2).replace(/0$/,'')+'×');
 ui.map.addEventListener('change',()=>{resetGame();showNotice('เปลี่ยนสนามแล้ว — กดเริ่มดวล');});ui.smooth.addEventListener('change',()=>{for(const b of bots){if(b.planner)continue;if(b.path.length){b.goal=null;b.path=[];b.thinkCooldown=.01;}}showNotice(ui.smooth.checked?'เปิด Path Smoothing รอบใหม่':'ปิด Path Smoothing รอบใหม่');});
-multiUI.scenario.value=scenario;multiUI.panel.hidden=!multiActive();
+multiUI.scenario.value=scenario;multiUI.panel.hidden=!multiActive();duel2UI.panel.hidden=!duel2Active();
 multiUI.scenario.addEventListener('change',()=>{
- scenario=multiUI.scenario.value;multiUI.panel.hidden=!multiActive();
- if(!multiActive()){document.getElementById('redFighterName').textContent='🔺 RED · สายบุก';document.getElementById('arenaHead').textContent='◈ Combat Maneuvers · Memory-Guided RRT';ui.redStyle.closest('.strategy-grid').style.display='';ui.auto.closest('label').style.display='';ui.activeDefense.checked=true;}
- if(/^https?:$/.test(location.protocol)){const query=new URLSearchParams(location.search);if(multiActive()){query.set('mode','multi');if(multiUI.enemyMode.value!=='melee')query.set('enemy',multiUI.enemyMode.value);}else{query.delete('mode');query.delete('enemy');query.delete('blue');query.delete('team');}history.replaceState(null,'',location.pathname+(query.toString()?'?'+query.toString():''));}
- resetGame();showNotice(multiActive()?'โหมด BLUE ตัวเดิมปะทะหลายเป้าหมาย':'กลับสนามดวลเดิม');
+ scenario=multiUI.scenario.value;multiUI.panel.hidden=!multiActive();duel2UI.panel.hidden=!duel2Active();
+ if(!multiActive()){document.getElementById('redFighterName').textContent='🔺 RED · สายบุก';document.getElementById('arenaHead').textContent=duel2Active()?'◈ DUEL 2v2 · Four Independent RRT Agents':'◈ Combat Maneuvers · Memory-Guided RRT';ui.redStyle.closest('.strategy-grid').style.display='';ui.auto.closest('label').style.display='';ui.activeDefense.checked=true;}
+ if(/^https?:$/.test(location.protocol)){
+  const query=new URLSearchParams(location.search);
+  for(const key of ['mode','enemy','blue','team','dteam','loss','delay'])query.delete(key);
+  if(multiActive()){query.set('mode','multi');if(multiUI.enemyMode.value!=='melee')query.set('enemy',multiUI.enemyMode.value);}
+  else if(duel2Active()){query.set('mode','duel2');if(duel2UI.teamMode.value==='cooperative')query.set('dteam','coop');
+   if(duel2UI.radioLoss.value!=='0')query.set('loss',duel2UI.radioLoss.value);
+   if(duel2UI.radioDelay.value!=='0')query.set('delay',duel2UI.radioDelay.value);}
+  history.replaceState(null,'',location.pathname+(query.toString()?'?'+query.toString():''));
+ }
+ resetGame();showNotice(duel2Active()?'เปิดสนาม 2 ต่อ 2 · BLUE/RED ใช้ AI รุ่นเดียวกัน':multiActive()?'โหมด BLUE ตัวเดิมปะทะหลายเป้าหมาย':'กลับสนามดวลเดิม');
+});
+for(const control of [duel2UI.teamMode,duel2UI.radioLoss,duel2UI.radioDelay])control.addEventListener('change',()=>{
+ if(!duel2Active())return;
+ if(/^https?:$/.test(location.protocol)){
+  const query=new URLSearchParams(location.search);query.set('mode','duel2');
+  query.delete('dteam');query.delete('loss');query.delete('delay');
+  if(duel2UI.teamMode.value==='cooperative')query.set('dteam','coop');
+  if(duel2UI.radioLoss.value!=='0')query.set('loss',duel2UI.radioLoss.value);
+  if(duel2UI.radioDelay.value!=='0')query.set('delay',duel2UI.radioDelay.value);
+  history.replaceState(null,'',location.pathname+'?'+query.toString());
+ }
+ resetGame();showNotice('2v2 · '+(duel2UI.teamMode.value==='cooperative'?'สื่อสารกัน':'อิสระ')+' · Packet Loss '+duel2UI.radioLoss.value+'%');
 });
 multiUI.teamMode.addEventListener('change',()=>{
  if(!multiActive())return;
