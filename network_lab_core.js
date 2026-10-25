@@ -205,9 +205,13 @@
      if(!sent)continue;
      if(c.protocol==='fanout'){
       if(t-a.firstAt.get(report.id)>4)continue;
-      const choices=neighbors.filter(id=>!sent.has(id)).sort((i,j)=>
-       sample(c.seed,'fanout',a.id,report.id,t,i)-sample(c.seed,'fanout',a.id,report.id,t,j));
-      for(const id of choices.slice(0,c.fanout)){sent.add(id);data(a.id,id,report);}
+      const offset=Math.floor(sample(c.seed,'fanout',a.id,report.id,t)*neighbors.length);
+      let selected=0;
+      for(let i=0;i<neighbors.length&&selected<c.fanout;i++){
+       const id=neighbors[(offset+i)%neighbors.length];
+       if(sent.has(id))continue;
+       sent.add(id);data(a.id,id,report);selected++;
+      }
      }else{
       for(const id of neighbors){
        if(sent.has(id))continue;
@@ -223,10 +227,13 @@
    if(t%4!==0)return;
    for(const a of agents){
     if(!neighborhood[a.id].length)continue;
-    const candidates=neighborhood[a.id].slice().sort((i,j)=>
-     sample(config.seed,'sync',t,a.id,i)-sample(config.seed,'sync',t,a.id,j));
+    const neighbors=neighborhood[a.id];
+    const offset=Math.floor(sample(config.seed,'sync',t,a.id)*neighbors.length);
     const ids=[...a.seen.keys()];
-    for(const peer of candidates.slice(0,3))transmit('digest',a.id,peer,{ids});
+    for(let i=0;i<Math.min(3,neighbors.length);i++){
+     const peer=neighbors[(offset+i)%neighbors.length];
+     transmit('digest',a.id,peer,{ids});
+    }
    }
   }
   function step(){
