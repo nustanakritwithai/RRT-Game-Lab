@@ -8,8 +8,8 @@
 'use strict';
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const pos=p=>!!p&&finite(p.x)&&finite(p.y);
-const actor=id=>typeof id==='string'&&/^B\d{1,3}$/.test(id);
-const target=id=>typeof id==='string'&&/^T\d{1,3}$/.test(id);
+const actor=id=>typeof id==='string'&&/^(?:B|R)\d{1,3}$/.test(id);
+const target=id=>typeof id==='string'&&/^(?:T|R)\d{1,3}$/.test(id);
 const token=id=>typeof id==='string'&&id.length>0&&id.length<=128&&/^[\w:.-]+$/.test(id);
 const dict=()=>Object.create(null);
 const emptyLedger=()=>({observations:dict(),seenMessages:dict()});
