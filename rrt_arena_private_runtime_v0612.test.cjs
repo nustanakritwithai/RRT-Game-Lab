@@ -11,12 +11,13 @@ test('sensing writes ONLY BLUE-local target tracks, radio reports remain inbox-o
  assert.doesNotMatch(sense,/mem\.rememberEncounter\(ownBrain/);
  assert.match(sense,/const measured=multiCore\.observe\(blue,multi\.targets,previous,elapsed/);
 });
-test('B2 coordination reads a delivered TARGET_CLAIM, never B1 coordinator state directly',()=>{
+test('B1 and B2 negotiate through delivered symmetric BID/ACK, never a B1 coordinator',()=>{
  const sense=block('function senseMultiWorld(){','function multiProjectiles(dt){');
- assert.match(sense,/commsCore\.peerClaim\(blue\.radioInbox,'B1',elapsed\)/);
- assert.match(sense,/commsCore\.sendClaim\(team\.radio,blue,peer,multi\.tracks/);
- assert.match(sense,/if\(peerClaim/);
- assert.doesNotMatch(sense,/team\.primaryFocus/);
+ assert.match(sense,/blue\.bidInbox=leaderless\.receive/);
+ assert.match(sense,/leaderless\.negotiate\(blue,multi\.tracks,selected\.id,blue\.bidInbox,elapsed/);
+ assert.match(sense,/leaderless\.sendBid\(r,blue,peer,multi\.tracks/);
+ assert.match(sense,/leaderless\.sendResponse\(r,blue,peer/);
+ assert.doesNotMatch(sense,/commsCore\.peerClaim|team\.primaryFocus|teamCore\.mergeTracks/);
 });
 test('radio coordinates are ONLY an exploration hint and cannot authorize firing',()=>{
  const planning=block('function chooseGoal(bot){','function beginPlan(');

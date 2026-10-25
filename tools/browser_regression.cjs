@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 06\.12/.test(duel.title),'title shows V0.6.12: '+duel.title);
+  check(/RRT ARENA 06\.13/.test(duel.title),'title shows V0.6.13: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));
@@ -230,6 +230,54 @@ async function main(){
   check(poseWire.sent>0&&poseWire.peers.every(ps=>ps.length===1&&ps[0].age>=.3&&
     ps[0].age<=.75&&Number.isFinite(ps[0].x)&&Number.isFinite(ps[0].y)),
    'POSE radio: both BLUE agents obtain a fresh peer position from delivered packet only');
+
+  // V0.6.13 leaderless: BID/ACK flows are from both agents' own eyes,
+  // and radio faults must not give either participant a permanent leader role.
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop&seed=83');
+  const p2p=await page.evaluate(()=>{
+   const d=window.__rrtArenaDebug,md=window.__rrtMultiDebug;
+   document.getElementById('start').click();d.advance(10);
+   const s=md.getState(),v=d.validate();
+   return {mode:s.team.mode,loss:s.team.radioLossPct,delay:s.team.radioExtraDelay,
+    bidsSent:s.team.bidsSent,bidsReceived:s.team.bidsReceived,
+    delivered:s.team.radioDelivered,drop:s.team.radioDropped,
+    memories:s.team.memorySeparated,blueIds:s.team.blues.map(b=>b.id),
+    bidOwners:s.team.blues.map(b=>Object.keys(b.receivedBids||{})),
+    valid:v.fightersFree&&v.waypointsClear};
+  });
+  check(p2p.mode==='cooperative'&&p2p.loss===0&&p2p.delay===0&&p2p.blueIds.join('/')==='B1/B2'&&p2p.memories,
+    'leaderless: two peers, zero-loss baseline and fully separate memories');
+  check(p2p.bidsSent>0&&p2p.bidsReceived>0&&p2p.delivered>0&&p2p.drop===0&&p2p.valid,
+    'leaderless: bids sent/received via real radio queues, no dropped packet in baseline');
+
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop&loss=100&seed=83');
+  const radioDown=await page.evaluate(()=>{
+   const d=window.__rrtArenaDebug,md=window.__rrtMultiDebug;
+   document.getElementById('start').click();d.advance(16);
+   const s=md.getState(),v=d.validate();
+   return {loss:s.team.radioLossPct,sent:s.team.radioSent,dropped:s.team.radioDropped,
+    received:s.team.radioDelivered,bidsReceived:s.team.bidsReceived,
+    sentShots:Object.values(s.team.shotsFired).reduce((n,v)=>n+v,0),
+    noPeer:s.team.blues.every(b=>!b.radioPoses.length&&!Object.keys(b.receivedBids||{}).length),
+    valid:v.fightersFree&&v.waypointsClear};
+  });
+  check(radioDown.loss===100&&radioDown.sent>0&&radioDown.dropped===radioDown.sent&&
+   radioDown.received===0&&radioDown.bidsReceived===0&&radioDown.noPeer,
+   '100% radio loss: no ghost-delivery, no peer memory access or secret network fallback');
+  check(radioDown.sentShots>0&&radioDown.valid,
+   '100% radio loss: BLUE still fires independently with authoritative safe collisions');
+
+  await page.goto(base+sep+'mode=multi&enemy=ranged&blue=2&team=coop&loss=50&delay=0.3&seed=83');
+  const noisy=await page.evaluate(()=>{
+   const md=window.__rrtMultiDebug,d=window.__rrtArenaDebug;
+   document.getElementById('start').click();d.advance(10);
+   const s=md.getState();
+   return {loss:s.team.radioLossPct,delay:s.team.radioExtraDelay,sent:s.team.radioSent,
+    lost:s.team.radioDropped,delivered:s.team.radioDelivered,memorySeparate:s.team.memorySeparated};
+  });
+  check(noisy.loss===50&&noisy.delay===.3&&noisy.sent>0&&noisy.lost>0&&
+   noisy.delivered>0&&noisy.memorySeparate,
+   'imperfect network: 50% packet loss and added latency operate without shared memory');
 
   // Same seed + same enemy settings must generate the same WORLD regardless of radio policy.
   const initialWorld=async(teamValue)=>{

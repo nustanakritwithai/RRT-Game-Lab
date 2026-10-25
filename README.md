@@ -1,4 +1,36 @@
-# RRT Arena V0.6.12 — Private Memory + Communication-Only
+# RRT Arena V0.6.13 — Leaderless Communication Lab
+
+เป้าหมาย: ให้ B1 และ B2 เจรจาเลือกเป้าหมายผ่านข้อความเท่านั้น **ไม่มีหัวหน้าถาวรหรือ Shared Memory** และยังใช้ BLUE รุ่นล่าสุดที่มีวงแหวนเขียวทุกโหมด ไม่เปลี่ยน HP, ความเร็ว, กระสุน, การยิง, RRT หรือการป้องกัน
+
+## ใหม่ใน V0.6.13
+
+- **Symmetric BID:** ทั้ง B1 และ B2 ส่งคะแนนความพร้อมรับเป้าหมายที่ตนเองมองเห็นจริง ผ่านวิทยุที่มีระยะ ความหน่วง และวันหมดอายุ ผู้รับเปรียบเทียบกับคะแนนจากการมองเห็นของตัวเอง ไม่อ่านความจำหรือ focus เพื่อนโดยตรง
+- **Peer negotiation:** เมื่อเสนอเป้าเดียวกัน ฝ่ายที่เหมาะสมน้อยกว่าพิจารณาเป้าหมายอื่นที่มองเห็นเอง หากเป้าปัจจุบันอยู่ใกล้หรือไม่มีตัวเลือกปลอดภัยก็สามารถปฏิเสธ ไม่มีการบังคับแบ่งเป้าเสมอไป
+- **ACK / NACK:** ผลการยอมเปลี่ยนเป้า/การปฏิเสธเป็นข้อความวิทยุที่มีความหน่วงและอายุข้อมูลเช่นกัน ไม่มีการแต่งตั้ง B1 เป็นผู้บัญชาการ
+- **Radio faults:** หน้าเกมตั้งข้อความสูญหาย 0%, 20%, 50%, 100% และหน่วงเพิ่ม 0, 0.3, 0.6, 1.2 วินาทีได้ โดยใช้ RNG ของ Radio แยกจาก World/Enemy/B1/B2
+- **Independent fallback:** เมื่อวิทยุใช้ไม่ได้ BLUE ยังยิงจากข้อมูลที่เห็นเองได้ และระบบฟิสิกส์ห้ามกระสุนทะลุเพื่อน/กำแพง ข้อความที่มาไม่ถึงไม่เพิ่มข้อมูลเซนเซอร์หรือความจำ
+- **Audit & Replay:** เก็บ bidsSent, bidsReceived, negotiatedYields, radioDropped, peerAcks และสรุปผลต่อแมตช์ใน Debug/Replay JSON
+
+## เปิดสนาม
+
+- [B1/B2 เจรจา P2P vs Ranged](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2&team=coop)
+- [B1/B2 เจรจา vs Mixed](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=mixed&blue=2&team=coop)
+- [วิทยุสูญหาย 50% เพิ่มหน่วง 0.3 วินาที](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2&team=coop&loss=50&delay=0.3)
+- [วิทยุดับ 100%](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2&team=coop&loss=100)
+- [Duo Independent ชุดควบคุม](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2)
+
+## ขอบเขตของระบบกระจายศูนย์
+
+เอนจินกลางยังคำนวณฟิสิกส์และการส่ง Packet เพื่อความยุติธรรมของเกม แต่การตัดสินใจของ BLUE ไม่มีผู้นำกลาง ใช้เฉพาะเซนเซอร์ตัวเองกับข้อความที่ได้รับจริงและยังไม่หมดอายุ B1/B2 ต่างมี PrivateMemory, RadioInbox และ BID Inbox ของตัวเอง
+
+**ขีดจำกัด:** ยังเป็น protocol ที่กำหนดกติกาไว้ ไม่ใช่ภาษาที่ Agent เรียนรู้ขึ้นมาเอง ยังไม่มีหลักฐานว่า Win Rate ดีขึ้นจนกว่าจะผ่านชุด paired benchmark ที่ยากขึ้น
+
+## Quality Gates
+
+Unit Tests, Chromium 320/393/1365px, radio 0/50/100% loss, message delay, Solo/Duel/Independent/Cooperative, GREEN ring และ simulation benchmark ต้องผ่านก่อน merge/deploy
+
+---
+## ประวัติ V0.6.12 — Private Memory + Communication-Only
 
 ## หลักการ: BLUE ไม่มี Shared Memory อีกต่อไป
 
