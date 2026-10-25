@@ -37,3 +37,10 @@ test('Duel2 reports held fire and lateral reposition attempts for research',()=>
  assert.match(debug,/laneMoves:team\.laneMoves/);
  assert.match(html,/🧭|มุมยิงใหม่/);
 });
+
+test('Duel2 evidence checks movement using public arena-scale speed, not fixed desktop pixels',()=>{
+ const sense=block('function senseDuel2World(){','function duel2Shoot(bot){');
+ assert.match(sense,/evidenceCore\.evaluate\(bot\.evidenceLedger,packet\.targetId,elapsed,\{/);
+ assert.match(sense,/maxDistance:R\*2\.5/);
+ assert.match(sense,/maxSpeed:bot\.moveSpeed\*S\*1\.8/);
+});
