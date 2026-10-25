@@ -11,6 +11,7 @@ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const fighter=id=>/^(?:B|R)[12]$/.test(String(id));
 const blue=id=>id==='B1'||id==='B2';
 const red=id=>id==='R1'||id==='R2';
+const sameTeam=(a,b)=>fighter(a)&&fighter(b)&&a[0]===b[0]&&a!==b;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function chooseTarget(self,tracks,current=null){
  if(!point(self))return null;
@@ -54,16 +55,16 @@ function makeInbox(){return {sightings:Object.create(null)};}
 function prune(inbox,now){
  const result=makeInbox();
  for(const [id,v] of Object.entries(inbox?.sightings||{}))
-  if(red(id)&&v?.expiresAt>now&&v.seenAt<=now&&point(v))result.sightings[id]={...v};
+  if(fighter(id)&&v?.expiresAt>now&&v.seenAt<=now&&point(v))result.sightings[id]={...v};
  return result;
 }
 function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3.5,interval=.65}={}){
  const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
- if(!from||!to||!blue(from.id)||!blue(to.id)||from.id===to.id||
+ if(!from||!to||!sameTeam(from.id,to.id)||
   from.hp<=0||to.hp<=0||!point(from)||!point(to)||!Number.isFinite(now)||distance(from,to)>range)
   return {queue,lastSent};
  for(const tr of Object.values(tracks||{})){
-  if(!tr||!red(tr.id)||tr.status!=='visible'||!point(tr)||!Number.isFinite(tr.lastSeen)||
+  if(!tr||!fighter(tr.id)||tr.id[0]===from.id[0]||tr.status!=='visible'||!point(tr)||!Number.isFinite(tr.lastSeen)||
     tr.lastSeen>now||now-tr.lastSeen>ttl)continue;
   const key='D2:'+from.id+'>'+to.id+':'+tr.id;
   if(now-(lastSent[key]??-Infinity)<interval)continue;
@@ -76,10 +77,10 @@ function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3
 }
 function receive(inbox,messages,owner,now,{ttl=3.5}={}){
  const result=prune(inbox,now);
- if(!blue(owner)||!Number.isFinite(now))return result;
+ if(!fighter(owner)||!Number.isFinite(now))return result;
  for(const m of messages||[]){
-  if(!m||m.type!=='SIGHTING'||m.source!=='own_sensor'||!blue(m.sender)||
-   m.sender===owner||m.receiver!==owner||m.originId!==m.sender||!red(m.targetId)||
+  if(!m||m.type!=='SIGHTING'||m.source!=='own_sensor'||!sameTeam(m.sender,owner)||
+   m.receiver!==owner||m.originId!==m.sender||!fighter(m.targetId)||m.targetId[0]===owner[0]||
    !point(m)||!Number.isFinite(m.confidence)||m.confidence<0||m.confidence>1||
    !Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
    !Number.isFinite(m.expiresAt)||m.deliverAt>now||m.seenAt>now||
