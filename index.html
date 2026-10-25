@@ -2822,6 +2822,8 @@ function currentIntent(bot){const info=botKnowledge(bot);
  if(bot.team==='blue'&&predictiveActive()&&(multi.pendingEvade||bot.intent==='swarm_evade'&&(bot.planner||bot.path.length)&&multi.decision?.reason==='hold_route'))return {kind:'swarm_evade',reason:multi.decision?.label||'เสี่ยงถูกล้อม → หลบล่วงหน้า'};
  if((bot.team==='blue'||duel2Active())&&rangedDefenseActive()&&(multi.pendingCover||bot.intent==='ranged_cover'&&(bot.planner||bot.path.length)&&multi.coverDecision?.reason==='hold_route'))return {kind:'ranged_cover',reason:multi.coverDecision?.label||'ถูกเล็ง → หาที่กำบัง'};
  if(multiActive()&&multi.melee&&multi.kiteEnabled&&bot.team==='blue'&&meleeCore.assessThreat(bot,visibleMeleeTracks(),{scale:S,ammo:bot.ammo}).kite)return {kind:'swarm_kite',reason:'ประชิดหลายตัว → เคลื่อนถอยเพื่อรักษาระยะยิง'};
+ if(duel2Active()&&duel2LaneBlocker(bot))
+  return {kind:'team_lane',reason:'เพื่อนอยู่ในแนวยิง → หาแนวยิงใหม่ด้วย RRT'};
  if(teamLaneBlocker(bot))return {kind:'team_lane',reason:'เพื่อนอยู่ในแนวยิง → เปลี่ยนมุมยิงโดยใช้ RRT'};
  // Against shooters: fire from a spot only the engaged target can see; otherwise pick a fire position by exposure.
  if((bot.team==='blue'||duel2Active())&&rangedDefenseActive()&&multi.cover){const a=multi.cover.assessment,ft=multiActive()?(multi.focus?multi.tracks[multi.focus]:null):rangedThreatWorld(bot).shooters.find(s=>s.id===(duel2Active()?bot.duelTargetId:'RED'));
@@ -2853,16 +2855,30 @@ function chooseGoal(bot){
  if(kind==='ranged_cover'){const g=rangedCoverGoal(bot);if(g)return g;bot.reason='ไม่พบจุดกำบังที่ดีกว่า → ใช้จุดกำบังเดิม';const c=core.findCover(bot,foe,walls,p=>freePoint(p,R+1),clearSight,{w:W,h:H},R+3,S);return c||fallbackPoint(bot,true);}
  if(kind==='ranged_hold')return copy(bot);
  if(kind==='team_lane'&&foe&&info.status==='visible'){
-  const radioTeammates=commsCore.peerPositions(bot.radioInbox,elapsed);
-  if(!radioTeammates.length){bot.reason='วิทยุขัดข้อง → กลับไปตัดสินใจอิสระ';return fallbackPoint(bot,false);}
+  // Duel2 agents use only personally seen teammate poses (in BOTH radio modes).
+  // Swarm Cooperative retains its existing delivered-radio-only lane policy.
+  const radioTeammates=duel2Active()?duel2SeenTeammates(bot):
+   commsCore.peerPositions(bot.radioInbox,elapsed);
+  if(!radioTeammates.length){
+   bot.reason=duel2Active()?'ไม่มีเพื่อนที่ยังเห็นอยู่ → เลือกแผนสำรอง':
+    'วิทยุขัดข้อง → กลับไปตัดสินใจอิสระ';
+   return fallbackPoint(bot,false);
+  }
   const route=coopCore.findClearLane(bot,foe,radioTeammates,{
    width:W,height:H,scale:S,radius:R+2,ownRange:bot.range,
-   free:p=>freePoint(p,R+2)&&teamFriendClear(bot,p),
-   direct:(a,b)=>!blocked(a,b,R+1)&&team.blues.every(m=>m===bot||m.hp<=0||coopCore.segmentCircleTime(a,b,m,R*2.05)===Infinity),
+   free:p=>freePoint(p,R+2)&&(duel2Active()?duel2PositionSafe(bot,p):teamFriendClear(bot,p)),
+   direct:(a,b)=>!blocked(a,b,R+1)&&
+    (duel2Active()?radioTeammates.every(m=>coopCore.segmentCircleTime(a,b,m,R*2.05)===Infinity):
+     team.blues.every(m=>m===bot||m.hp<=0||coopCore.segmentCircleTime(a,b,m,R*2.05)===Infinity)),
    canSee:clearSight,dangerAt:p=>mem.dangerAt(bot.brain,{x:p.x/W,y:p.y/H},elapsed)
   });
-  if(route){team.laneMoves++;bot.reason='หามุมยิงไม่ขวางเพื่อน · RRT ประเมิน '+route.evaluated+' จุด';return route.goal;}
-  bot.reason='ไม่มีเส้นทางยิงที่ปลอดภัย → ยับยั้งการยิง';return copy(bot);
+  if(route){
+   team.laneMoves=(team.laneMoves||0)+1;
+   bot.reason='🧭 มุมยิงใหม่ ไม่ขวางเพื่อน · RRT ประเมิน '+route.evaluated+' จุด';
+   return route.goal;
+  }
+  bot.reason='ไม่พบช่องยิงปลอดภัย → เคลื่อนหาจุดอื่น';
+  return duel2Active()?fallbackPoint(bot,false):copy(bot);
  }
  if(kind==='evade'&&foe){
    const ev=defense.plan({self:{x:bot.x,y:bot.y,preferred:bot.preferred},enemy:foe,
@@ -3095,6 +3111,23 @@ function dodgeMove(bot,dt){if(bot.dodgeTimer<=0)return false;const d=bot.dodgeVe
  if(bot.dodgeTimer<=0){bot.path=[];bot.goal=null;bot.thinkCooldown=.04;}return true;
 }
 // Only own real observed target tracks enter this team fire-lane decision.
+// Duel2 fire lane uses only this fighter's locally seen, unexpired teammate poses.
+function duel2SeenTeammates(bot){
+ if(!duel2Active()||bot.hp<=0)return [];
+ return Object.values(bot.duelSeenPeers||{}).filter(m=>
+  m&&Number.isFinite(m.x)&&Number.isFinite(m.y)&&Number.isFinite(m.seenAt)&&
+  m.seenAt<=elapsed&&elapsed-m.seenAt<=.32
+ ).map(m=>({id:m.id,x:m.x,y:m.y,hp:120}));
+}
+function duel2LaneBlocker(bot){
+ if(!duel2Active()||bot.hp<=0)return null;
+ const trace=bot.duelVisible?.[bot.duelTargetId];
+ if(!trace||trace.status!=='visible'||!bot.brain.wasVisible||
+    dist(bot,trace)>bot.range||!clearSight(bot,trace))return null;
+ const result=coopCore.safeFireLine(bot,trace,duel2SeenTeammates(bot),
+  {radius:R*.96,aim:bot.aim});
+ return result.clear?null:result;
+}
 function teamLaneBlocker(bot){
  if(!multiActive()||team.mode!=='cooperative'||!teamDuo()||bot.team!=='blue'||bot.hp<=0)return null;
  const tr=multi.focus?multi.tracks[multi.focus]:null;
@@ -3320,11 +3353,18 @@ function duel2Shoot(bot){
  if(bot.hp<=0||!trace||trace.status!=='visible'||!bot.brain.wasVisible||
   dist(bot,trace)>bot.range||!clearSight(bot,trace)||bot.cool>0||bot.reload>0)return;
  if(bot.ammo<=0){bot.reload=1.3;bot.mode='บรรจุกระสุน';return;}
- // Fire-lane check only uses a teammate pose actually seen by this fighter.
- const peer=Object.values(bot.duelSeenPeers||{}).find(p=>
-  between(p,bot,trace)<R*1.6&&dist(bot,p)<dist(bot,trace)&&
-  Math.abs(dist(bot,p)+dist(p,trace)-dist(bot,trace))<R*2);
- if(peer){bot.mode='เว้นแนวยิงให้เพื่อน';bot.thinkCooldown=Math.min(bot.thinkCooldown,.13);return;}
+ // Shooting and tactical planning share the SAME observed-ally lane geometry.
+ const lane=duel2LaneBlocker(bot);
+ if(lane){
+  if(elapsed-(bot.lastDuelHoldAt??-Infinity)>=.3){
+   team.heldFire++;bot.duelLaneHolds=(bot.duelLaneHolds||0)+1;
+   bot.lastDuelHoldAt=elapsed;
+  }
+  bot.mode='เว้นแนวยิงให้เพื่อน';
+  bot.reason='🧭 '+lane.blockerId+' ขวางแนวยิง → หาแนวยิงใหม่';
+  bot.thinkCooldown=Math.min(bot.thinkCooldown,.08);
+  return;
+ }
  const spread=(1-bot.aim)*.35;
  const angle=Math.atan2(trace.y-bot.y,trace.x-bot.x)+rand(-spread,spread);
  const sx=bot.x+Math.cos(angle)*(R+3),sy=bot.y+Math.sin(angle)*(R+3);
@@ -3510,7 +3550,8 @@ function updateDuel2HUD(){
  duel2UI.status.textContent='B '+blueAlive+'/2 · R '+redAlive+'/2 · '+
   (team.mode==='cooperative'?'📡 P2P':'อิสระ')+
   ' · ส่ง '+(team.radioSent||0)+' · ถึง '+(team.radioDelivered||0)+
-  ' · หลุด '+(team.radioDropped||0)+' · ขัดแย้ง '+(team.evidenceConflict||0);
+  ' · หลุด '+(team.radioDropped||0)+' · ขัดแย้ง '+(team.evidenceConflict||0)+
+  ' · 🧭 มุมยิงใหม่ '+(team.laneMoves||0);
 }
 function updateHUD(){if(!bots.length)return;
  if(duel2Active())updateDuel2HUD();else for(const bot of (multiActive()?[bots[0]]:bots)){const id=bot.team;
@@ -3675,12 +3716,13 @@ window.__rrtDuel2Debug={
     capabilities:{predictive:blueFeatureOn('predictive'),
      rangedDefense:rangedDefenseActive(),keepMoving:mobileActive()},
     stats:{hp:b.maxHp,ammo:b.maxAmmo,speed:b.moveSpeed,fire:b.baseFire,range:b.range,aim:b.aim},
-    shots:team.shotsFired?.[b.id]||0})),
+    shots:team.shotsFired?.[b.id]||0,laneHolds:b.duelLaneHolds||0})),
    radio:{sent:team.radioSent||0,delivered:team.radioDelivered||0,dropped:team.radioDropped||0,
     queued:team.radio?.queue?.length||0,bids:team.bidsSent||0,
     acks:team.peerAcks||0,negotiations:team.negotiatedYields||0,
     evidenceAccepted:team.evidenceAccepted||0,conflicts:team.evidenceConflict||0},
-   blockedFriendly:duel2FriendlyBlocks,bullets:bullets.length,score:{...scores}};
+   blockedFriendly:duel2FriendlyBlocks,heldFire:team.heldFire||0,
+   laneMoves:team.laneMoves||0,bullets:bullets.length,score:{...scores}};
  },
  setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative'].includes(mode))return false;
   duel2UI.teamMode.value=mode;resetGame();return true;},
