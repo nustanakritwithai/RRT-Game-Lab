@@ -3300,7 +3300,11 @@ function senseDuel2World(){
     bot.evidenceLedger=result.ledger;
     if(result.status==='ACCEPTED'){
      team.evidenceAccepted++;
-     const verdict=evidenceCore.evaluate(bot.evidenceLedger,packet.targetId,elapsed);
+     // Pixel-size-independent evidence: maximum local motion is normal speed or
+     // the existing 1.8x dodge step; never infer actual hidden enemy velocity.
+     const verdict=evidenceCore.evaluate(bot.evidenceLedger,packet.targetId,elapsed,{
+      maxDistance:R*2.5,maxSpeed:bot.moveSpeed*S*1.8,maxSkew:.8
+     });
      if(verdict.status==='CONFLICT'){disputed.add(packet.targetId);team.evidenceConflict++;}
      else validated.push(packet);
     }else if(result.status==='DUPLICATE_MESSAGE'||result.status==='DUPLICATE_EVIDENCE')
