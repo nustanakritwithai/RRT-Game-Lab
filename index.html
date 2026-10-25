@@ -2665,7 +2665,7 @@ function loopSoloStep(dt){
 function drawBlueCapabilityRing(bot){
  if(!bot||(bot.team!=='blue'&&!duel2Active())||bot.hp<=0)return;
  ctx.save();
- ctx.strokeStyle='#86ffc5';ctx.globalAlpha=.86;
+ ctx.strokeStyle=bot.team==='red'?'#ff9eaa':'#86ffc5';ctx.globalAlpha=.86;
  ctx.lineWidth=Math.max(2.7,R*.37);ctx.lineCap='round';
  ctx.beginPath();ctx.arc(bot.x,bot.y,R*2.6,-Math.PI*.57,Math.PI*.87);ctx.stroke();
  ctx.restore();
@@ -3668,7 +3668,7 @@ window.__rrtDuel2Debug={
    fighters:members.map(b=>({id:b.id,team:b.team,hp:b.hp,ammo:b.ammo,
     x:b.x,y:b.y,planCount:b.planCount,intent:b.intent,
     target:b.duelTargetId,visible:Object.keys(b.duelVisible||{}),
-    received:Object.keys(b.duelInbox?.sightings||{}),
+    received:Object.keys(b.duelInbox?.sightings||{}),receivedBids:Object.keys(leaderless.prune(b.bidInbox,elapsed).bids),
     memoryCount:Object.keys(b.duelBrains||{}).length,
     memoryUnique:members.every(other=>b===other||b.duelBrains!==other.duelBrains),
     evidence:Object.keys(b.evidenceLedger?.observations||{}).length,
