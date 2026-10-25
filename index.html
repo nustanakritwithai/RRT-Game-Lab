@@ -1569,8 +1569,9 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  const finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
- const targetId=id=>typeof id==='string'&&/^T\d{1,3}$/.test(id);
- const validAgent=id=>id==='B1'||id==='B2';
+ const targetId=id=>typeof id==='string'&&/^(?:T\d{1,3}|[BR][12])$/.test(id);
+ const validAgent=id=>/^[BR][12]$/.test(String(id));
+ const teammates=(a,b)=>validAgent(a)&&validAgent(b)&&a!==b&&a[0]===b[0];
  const emptyInbox=()=>({bids:{},responses:{}});
  function prune(inbox,now){
   const bids={},responses={};
@@ -1587,7 +1588,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   if(!validAgent(owner)||!Number.isFinite(now))return next;
   for(const m of messages||[]){
    if(!m||m.receiver!==owner||!validAgent(m.sender)||m.sender===owner||
-    !targetId(m.targetId)||!Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
+    !teammates(m.sender,owner)||!targetId(m.targetId)||!Number.isFinite(m.seenAt)||!Number.isFinite(m.deliverAt)||
     !Number.isFinite(m.expiresAt)||m.seenAt>now||m.deliverAt>now||m.expiresAt<=now)continue;
    if(m.type==='BID'){
     if(m.source!=='own_sensor'||!Number.isFinite(m.quality)||m.quality<0||m.quality>1)continue;
@@ -1618,7 +1619,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400}={}){
   const original=radio||{queue:[],lastSent:{}},queue=(original.queue||[]).slice(),lastSent={...(original.lastSent||{})};
   const local=tracks?.[selectedId];
-  if(!finite(from)||!finite(to)||!validAgent(from.id)||!validAgent(to.id)||from.id===to.id||
+  if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||
    !Number.isFinite(now)||!targetId(selectedId)||!finite(local)||local.status!=='visible'||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
   const key='BID:'+from.id+'>'+to.id;
@@ -1631,8 +1632,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  }
  function sendResponse(radio,from,to,target,kind,now,{range=Infinity,latency=.3,ttl=1.3,interval=.9}={}){
   const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
-  if(!finite(from)||!finite(to)||!validAgent(from.id)||!validAgent(to.id)||
-   from.id===to.id||!targetId(target)||!['ACK','NACK'].includes(kind)||!Number.isFinite(now)||
+  if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||!targetId(target)||!['ACK','NACK'].includes(kind)||!Number.isFinite(now)||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
   const key=kind+':'+from.id+'>'+to.id+':'+target;
   if(now-(lastSent[key]??-Infinity)<interval)return {queue,lastSent};
@@ -1646,7 +1646,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   const chosen=localTracks?.[chosenId];
   if(!finite(self)||!chosenId||!finite(chosen)||chosen.status!=='visible'||!Number.isFinite(now))return result;
   const peer=Object.values(prune(inbox,now).bids)
-   .find(b=>b.targetId===chosenId&&validAgent(b.sender)&&b.sender!==self.id);
+   .find(b=>b.targetId===chosenId&&teammates(b.sender,self.id));
   if(!peer)return result;
   result.peerId=peer.sender;
   const localBid=bidQuality(self,chosen,scale);
@@ -2662,7 +2662,7 @@ function loopSoloStep(dt){
 }
 // GREEN ring identifies unified BLUE in all modes. It does not imply hidden threat knowledge.
 function drawBlueCapabilityRing(bot){
- if(!bot||bot.team!=='blue'||bot.hp<=0)return;
+ if(!bot||(bot.team!=='blue'&&!duel2Active())||bot.hp<=0)return;
  ctx.save();
  ctx.strokeStyle='#86ffc5';ctx.globalAlpha=.86;
  ctx.lineWidth=Math.max(2.7,R*.37);ctx.lineCap='round';
@@ -3199,7 +3199,208 @@ function checkPlanning(bot,dt){if(bot.hp<=0)return;
   bot.thinkCooldown=changed?.34:rand(.67,.95);
  }
 }
-function loopStep(dt){if(multiActive()){loopMultiStep(dt);return;}if(phase!=='running')return;elapsed+=dt;
+// The 2v2 simulation uses the same BLUE tactical pipeline for B1/B2 and R1/R2.
+// Each agent owns its own sensors, opponent memories, defense state, radio and RRT.
+function duel2PositionSafe(bot,point,margin=2.03){
+ return bots.every(other=>other===bot||other.hp<=0||dist(other,point)>=R*margin);
+}
+function withDuel2Defense(bot,fn){
+ const names=['cover','coverDecision','pendingCover','lastCoverAt','coverage','coverageAt',
+  'coverMoves','coverReroutes','standoffs','bridgeSteps','jinks'];
+ const save=Object.fromEntries(names.map(key=>[key,multi[key]]));
+ for(const key of names)multi[key]=bot.duelDefense[key];
+ try{return fn();}finally{
+  for(const key of names)bot.duelDefense[key]=multi[key];
+  for(const key of names)multi[key]=save[key];
+ }
+}
+function senseDuel2World(){
+ if(elapsed-duel2SenseAt<.12)return;
+ duel2SenseAt=elapsed;
+ for(const bot of bots){
+  if(bot.hp<=0)continue;
+  const candidates=[],visibleNow=Object.create(null),previous=bot.duelTargetId;
+  for(const foe of bots){
+   if(foe.team===bot.team)continue;
+   const brain=bot.duelBrains[foe.id];
+   const seen=foe.hp>0&&dist(bot,foe)<=S*1.12&&clearSight(bot,foe);
+   const result=mem.updateObservation(brain,{visible:seen,position:seen?copy(foe):null},elapsed);
+   const known=mem.knowledge(brain,elapsed);
+   if(seen){
+    visibleNow[foe.id]={id:foe.id,status:'visible',x:foe.x,y:foe.y,
+     confidence:1,lastSeen:elapsed};
+    if(result.event==='spotted'||elapsed-bot.lastEncounterLog>1.7){
+     mem.rememberEncounter(brain,{x:foe.x/W,y:foe.y/H},elapsed,1);
+     bot.lastEncounterLog=elapsed;
+    }
+    bot.lastExposedAt=elapsed;
+    bot.evidenceLedger=evidenceCore.ingestLocal(bot.evidenceLedger,visibleNow[foe.id],bot.id,elapsed).ledger;
+   }
+   if(foe.hp>0&&known.position&&known.status!=='unknown')
+    candidates.push({id:foe.id,position:known.position,status:known.status,age:known.age||0});
+  }
+  bot.duelVisible=visibleNow;
+  // Local teammate poses are learned by the visual sensor, not read from radio or global plans.
+  bot.duelSeenPeers=Object.create(null);
+  for(const peer of bots){
+   if(peer===bot||peer.team!==bot.team||peer.hp<=0)continue;
+   if(dist(peer,bot)<=S*.98&&clearSight(peer,bot))
+    bot.duelSeenPeers[peer.id]={id:peer.id,x:peer.x,y:peer.y,seenAt:elapsed};
+  }
+  bot.evidenceLedger=evidenceCore.prune(bot.evidenceLedger,elapsed);
+  bot.duelInbox=duel2Core.prune(bot.duelInbox,elapsed);
+  bot.bidInbox=leaderless.prune(bot.bidInbox,elapsed);
+  // Both teams use IDENTICAL peer transport rules and uncertainty handling.
+  if(team.mode==='cooperative'){
+   const incoming=teamCore.receive(team.radio,bot.id,elapsed,{ttl:3.5});
+   team.radio=incoming.radio;team.radioDelivered=(team.radioDelivered||0)+incoming.received.length;
+   const validated=[],disputed=new Set();
+   for(const packet of incoming.received){
+    if(packet.type==='BID'||packet.type==='ACK'||packet.type==='NACK'){
+     validated.push(packet);
+     continue;
+    }
+    if(packet.type!=='SIGHTING')continue;
+    const normalized=evidenceCore.fromSighting(packet);
+    const result=evidenceCore.ingest(bot.evidenceLedger,normalized,bot.id,elapsed);
+    bot.evidenceLedger=result.ledger;
+    if(result.status==='ACCEPTED'){
+     team.evidenceAccepted++;
+     const verdict=evidenceCore.evaluate(bot.evidenceLedger,packet.targetId,elapsed);
+     if(verdict.status==='CONFLICT'){disputed.add(packet.targetId);team.evidenceConflict++;}
+     else validated.push(packet);
+    }else if(result.status==='DUPLICATE_MESSAGE'||result.status==='DUPLICATE_EVIDENCE')
+     team.evidenceDuplicate++;
+    else team.evidenceRejected++;
+   }
+   bot.duelInbox=duel2Core.receive(bot.duelInbox,validated,bot.id,elapsed);
+   for(const id of disputed)delete bot.duelInbox.sightings[id];
+   bot.bidInbox=leaderless.receive(bot.bidInbox,validated,bot.id,elapsed);
+   team.bidsReceived=(team.bidsReceived||0)+validated.filter(m=>m.type==='BID').length;
+  }
+  // A radio message cannot create a visible track or alter this target selector.
+  let selected=duel2Core.chooseTarget(bot,candidates,previous),resolution=null;
+  if(team.mode==='cooperative'&&selected&&visibleNow[selected]){
+   resolution=leaderless.negotiate(bot,visibleNow,selected,bot.bidInbox,elapsed,
+    {scale:S,criticalDistance:R*3.25,maxExtraDistance:.25});
+   if(resolution.changed&&visibleNow[resolution.targetId]){
+    selected=resolution.targetId;team.negotiatedYields=(team.negotiatedYields||0)+1;
+   }
+  }
+  if(selected!==previous){
+   bot.duelTargetId=selected;
+   bot.brain=selected?bot.duelBrains[selected]:bot.duelSearchBrain;
+   bot.path=[];bot.planner=null;bot.goal=null;bot.thinkCooldown=0;bot.planCooldown=0;
+   bot.agePlan=8;bot.intent='ready';
+   if(selected)log(bot.id+' เลือกเป้าหมายที่ตนเองรับรู้ '+selected,bot.team);
+  }else if(selected)bot.brain=bot.duelBrains[selected];
+  bot.seenStatus=botKnowledge(bot).status;
+  if(team.mode==='cooperative'){
+   const peer=bots.find(p=>p.team===bot.team&&p!==bot&&p.hp>0);
+   if(peer){
+    sendRadioPacket(r=>duel2Core.sendSightings(r,bot,peer,visibleNow,elapsed,
+     {range:S*.95,latency:.3,ttl:3.5,interval:.65}));
+    if(selected&&visibleNow[selected]){
+     const attempt=sendRadioPacket(r=>leaderless.sendBid(r,bot,peer,visibleNow,selected,elapsed,
+      {range:S*.95,latency:.3,scale:S,interval:.4}));
+     team.bidsSent=(team.bidsSent||0)+attempt.sent;
+    }
+    if(resolution?.type&&resolution.peerId===peer.id&&(resolution.previousTargetId||selected)){
+     const attempt=sendRadioPacket(r=>leaderless.sendResponse(r,bot,peer,
+      resolution.previousTargetId||selected,resolution.type,elapsed,{range:S*.95,latency:.3}));
+     if(resolution.type==='ACK')team.peerAcks=(team.peerAcks||0)+attempt.sent;
+    }
+   }
+  }
+ }
+}
+function duel2Shoot(bot){
+ const trace=bot.duelVisible?.[bot.duelTargetId];
+ if(bot.hp<=0||!trace||trace.status!=='visible'||!bot.brain.wasVisible||
+  dist(bot,trace)>bot.range||!clearSight(bot,trace)||bot.cool>0||bot.reload>0)return;
+ if(bot.ammo<=0){bot.reload=1.3;bot.mode='บรรจุกระสุน';return;}
+ // Fire-lane check only uses a teammate pose actually seen by this fighter.
+ const peer=Object.values(bot.duelSeenPeers||{}).find(p=>
+  between(p,bot,trace)<R*1.6&&dist(bot,p)<dist(bot,trace)&&
+  Math.abs(dist(bot,p)+dist(p,trace)-dist(bot,trace))<R*2);
+ if(peer){bot.mode='เว้นแนวยิงให้เพื่อน';bot.thinkCooldown=Math.min(bot.thinkCooldown,.13);return;}
+ const spread=(1-bot.aim)*.35;
+ const angle=Math.atan2(trace.y-bot.y,trace.x-bot.x)+rand(-spread,spread);
+ const sx=bot.x+Math.cos(angle)*(R+3),sy=bot.y+Math.sin(angle)*(R+3);
+ const speed=S*1.35;
+ bullets.push({x:sx,y:sy,px:sx,py:sy,vx:Math.cos(angle)*speed,
+  vy:Math.sin(angle)*speed,team:bot.team,ownerId:bot.id,targetId:trace.id,ttl:1.6});
+ team.shotsFired[bot.id]=(team.shotsFired[bot.id]||0)+1;
+ bot.ammo--;bot.cool=bot.baseFire*rand(.9,1.12);bot.fireFlash=.11;
+ bot.mode='กำลังยิง';burst(sx,sy,colors[bot.team],4,2);
+ if(!bot.ammo){bot.reload=1.35;bot.mode='กำลังรีโหลด';}
+}
+function duel2Projectiles(dt){
+ for(let i=bullets.length-1;i>=0;i--){
+  const shot=bullets[i],old={x:shot.x,y:shot.y};
+  const next={x:shot.x+shot.vx*dt,y:shot.y+shot.vy*dt};
+  shot.ttl-=dt;shot.px=shot.x;shot.py=shot.y;
+  const wallT=firstWallHit(old,next,1.8);
+  const hit=duel2Core.projectileContact(shot,bots,old,next,R*.96,firstFighterHit,wallT);
+  if(hit){
+   const {bot:victim,t}=hit;
+   const impact={x:old.x+(next.x-old.x)*t,y:old.y+(next.y-old.y)*t};
+   bullets.splice(i,1);
+   if(hit.friendly){
+    duel2FriendlyBlocks++;team.blockedFriendlyShots++;
+    burst(impact.x,impact.y,'#ffd48b',3,1);
+    continue;
+   }
+   victim.hp=Math.max(0,victim.hp-rand(8.5,12.5));
+   victim.hitFlash=.22;victim.lastDamageAt=elapsed;victim.thinkCooldown=0;
+   stats.hits++;
+   mem.rememberDanger(victim.brain,{x:victim.x/W,y:victim.y/H},elapsed,.72);
+   burst(impact.x,impact.y,colors[victim.team],12,3);
+   if(victim.hp===0){victim.path=[];victim.planner=null;log(victim.id+' ถูกกำจัด',victim.team);}
+   continue;
+  }
+  if(wallT!==Infinity||next.x<0||next.x>W||next.y<0||next.y>H){
+   const impact=wallT!==Infinity?{x:old.x+(next.x-old.x)*wallT,y:old.y+(next.y-old.y)*wallT}:next;
+   burst(impact.x,impact.y,'#ffc880',4,2);bullets.splice(i,1);continue;
+  }
+  if(shot.ttl<=0)bullets.splice(i,1);else{shot.x=next.x;shot.y=next.y;}
+ }
+}
+function loopDuel2Step(dt){
+ if(phase!=='running')return;
+ elapsed+=dt;
+ withRngStream('sense2',()=>senseDuel2World());
+ // Four independent BLUE-version brains share only common physical rules.
+ for(const bot of bots){
+  if(bot.hp<=0)continue;
+  withRngStream(bot.id,()=>withDuel2Defense(bot,()=>{
+   if(rangedDefenseActive()){
+    rangedDefenseCheck(bot);
+    if(multi.coverage&&elapsed-multi.coverageAt>=.5){
+     multi.coverageAt=elapsed;
+     rangedDef.markVisible(multi.coverage,bot,elapsed,{range:S*.98,canSee:clearSight});
+    }
+   }
+   const old=copy(bot);
+   checkPlanning(bot,dt);
+   if(bot.planner)runPlanner(bot,28);
+   if(!dodgeMove(bot,dt))moveBot(bot,dt);
+   if(mobileActive()&&bot.hp>0&&bot.x===old.x&&bot.y===old.y)keepMoving(bot,dt);
+   duel2Shoot(bot);
+  }));
+ }
+ withRngStream('damage',()=>duel2Projectiles(dt));
+ withRngStream('effects',()=>{for(let i=particles.length-1;i>=0;i--){
+  const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+  p.vx*=Math.max(0,1-2*dt);p.vy*=Math.max(0,1-2*dt);
+  if(p.life<=0)particles.splice(i,1);
+ }});
+ const result=duel2Core.resolve(bots,elapsed,150);
+ if(result){endRound(result.winner);if(result.reason==='timeout_team_hp')
+  showNotice('ครบเวลา 150 วินาที — ตัดสินจาก HP รวมของทีม');}
+ sampleAcc+=dt;if(sampleAcc>=.25&&phase==='running'){sampleAcc=0;snapshot();}
+}
+function loopStep(dt){if(multiActive()){loopMultiStep(dt);return;}if(duel2Active()){loopDuel2Step(dt);return;}if(phase!=='running')return;elapsed+=dt;
  senseWorld();
  // Duel BLUE is the latest combined BLUE, not a weaker original-mode special case.
  // All tactical input comes through its own sight/memory; RED AI stays unchanged.
@@ -3254,7 +3455,7 @@ function drawTactics(){if(!ui.showThreat.checked)return;
    ctx.fillText(({orbit:'STRAFE',flank:'FLANK',pressure:'PUSH',kite:'KITE'}[b.tactic]||'TARGET'),p.x,p.y-R-7);ctx.restore();
  }
 }
-function drawFighter(bot){const foe=perceivedFoe(bot),a=foe?Math.atan2(foe.y-bot.y,foe.x-bot.x):(bot.team==='blue'?-0.7:2.4),color=bot.id==='B2'?'#a2c0ff':colors[bot.team];ctx.save();ctx.translate(bot.x,bot.y);ctx.rotate(a);ctx.shadowBlur=bot.hitFlash?25:13;ctx.shadowColor=bot.hitFlash?'#ffffff':color;ctx.fillStyle=bot.hitFlash?'#ffffff':bot.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(R*.25,-R*.38);ctx.lineTo(R*.95,0);ctx.lineTo(R*.25,R*.38);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#e7faff';ctx.beginPath();ctx.arc(-R*.21,-R*.22,R*.16,0,Math.PI*2);ctx.arc(-R*.21,R*.22,R*.16,0,Math.PI*2);ctx.fill();if(bot.fireFlash>0){ctx.fillStyle='#ffe5ac';ctx.beginPath();ctx.arc(R*1.33,0,R*.42,0,Math.PI*2);ctx.fill();}ctx.restore();ctx.save();ctx.fillStyle='#ddebff';ctx.textAlign='center';ctx.font=`800 ${clamp(S*.028,9,14)}px system-ui`;ctx.fillText(bot.team==='blue'?(teamDuo()?(bot.id||'BLUE'):'BLUE'):'RED',bot.x,bot.y-R-9);ctx.restore();const w=R*2.5,h=3;ctx.fillStyle='#15283b';ctx.fillRect(bot.x-w/2,bot.y+R+6,w,h);ctx.fillStyle=color;ctx.fillRect(bot.x-w/2,bot.y+R+6,w*bot.hp/bot.maxHp,h);if(bot.dodgeTimer>0){ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.beginPath();ctx.arc(bot.x,bot.y,R*1.6,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+function drawFighter(bot){const foe=perceivedFoe(bot),a=foe?Math.atan2(foe.y-bot.y,foe.x-bot.x):(bot.team==='blue'?-0.7:2.4),color=bot.id==='B2'?'#a2c0ff':bot.id==='R2'?'#ffc0a3':colors[bot.team];ctx.save();ctx.translate(bot.x,bot.y);ctx.rotate(a);ctx.shadowBlur=bot.hitFlash?25:13;ctx.shadowColor=bot.hitFlash?'#ffffff':color;ctx.fillStyle=bot.hitFlash?'#ffffff':bot.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(R*.25,-R*.38);ctx.lineTo(R*.95,0);ctx.lineTo(R*.25,R*.38);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#e7faff';ctx.beginPath();ctx.arc(-R*.21,-R*.22,R*.16,0,Math.PI*2);ctx.arc(-R*.21,R*.22,R*.16,0,Math.PI*2);ctx.fill();if(bot.fireFlash>0){ctx.fillStyle='#ffe5ac';ctx.beginPath();ctx.arc(R*1.33,0,R*.42,0,Math.PI*2);ctx.fill();}ctx.restore();ctx.save();ctx.fillStyle='#ddebff';ctx.textAlign='center';ctx.font=`800 ${clamp(S*.028,9,14)}px system-ui`;ctx.fillText(duel2Active()?(bot.id||bot.team.toUpperCase()):bot.team==='blue'?(teamDuo()?(bot.id||'BLUE'):'BLUE'):'RED',bot.x,bot.y-R-9);ctx.restore();const w=R*2.5,h=3;ctx.fillStyle='#15283b';ctx.fillRect(bot.x-w/2,bot.y+R+6,w,h);ctx.fillStyle=color;ctx.fillRect(bot.x-w/2,bot.y+R+6,w*bot.hp/bot.maxHp,h);if(bot.dodgeTimer>0){ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.beginPath();ctx.arc(bot.x,bot.y,R*1.6,0,Math.PI*2);ctx.stroke();ctx.restore();}}
 function drawShot(s){ctx.save();ctx.strokeStyle=s.team==='blue'?'#88e7ff':'#ffb3ba';ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=9;ctx.lineWidth=Math.max(2,S*.007);ctx.beginPath();ctx.moveTo(s.x-s.vx*.024,s.y-s.vy*.024);ctx.lineTo(s.x,s.y);ctx.stroke();ctx.restore();}
 function drawMemory(){if(!ui.showMemory.checked)return;
  for(const b of (multiActive()?team.blues:bots)){const info=botKnowledge(b),tint=colors[b.team];
@@ -3273,7 +3474,7 @@ function drawMemory(){if(!ui.showMemory.checked)return;
 function drawReplay(){if(!timeline.length)return;
  const frame=timeline[Math.min(timeline.length-1,replayIndex)];if(!frame)return;
  ctx.save();ctx.textAlign='center';ctx.font='900 11px system-ui';ctx.fillStyle='#c6e5ff';ctx.fillText('⏪ REPLAY · '+formatTime(frame.t),W/2,22);
- for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];if(b.team==='blue')drawBlueCapabilityRing({team:'blue',x,y,hp:b.hp});ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText((b.id||b.team.toUpperCase())+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
+ for(const b of frame.bots){const x=b.x*W,y=b.y*H,color=colors[b.team];if(b.team==='blue'||duel2Active())drawBlueCapabilityRing({team:b.team,x,y,hp:b.hp});ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillStyle=b.team==='blue'?'#123e68':'#69314b';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='800 11px system-ui';ctx.fillText((b.id||b.team.toUpperCase())+' '+Math.round(b.hp)+' HP',x,y-R-9);ctx.fillStyle='#abd8eb';ctx.font='10px system-ui';ctx.fillText(b.intent,x,y+R+13);}
  if(multiActive())for(const t of (frame.targets||[])){ctx.fillStyle='#ffd28c';ctx.beginPath();ctx.arc(t.x*W,t.y*H,R*.65,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(t.id,t.x*W,t.y*H-R);}
  for(const shot of frame.bullets){ctx.fillStyle=shot.team==='blue'?'#88e7ff':shot.team==='ranged'?'#ffbf70':'#ffb3ba';ctx.beginPath();ctx.arc(shot.x*W,shot.y*H,2.6,0,Math.PI*2);ctx.fill();}
  ctx.restore();
@@ -3282,7 +3483,7 @@ function draw(){ctx.clearRect(0,0,W,H);drawGrid();for(const w of walls)wallDraw(
  if(replayActive){drawReplay();return;}
  drawMemory();for(const b of (multiActive()?team.blues:bots))drawTree(b);for(const b of (multiActive()?team.blues:bots))drawPath(b);drawTactics();for(const s of bullets)drawShot(s);drawRangedShots();for(const p of particles){ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.total);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,S*.004),0,Math.PI*2);ctx.fill();ctx.restore();}
  if(tool==='order'&&bots[0]&&bots[0].manual){const p=bots[0].manual;ctx.save();ctx.strokeStyle='#ffdf8a';ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(p.x,p.y,R*.9,0,Math.PI*2);ctx.stroke();ctx.restore();}
- if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else{drawBlueCapabilityRing(bots[0]);for(const b of bots)drawFighter(b);}
+ if(multiActive()){drawMultiTargets();drawSwarmForecast();for(const b of team.blues)drawFighter(b);}else if(duel2Active()){for(const b of bots)drawBlueCapabilityRing(b);for(const b of bots)if(b.hp>0)drawFighter(b);}else{drawBlueCapabilityRing(bots[0]);for(const b of bots)drawFighter(b);}
  ctx.fillStyle='#b6d4eb';ctx.font=`700 ${clamp(S*.026,10,13)}px system-ui`;ctx.textAlign='left';ctx.fillText('RRT TACTICAL · '+ui.map.selectedOptions[0].textContent.split('·').pop().trim(),12,H-14);
 }
 function updateHUD(){if(!bots.length)return;
