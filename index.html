@@ -3009,6 +3009,19 @@ multiUI.teamMode.addEventListener('change',()=>{
  }
  resetGame();showNotice('ตั้งทีม BLUE เป็น '+multiUI.teamMode.selectedOptions[0].textContent.trim());
 });
+// Fault controls are user-visible experimental variables; reset ephemeral queues
+// when changed and keep shareable URLs aligned with the actual radio settings.
+for(const control of [multiUI.radioLoss,multiUI.radioDelay])control.addEventListener('change',()=>{
+ if(!multiActive())return;
+ if(/^https?:$/.test(location.protocol)){
+  const query=new URLSearchParams(location.search);
+  if(multiUI.radioLoss.value==='0')query.delete('loss');else query.set('loss',multiUI.radioLoss.value);
+  if(multiUI.radioDelay.value==='0')query.delete('delay');else query.set('delay',multiUI.radioDelay.value);
+  history.replaceState(null,'',location.pathname+(query.toString()?'?'+query.toString():''));
+ }
+ resetGame();showNotice('สื่อสาร P2P · ข้อความสูญหาย '+multiUI.radioLoss.value+
+  '% · หน่วงเพิ่ม '+multiUI.radioDelay.value+' วินาที (เริ่มรอบใหม่)');
+});
 multiUI.preset.addEventListener('change',()=>{if(phase==='running'){showNotice('หยุดหรือจบรอบก่อนเปลี่ยนจำนวน');return;}multi.count=Number(multiUI.preset.value);resetGame();showNotice('เตรียมศัตรู '+multi.count+' ตัวแล้ว');});
  multiUI.kite.addEventListener('change',()=>{multi.kiteEnabled=multiUI.kite.checked;resetGame();showNotice('Swarm-Aware Kiting '+(multi.kiteEnabled?'เปิด':'ปิด')+' แล้ว');});
  multiUI.predict.addEventListener('change',()=>{multi.predictive=multiUI.predict.checked;resetGame();showNotice('Predictive Anti-Encirclement '+(multi.predictive?'เปิด':'ปิด (พฤติกรรม V0.6.5)')+' แล้ว');});
