@@ -109,7 +109,7 @@ async function main(){
     assert.ok(found.metrics.fieldInspections>=2,'Real field visits occurred');
     assert.ok(found.metrics.verifiedWater>0,'Verified wet site yields green agents');
     assert.equal(found.metrics.refutedRumor,0,'Never fabricate a false dry result');
-    assert.match(await page.locator('#water-summary').innerText(),/พบน้ำจริง/);
+    assert.match(await page.locator('#water-summary').innerText(),/มีน้ำจริง/);
     await page.screenshot({path:path.join(ROOT,'artifacts','peermesh-water-found-393.png'),fullPage:true});
     await page.locator('#scenario').selectOption('water-false');
     const initialDry=await page.evaluate(()=>window.__peerMeshDebug.getState());
@@ -121,7 +121,7 @@ async function main(){
     assert.ok(dry.metrics.refutedRumor>0,'Independent dry inspections refute rumor');
     assert.equal(dry.metrics.verifiedWater,0,'False rumor never turns green');
     assert.equal(dry.metrics.disputed,0,'False rumor is not permanently red');
-    assert.match(await page.locator('#m-conflict').innerText(),/\\d/);
+    assert.match(await page.locator('#m-conflict').innerText(),/[0-9]/);
     assert.match(await page.locator('#water-summary').innerText(),/ไม่มีน้ำจริง/);
     assert.match(await page.locator('#inspector').innerText(),/การสำรวจพื้นที่/);
     await page.screenshot({path:path.join(ROOT,'artifacts','peermesh-water-refuted-393.png'),fullPage:true});
