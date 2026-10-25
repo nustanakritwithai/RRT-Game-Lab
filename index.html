@@ -2045,7 +2045,7 @@ function keepMoving(blue,dt){
 }
 // Duo is a separate scheduling path. One-blue still executes the exact v0.6.8 loop below.
 function duoBlueTurn(blue,dt){
- withBlueContext(blue,()=>{
+ return withRngStream(blue.id,()=>withBlueContext(blue,()=>{
   senseMultiWorld();
   if(predictiveActive()&&multi.sensorAt===elapsed)predictiveCheck(blue);
   if(rangedDefenseActive()&&multi.sensorAt===elapsed&&!multi.pendingEvade)rangedDefenseCheck(blue);
@@ -2071,18 +2071,18 @@ function duoBlueTurn(blue,dt){
   if(!dodgeMove(blue,dt))moveBot(blue,dt);
   if(mobileActive()&&blue.x===bx&&blue.y===by)keepMoving(blue,dt);
   shoot(blue);
- });
+ }));
 }
 function loopDuoStep(dt){
  if(phase!=='running')return;
- elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);
+ elapsed+=dt;withRngStream('enemy',()=>{stepSimpleTargets(dt);stepRangedTargets(dt);});
  for(const blue of team.blues)if(blue.hp>0)duoBlueTurn(blue,dt);
  // Same-world metrics for Independent vs Cooperative without changing either AI.
  if(team.blues.every(b=>b.hp>0)){
   const a=multi.focus,b=team.secondary?.focus;
   if(a&&b){team.focusSamples++;if(a===b)team.focusOverlap++;}
  }
- multiProjectiles(dt);stepRangedProjectiles(dt);meleeWaveAttacks();
+ withRngStream('damage',()=>multiProjectiles(dt));withRngStream('effects',()=>{stepRangedProjectiles(dt);meleeWaveAttacks();});
  if(multi.melee){
   const outcome=teamCore.outcome(team.blues,multi.targets.filter(t=>t.active).length,elapsed,150);
   if(outcome)finishMultiWave(outcome);
@@ -2095,8 +2095,11 @@ function loopDuoStep(dt){
 }
 function loopMultiStep(dt){
  if(teamDuo())return loopDuoStep(dt);
+ return withRngStream('B1',()=>loopSoloStep(dt));
+}
+function loopSoloStep(dt){
  if(phase!=='running')return;
- elapsed+=dt;stepSimpleTargets(dt);stepRangedTargets(dt);senseMultiWorld();
+ elapsed+=dt;withRngStream('enemy',()=>{stepSimpleTargets(dt);stepRangedTargets(dt);});senseMultiWorld();
  const blue=bots[0];
  if(predictiveActive()&&multi.sensorAt===elapsed)predictiveCheck(blue);
  if(rangedDefenseActive()&&multi.sensorAt===elapsed&&!multi.pendingEvade)rangedDefenseCheck(blue);
@@ -2119,7 +2122,7 @@ function loopMultiStep(dt){
  const bx=blue.x,by=blue.y;
  if(!dodgeMove(blue,dt))moveBot(blue,dt);
  if(mobileActive()&&blue.x===bx&&blue.y===by)keepMoving(blue,dt);
- shoot(blue);multiProjectiles(dt);stepRangedProjectiles(dt);meleeWaveAttacks();
+ shoot(blue);withRngStream('damage',()=>multiProjectiles(dt));withRngStream('effects',()=>{stepRangedProjectiles(dt);meleeWaveAttacks();});
  if(multi.melee){const outcome=meleeCore.waveOutcome({blueHp:blue.hp,alive:multi.targets.filter(t=>t.active).length,total:multi.targets.length,seconds:elapsed,limit:150});if(outcome)finishMultiWave(outcome);}
  for(let k=particles.length-1;k>=0;k--){const p=particles[k];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.life<=0)particles.splice(k,1);}
  sampleAcc+=dt;if(sampleAcc>=.25){sampleAcc=0;snapshot();}
@@ -2646,12 +2649,12 @@ function loopStep(dt){if(multiActive()){loopMultiStep(dt);return;}if(phase!=='ru
   }
  }
  const bx=blue.x,by=blue.y;
- for(const bot of bots)checkPlanning(bot,dt);
- for(const bot of bots)if(bot.planner)runPlanner(bot,28);
- for(const bot of bots){if(!dodgeMove(bot,dt))moveBot(bot,dt);}
- if(mobileActive()&&blue.hp>0&&blue.x===bx&&blue.y===by)keepMoving(blue,dt);
- for(const bot of bots)shoot(bot);
- projectiles(dt);
+ for(const bot of bots)withRngStream(bot.team==='blue'?'B1':'enemy',()=>checkPlanning(bot,dt));
+ for(const bot of bots)if(bot.planner)withRngStream(bot.team==='blue'?'B1':'enemy',()=>runPlanner(bot,28));
+ for(const bot of bots)withRngStream(bot.team==='blue'?'B1':'enemy',()=>{if(!dodgeMove(bot,dt))moveBot(bot,dt);});
+ if(mobileActive()&&blue.hp>0&&blue.x===bx&&blue.y===by)withRngStream('B1',()=>keepMoving(blue,dt));
+ for(const bot of bots)withRngStream(bot.team==='blue'?'B1':'enemy',()=>shoot(bot));
+ withRngStream('damage',()=>projectiles(dt));
  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-2*dt);p.vy*=Math.max(0,1-2*dt);if(p.life<=0)particles.splice(i,1);}
  // Safety stop; a match cannot run forever if the fighters never obtain a firing line.
  if(elapsed>150&&phase==='running'){const leader=core.resolveWinner(bots[0].hp,bots[1].hp);endRound(leader);showNotice('หมดเวลา 150 วินาที — '+(leader==='draw'?'ทั้งสองฝ่ายเสมอกัน':'ผู้มีพลังชีวิตมากกว่าชนะ'));}
