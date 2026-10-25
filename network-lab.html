@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#081523">
-<meta name="description" content="PeerMesh Lab: Interactive 1–1000 agent decentralized communication simulator. Compare flooding, gossip, fanout and anti-entropy with reproducible seeds.">
+<meta name="description" content="PeerMesh Lab: ทดลองข่าวลือเรื่องแหล่งน้ำจริงหรือไม่มีจริง ให้ Agent 1–1,000 ตัวสื่อสารและลงพื้นที่ตรวจสอบโดยไม่มีหัวหน้ากลาง">
 <title>PeerMesh Lab | Decentralized Agent Communication</title>
 <style>
 :root{color-scheme:dark;--bg:#07111e;--panel:#101f30;--deep:#09192a;--line:#29455d;--ink:#e7f4fc;--mute:#94aec3;--cyan:#48cfff;--mint:#5ee6b3;--gold:#ffc66d;--rose:#fe7793}
@@ -43,7 +43,11 @@ h1 span{color:var(--mint)}
 .canvas-pill{position:absolute;top:12px;left:12px;border:1px solid #385b77;background:#091e32de;padding:5px 10px;border-radius:99px;font-size:10px;color:#b4dafa;pointer-events:none}
 .legend{display:flex;flex-wrap:wrap;gap:13px;padding:10px 14px;font-size:11px;color:var(--mute)}
 .key{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;background:#4b667d}
-.key.source{background:#f3b86d}.key.informed{background:#48cfff}.key.corroborated{background:#5ee6b3}.key.conflict{background:#ff7991}
+.key.source{background:#f3b86d}.key.informed{background:#48cfff}.key.corroborated{background:#5ee6b3}.key.conflict{background:#ff7991}.key.verify{background:#ffc66d}.key.refuted{background:#a68bff}.legend-extra{display:flex;flex-wrap:wrap;gap:13px}
+.water-summary{margin:3px 0 11px;background:linear-gradient(115deg,#142b41,#152439);border:1px solid #426078;border-radius:13px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.water-summary strong{display:block;font-size:13px;color:#dcefff}.water-summary p{margin:3px 0 0;color:#abccdc;font-size:11px}.water-progress{font-size:12px;line-height:1.5;color:#c5e7f4;font-variant-numeric:tabular-nums;font-weight:650}
+.water-summary small{display:block;color:#829eb4;font-size:10px}
+
 .actionbar{padding:11px 12px;display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid #213e56}
 .btn{border:1px solid #45617a;border-radius:10px;background:#18354c;color:#e0f5ff;padding:9px 14px;font-weight:750;font-size:12px}
 .btn:hover:not(:disabled){background:#25516b}
@@ -76,7 +80,7 @@ td.best{color:var(--mint);font-weight:850}
 footer{font-size:11px;color:#819db3;padding:4px 18px 30px}
 @media(max-width:1090px){.layout{grid-template-columns:minmax(0,1fr) 285px}.metrics{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:800px){header{padding:13px 12px 8px}h1{font-size:30px}.shell{padding:0 10px 20px}.layout{grid-template-columns:minmax(0,1fr)}.metrics{gap:7px}.metric{padding:8px 10px}.band{grid-template-columns:1fr 1fr}.control-body{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}.control-body .wide{grid-column:1/-1}}
-@media(max-width:520px){header{align-items:flex-start}.backlink{padding:7px 9px;font-size:10px}.desc{font-size:11px}.metrics{grid-template-columns:repeat(3,1fr)}.metric .label{font-size:10px}.metric strong{font-size:19px}.metric small{font-size:9px}.stage-head{padding:10px 11px}.stage-head strong{font-size:12px}#mesh-canvas{aspect-ratio:1.24}.legend{gap:9px;font-size:10px}.actionbar{padding:10px;display:grid;grid-template-columns:repeat(3,1fr)}.btn{padding:8px 6px;font-size:12px;min-height:44px}.band{grid-template-columns:1fr}.control-body{grid-template-columns:1fr 1fr;column-gap:9px}.section-head{padding:11px 12px}}
+@media(max-width:520px){header{align-items:flex-start}.backlink{padding:7px 9px;font-size:10px}.desc{font-size:11px}.metrics{grid-template-columns:repeat(3,1fr)}.metric .label{font-size:10px}.metric strong{font-size:19px}.metric small{font-size:9px}.stage-head{padding:10px 11px}.stage-head strong{font-size:12px}#mesh-canvas{aspect-ratio:1.24}.legend{gap:9px;font-size:10px}.actionbar{padding:10px;display:grid;grid-template-columns:repeat(3,1fr)}.btn{padding:8px 6px;font-size:12px;min-height:44px}.band{grid-template-columns:1fr}.water-summary{padding:9px 10px}.water-summary strong{font-size:12px}.legend-extra{gap:9px}.control-body{grid-template-columns:1fr 1fr;column-gap:9px}.section-head{padding:11px 12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
@@ -85,7 +89,7 @@ footer{font-size:11px;color:#819db3;padding:4px 18px 30px}
 <div>
 <div class="brand">RRT Game Lab / Network Research</div>
 <h1>PeerMesh <span>Lab</span></h1>
-<p class="desc">เกมทดลองการแพร่กระจายข้อมูลจาก 1 Agent ถึง 1,000 Agent โดยไม่มีผู้ตัดสินใจกลาง เปรียบเทียบ Protocol และตรวจสอบข้อมูลซ้ำหรือขัดแย้งกันแบบเห็นภาพ</p>
+<p class="desc">จำลองข่าวลือ “พิกัดนี้มีแหล่งน้ำ” เปรียบเทียบโลกที่มีน้ำจริงกับไม่มีน้ำจริง ให้ Agent ส่งข่าวและลงพื้นที่ตรวจเอง ก่อนสรุปจากหลักฐานอิสระ · รองรับ 1–1,000 Agent</p>
 </div>
 <a class="backlink" href="./index.html" aria-label="กลับไปเกม RRT Arena">↗ RRT Arena</a>
 </header>
@@ -95,19 +99,27 @@ footer{font-size:11px;color:#819db3;padding:4px 18px 30px}
 <div class="metric"><span class="label">Coverage</span><strong id="m-coverage">0.3%</strong><small>ได้รับข้อความต้นทาง</small></div>
 <div class="metric"><span class="label">ส่งข้อความ</span><strong id="m-transmissions">0</strong><small>จำนวนการพยายามส่ง</small></div>
 <div class="metric"><span class="label">ข้อมูลซ้ำ</span><strong id="m-duplicates">0</strong><small>รับแล้วแต่เคยเห็น</small></div>
-<div class="metric"><span class="label">ยืนยันตรงกัน</span><strong id="m-agree">0</strong><small>≥2 ต้นทางอิสระ</small></div>
-<div class="metric"><span class="label">ข้อมูลขัดแย้ง</span><strong id="m-conflict">0</strong><small>ความเห็น A และ B ไม่ตรงกัน</small></div>
+<div class="metric"><span class="label" id="m-agree-label">พบแหล่งน้ำแล้ว</span><strong id="m-agree">0</strong><small id="m-agree-sub">≥2 ผู้สำรวจอิสระ</small></div>
+<div class="metric"><span class="label" id="m-conflict-label">ตรวจแล้วไม่พบน้ำ</span><strong id="m-conflict">0</strong><small id="m-conflict-sub">≥2 ผู้สำรวจอิสระ</small></div>
 </div>
+<section id="water-summary" class="water-summary" aria-live="polite" aria-label="สถานะการตรวจสอบข่าวลือ">
+<div><strong id="water-case-label">การทดลอง: ข่าวลือเรื่องแหล่งน้ำ</strong><p id="water-explainer">การมีน้ำเป็นข้อมูลของโลกจำลองเท่านั้น Agent จะไม่รู้จนกว่าจะเดินทางไปตรวจเอง</p></div>
+<div><div id="water-progress" class="water-progress">ตรวจพื้นที่แล้ว 0 · กำลังไปตรวจ 0 · ข่าวลือยังไม่ยืนยัน 1</div><small id="water-result">ทดลองกับ Seed 311 · จุดที่อ้างว่าเป็นแหล่งน้ำ (500, 310)</small></div>
+</section>
 <div class="layout">
 <div>
 <section class="panel" aria-labelledby="lab-heading">
 <div class="stage-head"><strong id="lab-heading">สนาม Agent Network · <span id="tick-count">Tick 0</span></strong><span class="subtle live"><i id="run-light" class="light"></i><span id="run-label">READY</span></span></div>
 <div class="canvas-wrap">
 <canvas id="mesh-canvas" width="1000" height="620" role="img" aria-label="แผนผัง Agent เลือกจุดเพื่อดูข้อมูลรายตัว">Canvas ไม่รองรับในเบราว์เซอร์นี้</canvas>
-<div class="canvas-pill">LOCAL DECISIONS · NO CENTRAL LEADER</div>
+<div class="canvas-pill" id="scene-pill">RUMOR → SCOUT → VERIFY · NO CENTRAL LEADER</div>
 </div>
 <div class="legend" aria-label="สัญลักษณ์สถานะ">
-<span><i class="key source"></i>จุดเริ่มต้น</span><span><i class="key"></i>ยังไม่ทราบ</span><span><i class="key informed"></i>ได้รับข้อมูล</span><span><i class="key corroborated"></i>หลักฐานตรงกัน</span><span><i class="key conflict"></i>หลักฐานขัดแย้ง</span>
+<span><i class="key source"></i>ต้นทางข่าวลือ</span><span><i class="key"></i>ยังไม่ทราบ</span>
+<span class="legend-extra" id="water-legend">
+<span><i class="key informed"></i>ได้ยินข่าวลือ</span><span><i class="key verify"></i>กำลังตรวจ</span><span><i class="key corroborated"></i>ยืนยันพบแหล่งน้ำ</span><span><i class="key refuted"></i>ยืนยันไม่พบแหล่งน้ำ</span><span><i class="key conflict"></i>ผลสำรวจขัดแย้ง</span>
+</span>
+<span class="legend-extra" id="classic-legend" style="display:none"><span><i class="key informed"></i>ได้รับข้อมูล</span><span><i class="key corroborated"></i>หลักฐานตรงกัน</span><span><i class="key conflict"></i>หลักฐานขัดแย้ง</span></span>
 </div>
 <div class="actionbar" aria-label="ควบคุมการจำลอง">
 <button class="btn primary" id="start" type="button">▶ เริ่มทดลอง</button>
@@ -134,7 +146,16 @@ footer{font-size:11px;color:#819db3;padding:4px 18px 30px}
 <div class="control-body">
 <label class="field"><span>จำนวน Agent <output id="node-count-value">300</output></span><select id="node-count"><option value="10">10</option><option value="50">50</option><option value="100">100</option><option value="300" selected>300</option><option value="500">500</option><option value="1000">1,000</option></select></label>
 <label class="field"><span>วิธีการสื่อสาร</span><select id="protocol"><option value="flood">Flooding — กระจายทุกเพื่อน</option><option value="gossip">Gossip — ส่งแบบสุ่ม</option><option value="fanout">Fanout — จำกัดจำนวนเพื่อน</option><option value="anti-entropy">Anti-Entropy — เปรียบเทียบรายการ</option></select></label>
-<label class="field wide"><span>สถานการณ์ข้อมูล</span><select id="scenario"><option value="single">ต้นทางเดียว — ข่าว A</option><option value="witnesses">3 แหล่งยืนยันข่าว A</option><option value="conflict">หลักฐาน A และ B ขัดแย้ง</option></select></label>
+<label class="field wide"><span>สถานการณ์ข้อมูล</span><select id="scenario">
+<optgroup label="ข่าวลือแหล่งน้ำ — ลงพื้นที่ตรวจจริง">
+<option value="water-true" selected>💧 มีแหล่งน้ำจริง (แต่ Agent ยังไม่รู้)</option>
+<option value="water-false">🏜️ ไม่มีแหล่งน้ำจริง (ข่าวลือผิด)</option>
+</optgroup>
+<optgroup label="การทดลองแบบเดิม">
+<option value="single">ต้นทางเดียว — ข่าว A</option>
+<option value="witnesses">3 แหล่งยืนยันข่าว A</option>
+<option value="conflict">หลักฐาน A และ B ขัดแย้ง</option>
+</optgroup></select></label>
 <label class="field wide"><span>รัศมีสื่อสาร <output id="range-value">108</output></span><input id="range" type="range" min="40" max="450" step="5" value="110"></label>
 <label class="field wide"><span>Packet Loss <output id="loss-value">10%</output></span><input id="loss" type="range" min="0" max="100" step="5" value="10"></label>
 <label class="field"><span>Latency (ticks)</span><select id="latency"><option value="1">1 tick</option><option selected value="2">2 ticks</option><option value="4">4 ticks</option><option value="8">8 ticks</option></select></label>
@@ -142,9 +163,9 @@ footer{font-size:11px;color:#819db3;padding:4px 18px 30px}
 <label class="checkbox wide"><input type="checkbox" id="mobile"><span>ให้ Agent เคลื่อนที่ตลอดเวลา</span></label>
 <label class="field"><span>Seed ทำซ้ำได้</span><input id="seed" type="number" min="1" max="2147483647" step="1" value="311"></label>
 <label class="field"><span>Maximum tick</span><select id="max-ticks"><option value="80">80</option><option selected value="160">160</option><option value="240">240</option></select></label>
-<div class="wide hint">ทุกการเปลี่ยนค่าจะเริ่มสนามใหม่ โดยไม่เปลี่ยนเกม RRT Arena เดิม ทุก Agent เก็บข้อมูลของตัวเอง การตัดสิน UNKNOWN / CORROBORATED / CONFLICT อาศัยเพียงข้อความที่ได้รับ</div>
+<div class="wide hint">ทุกการเปลี่ยนค่าจะเริ่มสนามใหม่ โดยไม่เปลี่ยน RRT Arena เดิม ในโหมดแหล่งน้ำ Agent ที่รับข่าวบางตัวจะเดินไปตรวจพิกัดด้วยตนเอง ผลภาคสนามจากผู้สำรวจอย่างน้อย 2 ต้นทางที่ตรงกันจึงถือว่าได้รับการยืนยัน (ไม่ใช้จำนวนการส่งต่อเป็นคะแนน)</div>
 <div class="rule wide"></div>
-<div class="wide hint"><strong style="color:#b5e9f8">ข้อจำกัด</strong> ระบบนี้เป็น Agent แบบมีกฎ ไม่ใช่ LLM ตัวจริง ไม่มีการรับรองตัวตนทางคริปโต และ CORROBORATED แปลว่าเห็นตรงกัน ไม่ได้พิสูจน์ว่าข่าวเป็นความจริง</div>
+<div class="wide hint"><strong style="color:#b5e9f8">ข้อจำกัด</strong> ระบบนี้เป็น Agent แบบมีกฎ ไม่ใช่ LLM จริง ไม่มีการรับรองตัวตนทางคริปโต ผล “พบ/ไม่พบ” เป็นการตรวจในโลกจำลองเท่านั้น ไม่ใช่ข้อเท็จจริงภายนอก</div>
 </div>
 </aside>
 </div>

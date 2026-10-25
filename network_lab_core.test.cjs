@@ -101,3 +101,72 @@ test('static website exposes functional controls and the correct pure engine fil
  assert.ok(html.includes('src="network_lab_core.js"'));
  assert.ok(html.includes('1000'));
 });
+
+test('water rumor is initially unverified even when the world really has water',()=>{
+ const sim=createSimulation({count:100,scenario:'water-true',protocol:'flood',range:1500,loss:0});
+ assert.equal(sim.state(0).status,'RUMOR_ONLY');
+ assert.equal(sim.metrics().verifiedWater,0);
+ assert.equal(sim.metrics().refutedRumor,0);
+ assert.equal(sim.metrics().fieldInspections,0);
+ assert.equal(sim.evaluation().waterExists,true);
+ assert.equal(sim.agents.every(a=>!('waterExists' in a)&&!('groundTruth' in a)),true);
+});
+test('water exists: traveling local observers independently verify and peers turn green',()=>{
+ const sim=createSimulation({count:64,scenario:'water-true',protocol:'flood',range:1500,loss:0,latency:1,maxTicks:160});
+ sim.run(155);
+ const m=sim.metrics();
+ assert.ok(m.fieldInspections>=2,'at least two independent site visits');
+ assert.ok(m.verifiedWater>10,'independent onsite findings propagate');
+ assert.equal(m.refutedRumor,0);
+ assert.equal(m.disputed,0);
+ assert.equal(sim.state(29).status,'WATER_FOUND');
+ assert.ok(sim.state(29).inspections.water>=2);
+ assert.equal(sim.evaluation().waterExists,true);
+});
+test('false rumor: two independent dry-site inspections refute A instead of indefinite CONFLICT',()=>{
+ const sim=createSimulation({count:64,scenario:'water-false',protocol:'flood',range:1500,loss:0,latency:1,maxTicks:160});
+ sim.run(155);
+ const m=sim.metrics();
+ assert.ok(m.fieldInspections>=2);
+ assert.ok(m.refutedRumor>10,'rumor is evaluated using local observations');
+ assert.equal(m.verifiedWater,0);
+ assert.equal(m.disputed,0);
+ assert.equal(sim.state(29).status,'NO_WATER');
+ assert.ok(sim.state(29).inspections.dry>=2);
+ assert.equal(sim.evaluation().waterExists,false);
+});
+test('a single inspection stays provisional; rumor and inspection are not independent corroboration',()=>{
+ const sim=createSimulation({count:3,scenario:'water-false',protocol:'flood',range:1500,loss:0,latency:1,maxTicks:160});
+ sim.run(155);
+ const s=sim.state(0);
+ assert.ok(s.inspections.dry<=1,'only one scout for tiny mesh');
+ assert.notEqual(s.status,'NO_WATER','rumor plus a single inspection cannot verify absence');
+ assert.equal(sim.metrics().refutedRumor,0);
+});
+test('100% packet loss prevents remote scouting and cannot leak world truth',()=>{
+ const sim=createSimulation({count:80,scenario:'water-false',protocol:'flood',range:1500,loss:1,maxTicks:160});
+ sim.run(150);
+ assert.equal(sim.metrics().primaryReached,1);
+ assert.equal(sim.metrics().fieldInspections,0);
+ assert.equal(sim.metrics().refutedRumor,0);
+ assert.equal(sim.state(35).status,'UNKNOWN');
+});
+test('water observation reports preserve firsthand origin through relays, not duplicate votes',()=>{
+ const sim=createSimulation({count:64,scenario:'water-false',protocol:'flood',range:1500,loss:0,latency:1,maxTicks:160});
+ sim.run(155);
+ const probe=sim.agents[29],state=sim.state(29);
+ assert.equal(probe.evidence instanceof Map,true);
+ assert.equal(state.inspections.water,0);
+ assert.equal(state.inspections.dry,
+   [...probe.evidence.values()].filter(e=>e.kind==='inspection'&&e.value==='B').length);
+ assert.equal(state.independentSources,probe.reports.size);
+ assert.ok(sim.metrics().duplicates>0);
+});
+test('seed replay and throughput cap hold for the moving 1,000-agent water trial',()=>{
+ const config={count:1000,scenario:'water-true',protocol:'fanout',range:105,loss:.2,maxTicks:110,maxTransmissions:85000,seed:528};
+ const a=createSimulation(config),b=createSimulation(config);
+ a.run(90);b.run(90);
+ assert.deepEqual(a.snapshot(),b.snapshot());
+ assert.ok(a.metrics().transmissions<=85000);
+ assert.equal(a.metrics().count,1000);
+});
