@@ -74,3 +74,21 @@ test('RNG never changes Math.random at module-import time and accepts stable str
  assert.strictEqual(Math.random,old);
  assert.equal(m.createStreams(123).next('world'),m.createStreams(123).next('world'));
 });
+
+test('teammate coordinates for tactical decisions must arrive as RADIO POSE messages',()=>{
+ const a={id:'B1',x:120,y:90,hp:120},b={id:'B2',x:130,y:160,hp:120};
+ const sent=m.sendPose({queue:[],lastSent:{}},a,b,10,{latency:.25,range:200});
+ assert.equal(sent.queue.length,1);assert.equal(sent.queue[0].type,'POSE');
+ assert.equal(m.peerPositions(m.ingest(m.makeInbox(),sent.queue,10.2,{owner:'B2'}),10.2).length,0);
+ const arrived=m.ingest(m.makeInbox(),sent.queue,10.26,{owner:'B2'});
+ assert.deepEqual(m.peerPositions(arrived,10.26).map(v=>v.id),['B1']);
+ assert.deepEqual(m.peerPositions(arrived,10.26).map(v=>({x:v.x,y:v.y})),[{x:120,y:90}]);
+ assert.equal(m.peerPositions(m.prune(arrived,10.85),10.85).length,0);
+ assert.equal(m.sendPose({queue:[],lastSent:{}},a,{...b,x:400},10,{range:200}).queue.length,0);
+});
+test('radio POSE is not from hidden world state; malformed sender/origin is rejected',()=>{
+ const pose={type:'POSE',sender:'B1',receiver:'B2',x:200,y:100,seenAt:10,deliverAt:10.2,source:'world_truth'};
+ assert.equal(m.ingest(m.makeInbox(),[pose],10.3,{owner:'B2'}).poses.B1,undefined);
+ assert.equal(m.ingest(m.makeInbox(),[{...pose,source:'own_position',x:NaN}],10.3,{owner:'B2'}).poses.B1,undefined);
+ assert.equal(m.ingest(m.makeInbox(),[{...pose,source:'own_position',deliverAt:11}],10.3,{owner:'B2'}).poses.B1,undefined);
+});
