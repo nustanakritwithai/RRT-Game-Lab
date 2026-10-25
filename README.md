@@ -1,4 +1,40 @@
-# RRT Arena V0.6.11 — Team Coordination V2
+# RRT Arena V0.6.12 — Private Memory + Communication-Only
+
+## หลักการ: BLUE ไม่มี Shared Memory อีกต่อไป
+
+B1 และ B2 ยังคงใช้ AI ความสามารถล่าสุด (วงแหวนเขียว) ที่เหมือนกัน พร้อม Memory-Guided RRT, Ranged Threat Defense, Keep Moving, Predictive และ Team V2. **หน่วยความจำแต่ละตัวแยกจากกันทั้งในแมตช์และเมื่อเปิด Carry Memory ข้ามรอบ** ข้อความวิทยุไม่ถูกเขียนลง `danger`, `encounters` หรือ `lastSeen` ใน PrivateMemory ของผู้รับ และไม่ถูกผสานลง `multi.tracks` ซึ่งสงวนไว้สำหรับเซนเซอร์ท้องถิ่นของตัวนั้น
+
+### Message-only team coordination
+
+- `SIGHTING`: ข้อมูลพิกัดที่เจ้าของมองเห็นจริง ผ่านวิทยุ `latency=0.3s`, จำกัดระยะ `0.95*S` และ TTL 3.5s; เก็บใน **RadioInbox เฉพาะตัวชั่วคราว** เท่านั้น
+- `TARGET_CLAIM`: Agent ที่เห็นและกำลังเลือกเป้าหมาย ส่ง ID ไปยังเพื่อนผ่าน queue หน่วงเวลาและมีวันหมดอายุ; B2 แบ่งเป้าหมายเมื่อได้รับข้อความจาก B1 แล้วเท่านั้น **ไม่อ่าน `team.primaryFocus` โดยตรง**
+- ข้อความหมดอายุจะถูกตัดจาก Inbox. การรายงาน SIGHTING ใช้เป็น **คำแนะนำค้นหาพื้นที่** ผ่าน RRT ของผู้รับ; ไม่ทำให้เซนเซอร์มองเห็นเป้า, ไม่เขียนประวัติ และไม่ให้สิทธิ์ยิงทะลุกำแพง
+- `Independent` และ `Solo` ไม่รับส่งข้อความ ไม่มี Team V2 Advisor ส่วน Cooperative เท่านั้นที่ใช้ Inbox + Fire Lane/Focus Advisor ปัจจุบัน
+- เมื่อ B1 ถูกกำจัด B2 ยังคงทำงานจาก private memory และ inbox ที่ได้รับจริงจนหมดอายุตามกฎ
+
+### การสุ่มและความยุติธรรมของการทดลอง
+
+ใช้ named seeded RNG streams แยก `world` (สนาม/เกิดศัตรู), `enemy` (พฤติกรรมศัตรู), `B1`, `B2`, `damage`, `effects` และสงวน `radio` สำหรับการทดลอง packet loss ในอนาคต. ทำให้การใช้ตัวเลขสุ่มเพิ่มของ B2 ไม่ทำให้ World หรือ Enemy เปลี่ยนลำดับสุ่ม. ตั้ง `?seed=311` หรือใช้ `window.__rrtMultiDebug.reseed(311)` ใน regression harness. **แม้แยก streams แล้ว การตัดสินใจที่ต่างกันยังอาจทำให้ศัตรูพบสถานการณ์ไม่เหมือนกัน** จึงห้ามตีความว่าเป็น causal proof โดยอัตโนมัติ
+
+### Quality gates
+
+- Unit tests: `rrt_arena_private_radio_v0612.test.cjs` และ `rrt_arena_private_runtime_v0612.test.cjs`, source-inline consistency และทุกชุดทดสอบเก่า
+- Chromium: Duel, Melee, Ranged, Mixed, Solo, Independent และ Cooperative บน 320/393/1365px; ตรวจ Inbox แยกจริง, ส่งข้อความจริง, การชนและหน้าจอคงที่
+- Regression: เกมยังใช้ BLUE ต้นฉบับ มีวงแหวนสีเขียว B1/B2 ไม่เปลี่ยน HP, ammo, velocity หรือ cooldown เพื่ออ้างว่าการสื่อสารมีประสิทธิภาพ
+- Benchmark: 20 seeds × Independent/Cooperative รักษา smoke pass; **ตัวเลขรุ่นเก่า V0.6.11 ไม่ใช่ผลทดลองของรุ่นใหม่นี้**
+
+### ลิงก์เกม
+
+- [Cooperative vs Ranged](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2&team=coop)
+- [Independent vs Ranged](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=ranged&blue=2)
+- [Cooperative vs Mixed](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=multi&enemy=mixed&blue=2&team=coop)
+
+### ขอบเขตถัดไป
+
+V0.6.13: เพิ่ม Message Protocol สำหรับ ACK, NEED_SUPPORT, RELOADING, LANE_BLOCKED และ packet loss โดยไม่แทรกการมองเห็นหรือความจำลับ. V0.7.0: 100–200 seeds ในสนาม 16–24 ตัว พร้อมสถิติ effect size, confidence interval และ replay ของข้อความ/การตอบสนอง
+
+---
+## อ้างอิง — V0.6.11 Team Coordination V2
 
 เพิ่มระบบประสานงานเชิงยุทธวิธีเหนือ BLUE ล่าสุด V0.6.10 โดย **ไม่เปลี่ยน HP/ความเร็ว/คูลดาวน์/กระสุน/โมเดลตัดสินใจ** ของ B1 หรือ B2. SOLO และ Duo Independent ยังเป็นชุดควบคุม และเฉพาะ Duo Cooperative เท่านั้นที่มีการตัดสินใจร่วมทีมแบบใหม่
 
