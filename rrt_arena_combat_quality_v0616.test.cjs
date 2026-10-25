@@ -22,14 +22,14 @@ test('Duel2 blocked shooter tries a NEW clear firing lane using original RRT goa
  assert.match(goal,/duel2Active\(\)/);
  assert.match(goal,/duel2SeenTeammates\(bot\)/);
  assert.match(goal,/coopCore\.findClearLane\(bot,foe/);
- assert.match(goal,/duel2PositionSafe\(bot,p\)/);
+ assert.match(goal,/radioTeammates\.every\(m=>dist\(p,m\)>R\*2\.25\)/);
  assert.match(goal,/!blocked\(a,b,R\+1\)/);
 });
 test('Duel2 must not use secret teammate positions to plan an avoidance route',()=>{
  const planning=block('function chooseGoal(bot){','function beginPlan(');
  const lane=planning.slice(planning.indexOf("if(kind==='team_lane'"),planning.indexOf("if(kind==='evade'"));
  assert.match(lane,/duel2SeenTeammates\(bot\)/);
- assert.doesNotMatch(lane,/\bbots\.(?:find|filter|map)|peer\.brain|duelBrains\[peer\./);
+ assert.doesNotMatch(lane,/duel2PositionSafe|\bbots\.(?:find|filter|map)|peer\.brain|duelBrains\[peer\./);
 });
 test('Duel2 reports held fire and lateral reposition attempts for research',()=>{
  const debug=block('window.__rrtDuel2Debug={','window.__rrtMultiDebug={');
