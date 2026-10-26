@@ -76,7 +76,7 @@ test('suppression may not skip a fresh first sighting if packet loss consumed an
 test('existing tactical move, damage, ammo and source visibility rules remain unchanged',()=>{
  const source=fs.readFileSync(require('node:path').join(__dirname,'index.html'),'utf8');
  const sensing=source.slice(source.indexOf('function senseDuel2World(){'),source.indexOf('function duel2Shoot(bot){'));
- assert.match(sensing,/duel2Core\.chooseTarget\(bot,candidates,previous,\{scale:S\}\)/);
+ assert.match(sensing,/duel2Core\.chooseTarget\(bot,candidates,previous,\{\s*scale:S,now:elapsed/);
  assert.match(sensing,/closingRate/);
  assert.match(sensing,/duel2Core\.sendSightings/);
  const shooting=source.slice(source.indexOf('function duel2Shoot(bot){'),source.indexOf('function duel2Projectiles(dt){'));
