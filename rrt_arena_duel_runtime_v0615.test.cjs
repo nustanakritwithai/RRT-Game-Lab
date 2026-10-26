@@ -71,7 +71,7 @@ test('win condition is full-team elimination or total HP on timeout',()=>{
 });
 test('mobile controls and separate HUD are wired to battle scene',()=>{
  const status=block('function updateDuel2HUD(){','function updateHUD(){');
- assert.match(status,/Math\.ceil\(hp\)\+'\/240'/);
+ assert.match(status,/Math\.ceil\(hp\)\+'\/'\+maxHp/);
  assert.match(status,/id/);
  assert.match(text,/duel2UI\.teamMode\.addEventListener|for\(const control of \[duel2UI\.teamMode/);
  assert.match(text,/duel2UI\.panel\.hidden=!duel2Active\(\)/);
