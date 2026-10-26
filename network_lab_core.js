@@ -333,7 +333,12 @@
    for(const a of agents){
     const neighbors=neighborhood[a.id];
     if(!a.seen.size||!neighbors.length)continue;
-    for(const report of a.seen.values()){
+    const ordered=c.protocol==='adaptive-gossip'
+     ?[...a.seen.values()].sort((u,v)=>
+       (u.kind==='inspection'?0:1)-(v.kind==='inspection'?0:1)||
+       (u.observedAt||0)-(v.observedAt||0)||u.origin-v.origin)
+     :a.seen.values();
+    for(const report of ordered){
      if(report.hop>=c.maxHops)continue;
      const sent=a.sent.get(report.id);
      if(!sent)continue;
@@ -375,6 +380,7 @@
    if(t%interval!==0)return;
    for(const a of agents){
     if(!neighborhood[a.id].length)continue;
+    if(config.protocol==='adaptive-gossip'&&a.seen.size===0)continue;
     const neighbors=neighborhood[a.id];
     const offset=Math.floor(sample(config.seed,'sync',t,a.id)*neighbors.length);
     const ids=[...a.seen.keys()];
