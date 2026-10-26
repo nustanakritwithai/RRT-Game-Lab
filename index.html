@@ -1616,18 +1616,30 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   const reload=self.reload>0?-.10:0;
   return Math.round(clamp(.2+position+health+ammo+reload,0,1)*10000)/10000;
  }
- function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400}={}){
+ function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400,
+  stableInterval=null,qualityDelta=.06}={}){
   const original=radio||{queue:[],lastSent:{}},queue=(original.queue||[]).slice(),lastSent={...(original.lastSent||{})};
   const local=tracks?.[selectedId];
   if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||
    !Number.isFinite(now)||!targetId(selectedId)||!finite(local)||local.status!=='visible'||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
   const key='BID:'+from.id+'>'+to.id;
-  if(now-(lastSent[key]??-Infinity)<interval)return {queue,lastSent};
+  const quality=bidQuality(from,local,scale),prior=lastSent[key];
+  const previousAt=Number.isFinite(prior)?prior:
+   prior&&Number.isFinite(prior.at)?prior.at:-Infinity;
+  // Duplex two-agent Duel uses event-based updates: changed target/quality
+  // can refresh after the original minimum interval. Stable BID packets
+  // refresh before TTL expiry and cannot create extra independent evidence.
+  const stable=Number.isFinite(stableInterval)&&prior&&
+   prior.targetId===selectedId&&Number.isFinite(prior.quality)&&
+   Math.abs(prior.quality-quality)<Math.max(0,Number.isFinite(qualityDelta)?qualityDelta:.06);
+  const gate=stable?Math.max(interval,stableInterval):interval;
+  if(now-previousAt<gate)return {queue,lastSent};
   queue.push({type:'BID',sender:from.id,receiver:to.id,targetId:selectedId,
-   quality:bidQuality(from,local,scale),source:'own_sensor',seenAt:now,
+   quality,source:'own_sensor',seenAt:now,
    deliverAt:now+Math.max(0,latency),expiresAt:now+Math.max(0,ttl)});
-  lastSent[key]=now;
+  // Legacy modes retain their numeric lastSent book and unchanged timing.
+  lastSent[key]=Number.isFinite(stableInterval)?{at:now,targetId:selectedId,quality}:now;
   return {queue:queue.slice(-240),lastSent};
  }
  function sendResponse(radio,from,to,target,kind,now,{range=Infinity,latency=.3,ttl=1.3,interval=.9}={}){
@@ -1820,12 +1832,13 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function threatScore(self,track,scale){
  const near=1-clamp(distance(self,track.position)/Math.max(1,scale*.8),0,1);
  const rate=Number.isFinite(track.closingRate)?track.closingRate:0;
- const approaching=.36*clamp(rate/Math.max(1,scale*.28),0,1);
+ const approaching=.40*clamp(rate/Math.max(1,scale*.28),0,1);
  const departing=.09*clamp(-rate/Math.max(1,scale*.25),0,1);
  const stale=track.status==='remembered'?.55*clamp(track.age/4,0,1):0;
  return near+approaching-departing-stale;
 }
-function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12}={}){
+function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12,
+ now=null,lastSwitchAt=-Infinity,minHoldSeconds=0,emergencyMargin=.32}={}){
  if(!point(self))return null;
  const known=(tracks||[]).filter(t=>t&&(red(t.id)||blue(t.id)))
   .filter(t=>point(t.position)&&['visible','remembered'].includes(t.status)&&Number.isFinite(t.age));
@@ -1835,9 +1848,16 @@ function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12}={}){
   threatScore(self,b,arena)-threatScore(self,a,arena)||
   a.age-b.age||a.id.localeCompare(b.id));
  const best=known[0],previous=known.find(t=>t.id===current);
- if(previous&&previous.status===best.status&&
-  threatScore(self,best,arena)-threatScore(self,previous,arena)<
-    (Number.isFinite(switchMargin)?Math.max(0,switchMargin):.12))return previous.id;
+ if(previous&&previous.status===best.status){
+  const advantage=threatScore(self,best,arena)-threatScore(self,previous,arena);
+  // Hold the current visible threat briefly to avoid restarting RRT for a
+  // tiny advantage. Unseen/dead previous targets are NOT protected by dwell.
+  if(Number.isFinite(now)&&Number.isFinite(lastSwitchAt)&&
+     now-lastSwitchAt<Math.max(0,minHoldSeconds)&&
+     advantage<Math.max(0,emergencyMargin))return previous.id;
+  if(advantage<(Number.isFinite(switchMargin)?Math.max(0,switchMargin):.12))
+   return previous.id;
+ }
  return best.id;
 }
 function resolve(bots,elapsed,limit=150){
@@ -2039,7 +2059,7 @@ function setupDuel2(){
    ui.carryMemory.checked?storedLessons[bot.id]?.encounters||[]:[]);
   bot.brain=bot.duelSearchBrain;bot.duelTargetId=null;bot.duelVisible=Object.create(null);
   bot.duelInbox=duel2Core.makeInbox();bot.evidenceLedger=evidenceCore.emptyLedger();
-  bot.duelRangeHistory=Object.create(null);bot.duelSwitches=0;
+  bot.duelRangeHistory=Object.create(null);bot.duelSwitches=0;bot.duelLastSwitchAt=-Infinity;
   bot.duelDefense={
    cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,
    coverage:rangedDef.createCoverage(W,H,10),coverageAt:-1,
@@ -3358,7 +3378,10 @@ function senseDuel2World(){
    team.bidsReceived=(team.bidsReceived||0)+validated.filter(m=>m.type==='BID').length;
   }
   // A radio message cannot create a visible track or alter this target selector.
-  let selected=duel2Core.chooseTarget(bot,candidates,previous,{scale:S}),resolution=null;
+  let selected=duel2Core.chooseTarget(bot,candidates,previous,{
+   scale:S,now:elapsed,lastSwitchAt:bot.duelLastSwitchAt,
+   minHoldSeconds:1,emergencyMargin:.3
+  }),resolution=null;
   if(team.mode==='cooperative'&&selected&&visibleNow[selected]){
    resolution=leaderless.negotiate(bot,visibleNow,selected,bot.bidInbox,elapsed,
     {scale:S,criticalDistance:R*3.25,maxExtraDistance:.25});
@@ -3367,6 +3390,7 @@ function senseDuel2World(){
    }
   }
   if(selected!==previous){
+   bot.duelLastSwitchAt=elapsed;
    if(previous&&selected){bot.duelSwitches++;team.targetSwitches=(team.targetSwitches||0)+1;}
    bot.duelTargetId=selected;
    bot.brain=selected?bot.duelBrains[selected]:bot.duelSearchBrain;
@@ -3383,7 +3407,7 @@ function senseDuel2World(){
       minDisplacement:R*1.4,maxRefreshSeconds:2.25}));
     if(selected&&visibleNow[selected]){
      const attempt=sendRadioPacket(r=>leaderless.sendBid(r,bot,peer,visibleNow,selected,elapsed,
-      {range:S*.95,latency:.3,scale:S,interval:.4}));
+      {range:S*.95,latency:.3,scale:S,interval:.4,stableInterval:.95,qualityDelta:.06}));
      team.bidsSent=(team.bidsSent||0)+attempt.sent;
     }
     if(resolution?.type&&resolution.peerId===peer.id&&(resolution.previousTargetId||selected)){
@@ -3606,7 +3630,7 @@ function updateDuel2HUD(){
  duel2UI.status.textContent='B '+blueAlive+'/2 · R '+redAlive+'/2 · '+
   (team.mode==='cooperative'?'📡 P2P':'อิสระ')+
   ' · ส่ง '+(team.radioSent||0)+' · ถึง '+(team.radioDelivered||0)+
-  ' · หลุด '+(team.radioDropped||0)+' · ขัดแย้ง '+(team.evidenceConflict||0)+
+  ' · หลุด '+(team.radioDropped||0)+' · เป้า↔ '+(team.targetSwitches||0)+' · ลดซ้ำ '+(team.suppressedSightings||0)+' · ขัดแย้ง '+(team.evidenceConflict||0)+
   ' · 🧭 มุมยิงใหม่ '+(team.laneMoves||0);
 }
 function updateHUD(){if(!bots.length)return;
