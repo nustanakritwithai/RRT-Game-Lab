@@ -25,6 +25,7 @@ jobs:
           node --check network_lab_core.js
           node --check network_lab_ui.js
           node --check tools/network_lab_browser.cjs
+          node --check tools/peermesh_duel2_browser.cjs
           test -s network-lab.html
       - name: Verify benchmark script syntax
         run: node --check tools/benchmark_swarm.cjs
@@ -75,6 +76,7 @@ jobs:
         run: |
           node tools/browser_regression.cjs
           node tools/network_lab_browser.cjs
+          node tools/peermesh_duel2_browser.cjs
           node tools/benchmark_duel2_quality.cjs
       - name: Upload PeerMesh real Chromium screenshots
         if: always()
