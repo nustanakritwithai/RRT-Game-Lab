@@ -251,3 +251,28 @@ test('new metrics are bounded for reproducible 1,000 mobile nodes',()=>{
  assert.ok(m.sourceComponent>=1&&m.sourceComponent<=1000);
  assert.ok(m.isolated>=0&&m.isolated<=999);
 });
+
+test('adaptive IHAVE/IWANT sends message IDs first and downloads evidence on demand',()=>{
+ const s=createSimulation({count:80,seed:311,protocol:'adaptive-gossip',scenario:'water-false',
+  range:1500,loss:0,latency:1,maxTicks:100});
+ s.run(70);
+ const m=s.metrics();
+ assert.ok(m.advertisements>0,'peers announce ID before full payload');
+ assert.ok(m.requests>0,'receiver explicitly asks for missing evidence');
+ assert.ok(m.acknowledgements>0,'ack confirms delivery');
+ assert.ok(m.dataPackets<m.advertisements,'many announcements avoid duplicate full payloads');
+ assert.ok(m.refutedRumor>0,'evidence reaches multiple agents');
+ assert.ok(m.estimatedBytes>0);
+});
+test('adaptive tunable rumor/evidence fanout is bounded and part of reproducible config',()=>{
+ const c={count:150,seed:777,protocol:'adaptive-gossip',scenario:'water-true',
+  range:75,loss:.25,mobile:true,maxTicks:80,
+  maxRetries:3,adaptiveRumorPeers:2,adaptiveEvidencePeers:8};
+ const a=createSimulation(c),b=createSimulation(c);
+ a.run(80);b.run(80);
+ assert.deepEqual(a.snapshot(),b.snapshot());
+ assert.equal(a.config.adaptiveRumorPeers,2);
+ assert.equal(a.config.adaptiveEvidencePeers,8);
+ assert.equal(a.config.maxRetries,3);
+ assert.ok(a.metrics().factFirst<=a.metrics().factReached);
+});
