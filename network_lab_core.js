@@ -42,8 +42,8 @@
    fanout:Math.trunc(clamp(c.fanout,1,20,3)),
    maxHops:Math.trunc(clamp(c.maxHops,0,48,16)),
    maxRetries:Math.trunc(clamp(c.maxRetries,1,8,4)),
-   adaptiveRumorPeers:Math.trunc(clamp(c.adaptiveRumorPeers,1,12,3)),
-   adaptiveEvidencePeers:Math.trunc(clamp(c.adaptiveEvidencePeers,1,16,6)),
+   adaptiveRumorPeers:Math.trunc(clamp(c.adaptiveRumorPeers,1,12,5)),
+   adaptiveEvidencePeers:Math.trunc(clamp(c.adaptiveEvidencePeers,1,16,10)),
    maxTicks:Math.trunc(clamp(c.maxTicks,1,400,160)),
    maxTransmissions:Math.trunc(clamp(c.maxTransmissions,1,300000,150000))
   });
@@ -427,7 +427,7 @@
     push(neighborhood);
     // Slow digest-based repair for adaptive peers; this also permits a
     // moving agent to store data and reconcile with newly encountered peers.
-    if(config.protocol==='adaptive-gossip')sync(neighborhood,1,16);
+    if(config.protocol==='adaptive-gossip')sync(neighborhood,2,12);
    }
    const m=metrics();
    history.push({tick:t,coveragePct:m.coveragePct,primaryReached:m.primaryReached,
