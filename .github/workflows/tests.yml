@@ -30,6 +30,8 @@ jobs:
         run: node --check tools/benchmark_swarm.cjs
       - name: Verify Duel2 quality benchmark syntax
         run: node --check tools/benchmark_duel2_quality.cjs
+          node --check rrt_arena_formation_v0618.js
+          node --check tools/formation_browser.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
@@ -41,6 +43,8 @@ jobs:
           grep -q 'RRTArenaLeaderless' index.html
           grep -q 'RRTArenaEvidence' index.html
           grep -q 'RRTArenaDuel2' index.html
+          grep -q 'RRTArenaFormation' index.html
+          grep -q 'id="duel2Formation"' index.html
           grep -q 'id="duel2TeamMode"' index.html
           grep -q 'id="duel2Status"' index.html
           grep -q 'id="blueEvidenceStatus"' index.html
@@ -73,6 +77,7 @@ jobs:
           node tools/browser_regression.cjs
           node tools/network_lab_browser.cjs
           node tools/benchmark_duel2_quality.cjs
+          node tools/formation_browser.cjs
       - name: Upload PeerMesh real Chromium screenshots
         if: always()
         uses: actions/upload-artifact@v4
