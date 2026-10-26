@@ -46,6 +46,11 @@ async function main(){
    const initial=await page.evaluate(()=>window.__peerMeshDebug.getState());
    assert.equal(initial.agents,300,'Initial agent count '+width);
    assert.equal(initial.metrics.primaryReached,1,'Primary source 1 '+width);
+   assert.equal(initial.settings.protocol,'adaptive-gossip','New reliable protocol default');
+   assert.ok(initial.metrics.sourceComponent>=1,'Topology count available');
+   assert.equal(await page.locator('#m-fact-first').count(),1,'Fact-before-rumor display');
+   assert.equal(await page.locator('#m-retries').count(),1,'Retry/ACK display');
+   assert.equal(await page.locator('#max-retries').inputValue(),'4','Bounded retry setting');
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
    assert.ok(overflow<=2,'Horizontal viewport overflow at '+width+': '+overflow);
    await page.locator('#start').click();
@@ -78,13 +83,14 @@ async function main(){
     await page.locator('#node-count').selectOption('50');
     await page.locator('#scenario').selectOption('single');
     await page.locator('#compare').click();
-    await page.waitForFunction(()=>window.__peerMeshDebug.getState().comparison.length===4
-     && document.querySelectorAll('#comparison tbody tr').length===4
+    await page.waitForFunction(()=>window.__peerMeshDebug.getState().comparison.length===5
+     && document.querySelectorAll('#comparison tbody tr').length===5
      && !window.__peerMeshDebug.getState().comparing,{timeout:60000});
     const compared=await page.evaluate(()=>window.__peerMeshDebug.getState());
-    assert.equal(compared.comparison.length,4,'All protocols compared');
+    assert.equal(compared.comparison.length,5,'All protocols compared');
     const rows=await page.locator('#comparison tbody tr').count();
-    assert.equal(rows,4,'Comparison table rows');
+    assert.equal(rows,5,'Comparison table rows');
+    assert.ok(compared.comparison.some(p=>p.name==='Adaptive Gossip'),'Adaptive benchmark included');
     const [download]=await Promise.all([
      page.waitForEvent('download'),
      page.locator('#export').click()
@@ -124,6 +130,14 @@ async function main(){
     assert.match(await page.locator('#m-conflict').innerText(),/[0-9]/);
     assert.match(await page.locator('#water-summary').innerText(),/ไม่มีน้ำจริง/);
     assert.match(await page.locator('#inspector').innerText(),/การสำรวจพื้นที่/);
+    const dryLabels=await page.locator('#water-summary').innerText();
+    assert.match(dryLabels,/ยืนยันไม่พบ/);
+    assert.equal(dry.metrics.verifiedWater,0);
+    await page.locator('#range').evaluate(el=>{
+     el.value='40';el.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#topology-note').count(),1,'Sparse connectivity notice');
+    assert.equal(await page.locator('#research-metrics').count(),1,'Research metrics card');
     await page.screenshot({path:path.join(ROOT,'artifacts','peermesh-water-refuted-393.png'),fullPage:true});
     await page.screenshot({path:path.join(ROOT,'artifacts','peermesh-mobile-393.png'),fullPage:true});
    }
