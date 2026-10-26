@@ -128,12 +128,30 @@ async function main(){
    const one=mod.sendSightings(null,self,ally,track(1,100),1,options);
    const two=mod.sendSightings(one,self,ally,track(1.8,100),1.8,options);
    const three=mod.sendSightings(two,self,ally,track(3.5,100),3.5,options);
+   const visible=[
+    {id:'R1',position:{x:140,y:0},status:'visible',age:0,closingRate:0},
+    {id:'R2',position:{x:100,y:0},status:'visible',age:0,closingRate:0}
+   ];
+   const held=mod.chooseTarget(self,visible,'R1',{
+    scale:400,now:1,lastSwitchAt:.8,minHoldSeconds:1,emergencyMargin:.4});
+   const fresh=mod.chooseTarget(self,visible,'R1',{
+    scale:400,now:2.1,lastSwitchAt:.8,minHoldSeconds:1,emergencyMargin:.4});
+   const bidMod=window.RRTArenaLeaderless;
+   const fighter={...self,maxHp:120,ammo:6,maxAmmo:6,reload:0};
+   const bidOpts={range:120,latency:.3,interval:.4,stableInterval:.95,qualityDelta:.06,ttl:1.3,scale:400};
+   const bidA=bidMod.sendBid(null,fighter,ally,{R1:{id:'R1',x:80,y:0,status:'visible'}},'R1',1,bidOpts);
+   const bidB=bidMod.sendBid(bidA,fighter,ally,{R1:{id:'R1',x:80,y:0,status:'visible'}},'R1',1.5,bidOpts);
    return {threat,initial:one.queue.length,unchanged:two.queue.length,
-    suppressed:two.suppressed,heartbeat:three.queue.length};
+    suppressed:two.suppressed,heartbeat:three.queue.length,
+    held,fresh,firstBid:bidA.queue.length,stableBid:bidB.queue.length};
   });
   check(v617.threat==='R2','duel2: 2v2 local closing-threat priority works inside deployed HTML');
   check(v617.initial===1&&v617.unchanged===1&&v617.suppressed===1&&
    v617.heartbeat===2,'duel2: static SIGHTING deduplicated with bounded heartbeat');
+  check(v617.held==='R1'&&v617.fresh==='R2',
+   'duel2: target dwell suppresses oscillation but releases on timeout');
+  check(v617.firstBid===1&&v617.stableBid===1,
+   'duel2: unchanged target BID is not retransmitted at the old 0.4s rate');
   check(['targetSwitches','focusOverlapSamples','suppressedSightings'].every(key=>
    Number.isFinite(radioUp[key])&&radioUp[key]>=0),
    'duel2: live research telemetry reports target focus and radio suppression');
