@@ -14,6 +14,9 @@ const point=p=>p&&finite(p.x)&&finite(p.y);
 const types=['SIGHTING','BID','ACK','NACK','NEED_SUPPORT','PM_ACK'];
 const rank={PM_ACK:0,NEED_SUPPORT:1,NACK:2,ACK:2,BID:3,SIGHTING:4};
 const maxAttempts=3;
+ // RTT-sensitive team chat: sighting and urgent self-status deserve delivery
+ // receipts; newer BID/ACK/NACK quickly supersede older tactical negotiation.
+ const needsAck=type=>type==='SIGHTING'||type==='NEED_SUPPORT';
 const counters=()=>({offered:0,suppressed:0,sent:0,retries:0,acknowledged:0,
  duplicates:0,stale:0,received:0,expired:0,invalid:0,supports:0});
 function createPeer(id){
@@ -79,12 +82,13 @@ function due(peer,now,{receiver=null,inRange=true,maxPackets=3}={}){
   p.attempts++;
   peer.counters.sent++;
   if(p.attempts>1)peer.counters.retries++;
-  p.nextAt=p.message.type==='PM_ACK'?Infinity:now+.42*Math.pow(2,p.attempts-1);
+  p.nextAt=needsAck(p.message.type)?
+   now+.96*Math.pow(2,p.attempts-1):Infinity;
   packets.push({...p.message,deliverAt});
  }
- // ACK is a one-shot control packet; if it gets lost, another incoming retry
- // causes the receiver to generate another ACK. There is no ACK-of-ACK.
- for(const [key,p] of peer.pending)if(p.message.type==='PM_ACK'&&p.nextAt===Infinity)
+ // Noncritical negotiations and PM_ACK are best-effort one-shot packets.
+ // If a delivery receipt is lost, the source may retry its original SIGHTING.
+ for(const [key,p] of peer.pending)if(!needsAck(p.message.type)&&p.nextAt===Infinity)
   peer.pending.delete(key);
  return packets;
 }
@@ -116,9 +120,9 @@ function receive(peer,packet,now){
   (packet.type==='NEED_SUPPORT'&&(packet.source!=='own_status'||!point(packet)))){
   peer.counters.invalid++;return {deliver:false,reason:'INVALID',ack:null};
  }
- const ack={type:'PM_ACK',source:'own_decision',sender:peer.id,
+ const ack=needsAck(packet.type)?{type:'PM_ACK',source:'own_decision',sender:peer.id,
   receiver:packet.sender,replyTo:packet.meshId,seenAt:now,
-  deliverAt:now+.30,expiresAt:now+1.1};
+  deliverAt:now+.30,expiresAt:now+1.1}:null;
  if((peer.seen.get(packet.meshId)||-Infinity)>now){
   peer.counters.duplicates++;return {deliver:false,reason:'DUPLICATE',ack};
  }
