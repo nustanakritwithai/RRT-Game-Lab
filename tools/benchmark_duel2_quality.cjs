@@ -8,7 +8,9 @@ const seeds=[83,311,511,713];
 const conditions=[
  {name:'independent',query:''},
  {name:'cooperative',query:'&dteam=coop'},
- {name:'radio_outage',query:'&dteam=coop&loss=100'}
+ {name:'adaptive',query:'&dteam=adaptive'},
+ {name:'radio_outage',query:'&dteam=coop&loss=100'},
+ {name:'adaptive_outage',query:'&dteam=adaptive&loss=100'}
 ];
 const file='file://'+path.resolve(__dirname,'../index.html');
 const output=path.resolve(__dirname,'../benchmarks/duel2-v0617.json');
@@ -56,6 +58,10 @@ async function run(){
      suppressedSightings:last.suppressedSightings,
      laneMoves:last.laneMoves,
      sent:last.radio.sent,delivered:last.radio.delivered,dropped:last.radio.dropped,
+     meshActive:last.peerMesh?.active||false,
+     meshRetries:(last.peerMesh?.agents||[]).reduce((n,a)=>n+(a.retries||0),0),
+     meshAcks:(last.peerMesh?.agents||[]).reduce((n,a)=>n+(a.acknowledged||0),0),
+     meshDuplicates:(last.peerMesh?.agents||[]).reduce((n,a)=>n+(a.duplicates||0),0),
      evidenceAccepted:last.radio.evidenceAccepted,conflicts:last.radio.conflicts,
      noCrossTeamBids:last.fighters.every(b=>b.receivedBids.every(id=>id[0]===b.id[0])),
      samples:frames};
@@ -70,7 +76,7 @@ async function run(){
  const invalid=rows.filter(r=>!r.parity||!r.noCrossTeamBids||
   r.samples.some(v=>!v.positionsValid)||r.plans===0||
   r.condition==='independent'&&(r.sent!==0||r.delivered!==0)||
-  r.condition==='radio_outage'&&(r.delivered!==0||r.dropped!==r.sent));
+  ['radio_outage','adaptive_outage'].includes(r.condition)&&(r.delivered!==0||r.dropped!==r.sent));
  const groups=conditions.map(c=>{
   const rr=rows.filter(r=>r.condition===c.name);
   return {mode:c.name,matches:rr.length,blueWins:rr.filter(r=>r.winner==='blue').length,
@@ -83,9 +89,12 @@ async function run(){
    averageSuppressedSightings:sum(rr,'suppressedSightings')/rr.length,
    focusOverlapPercent:sum(rr,'focusOverlapSamples')?100*sum(rr,'focusOverlap')/sum(rr,'focusOverlapSamples'):null,
    averageRadioSent:sum(rr,'sent')/rr.length,
+   averageMeshRetries:sum(rr,'meshRetries')/rr.length,
+   averageMeshAcknowledged:sum(rr,'meshAcks')/rr.length,
+   averageMeshDuplicates:sum(rr,'meshDuplicates')/rr.length,
    accepted:sum(rr,'evidenceAccepted'),conflicts:sum(rr,'conflicts')};
  });
- const report={type:'simulation-only',version:'0.6.17',seedCount:seeds.length,
+ const report={type:'simulation-only',version:'0.6.17 + optional PeerMesh Tactical V0.7',seedCount:seeds.length,
   seedPolicy:'paired deterministic world, independent named random streams',
   viewport:[393,852],horizonSeconds:25,
   caveat:'Smoke sample only; no causal or general win-rate claim. Unfinished matches are NOT losses.',
