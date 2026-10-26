@@ -2134,10 +2134,22 @@ function withRngStream(name,fn){
 // Transport operates on outgoing packets only; never makes a tactical decision.
 function sendRadioPacket(build){
  const before=team.radio,attempted=build(before);
- // Sender-side delta suppression is counted, but no skipped packet is
- // delivered or treated as a second independent observation.
+ // Existing observation-change rate limits are preserved for all modes.
  if(duel2Active()&&Number.isFinite(attempted?.suppressed))
   team.suppressedSightings=(team.suppressedSightings||0)+attempted.suppressed;
+ if(duel2Active()&&team.mode==='adaptive'){
+  // Only new packets enter the SENDER's private PeerMesh outbox.
+  // Shared radio queue remains physical transport, never shared decisions.
+  const newPackets=(attempted.queue||[]).filter(p=>!(before.queue||[]).includes(p));
+  for(const packet of newPackets){
+   const sender=bots.find(b=>b.id===packet.sender&&b.hp>0);
+   if(!sender||!sender.peerMesh)continue;
+   const result=meshCore.offer(sender.peerMesh,packet,elapsed);
+   if(!result.accepted)team.peerMeshSuppressed++;
+  }
+  team.radio={queue:before.queue.slice(),lastSent:{...(attempted.lastSent||before.lastSent)}};
+  return {sent:0,dropped:0,queued:newPackets.length};
+ }
  const net=leaderless.applyNetwork(before,attempted,{
   loss:Number((duel2Active()?duel2UI.radioLoss:multiUI.radioLoss).value)/100,
   delay:Number((duel2Active()?duel2UI.radioDelay:multiUI.radioDelay).value),
@@ -2146,6 +2158,29 @@ function sendRadioPacket(build){
  team.radio=net.radio;team.radioSent=(team.radioSent||0)+net.sent;
  team.radioDropped=(team.radioDropped||0)+net.dropped;
  return net;
+}
+// PeerMesh V0.7: each agent decides what to send and whether retry is due.
+// This function only applies physical radio range/loss/delay to those packets.
+function flushDuel2PeerMesh(){
+ if(!duel2Active()||team.mode!=='adaptive')return;
+ for(const bot of bots){
+  if(bot.hp<=0||!bot.peerMesh)continue;
+  const peer=bots.find(p=>p!==bot&&p.team===bot.team&&p.hp>0);
+  if(!peer)continue;
+  const packets=meshCore.due(bot.peerMesh,elapsed,{receiver:peer.id,
+   inRange:dist(bot,peer)<=S*.95,maxPackets:3});
+  if(!packets.length)continue;
+  const before=team.radio,attempted={
+   queue:before.queue.concat(packets),lastSent:{...before.lastSent}};
+  const net=leaderless.applyNetwork(before,attempted,{
+   loss:Number(duel2UI.radioLoss.value)/100,
+   delay:Number(duel2UI.radioDelay.value),
+   rand:()=>rngStreams.next('radio')
+  });
+  team.radio=net.radio;team.radioSent+=net.sent;team.radioDropped+=net.dropped;
+  team.bidsSent+=packets.filter(p=>p.type==='BID').length;
+  team.peerAcks+=packets.filter(p=>p.type==='ACK').length;
+ }
 }
 const multiActive=()=>scenario==='multi';
 const duel2Active=()=>scenario==='duel2';
@@ -3128,6 +3163,14 @@ function chooseGoal(bot){
   if(g&&dist(bot,g)>R*2){bot.reason='ค้นหาพื้นที่ที่ยังไม่ได้มองนานที่สุด';return g;}
  }
  if(kind==='search'||!foe){
+  if(duel2Active()&&team.mode==='adaptive'&&bot.hp>0&&
+     !Object.keys(bot.duelVisible||{}).length){
+   const hint=meshCore.supportGoal(bot.peerMesh,elapsed,p=>freePoint(p,R+2));
+   if(hint&&dist(bot,hint)>R*3){
+    bot.reason='PeerMesh: เพื่อนขอช่วย · ค้นหาจุดที่รายงาน (ยังยิงไม่ได้)';
+    return hint;
+   }
+  }
   // A reported enemy is a time-limited exploration hint, NOT a private
   // memory update and NEVER permission to fire through obstructed sight.
   if(duel2TeamRadioOn()){
@@ -3503,6 +3546,19 @@ function senseDuel2World(){
    team.radio=incoming.radio;team.radioDelivered=(team.radioDelivered||0)+incoming.received.length;
    const validated=[],disputed=new Set();
    for(const packet of incoming.received){
+    if(team.mode==='adaptive'){
+     const verdict=meshCore.receive(bot.peerMesh,packet,elapsed);
+     if(verdict.ack)meshCore.offer(bot.peerMesh,verdict.ack,elapsed);
+     if(!verdict.deliver){
+      if(verdict.reason==='DUPLICATE')team.peerMeshSuppressed++;
+      else if(verdict.reason==='STALE'||verdict.reason==='INVALID')team.peerMeshInvalid++;
+      continue;
+     }
+     team.peerMeshDelivered++;
+     // Self-reported ally position is a short-lived SEARCH hint, not enemy
+     // visibility, enemy memory, target selection or permission to fire.
+     if(packet.type==='NEED_SUPPORT'){team.peerMeshSupports++;continue;}
+    }
     if(packet.type==='BID'||packet.type==='ACK'||packet.type==='NACK'){
      validated.push(packet);
      continue;
@@ -3554,6 +3610,13 @@ function senseDuel2World(){
   if(duel2TeamRadioOn()){
    const peer=bots.find(p=>p.team===bot.team&&p!==bot&&p.hp>0);
    if(peer){
+    if(team.mode==='adaptive'&&bot.lastDamageAt>0&&
+       elapsed-bot.lastDamageAt<.65&&bot.hp<bot.maxHp*.90&&
+       elapsed-(bot.meshLastSupportAt??-Infinity)>.7){
+     const ownReport=meshCore.support(bot,peer.id,elapsed);
+     if(ownReport)meshCore.offer(bot.peerMesh,ownReport,elapsed);
+     bot.meshLastSupportAt=elapsed;
+    }
     sendRadioPacket(r=>duel2Core.sendSightings(r,bot,peer,visibleNow,elapsed,
      {range:S*.95,latency:.3,ttl:3.5,interval:.65,
       minDisplacement:R*1.4,maxRefreshSeconds:2.25}));
@@ -3570,6 +3633,7 @@ function senseDuel2World(){
    }
   }
  }
+ flushDuel2PeerMesh();
  // Sample shared-target overlap for each team without sharing focus into an
  // agent's decision state. This is post-decision research telemetry only.
  for(const color of ['blue','red']){
@@ -3958,6 +4022,11 @@ window.__rrtDuel2Debug={
      rangedDefense:rangedDefenseActive(),keepMoving:mobileActive()},
     stats:{hp:b.maxHp,ammo:b.maxAmmo,speed:b.moveSpeed,fire:b.baseFire,range:b.range,aim:b.aim},
     shots:team.shotsFired?.[b.id]||0,laneHolds:b.duelLaneHolds||0,focusSwitches:b.duelSwitches||0})),
+   peerMesh:{active:team.mode==='adaptive',
+    agents:members.map(b=>({id:b.id,team:b.team,
+     ...(b.peerMesh?meshCore.stats(b.peerMesh):{})})),
+    suppressed:team.peerMeshSuppressed||0,received:team.peerMeshDelivered||0,
+    supports:team.peerMeshSupports||0,invalid:team.peerMeshInvalid||0},
    radio:{sent:team.radioSent||0,delivered:team.radioDelivered||0,dropped:team.radioDropped||0,
     queued:team.radio?.queue?.length||0,bids:team.bidsSent||0,
     acks:team.peerAcks||0,negotiations:team.negotiatedYields||0,
@@ -3969,7 +4038,7 @@ window.__rrtDuel2Debug={
    suppressedSightings:team.suppressedSightings||0,
    bullets:bullets.length,score:{...scores}};
  },
- setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative'].includes(mode))return false;
+ setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative','adaptive'].includes(mode))return false;
   duel2UI.teamMode.value=mode;resetGame();return true;},
  forceHp:(id,hp)=>{const b=duel2Active()?bots.find(x=>x.id===id):null;
   if(!b||!Number.isFinite(hp)||hp<0||hp>b.maxHp)return false;
