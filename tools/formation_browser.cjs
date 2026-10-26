@@ -15,7 +15,7 @@ const presets=[
  let checked=0;
  try{
   for(const [code,count,teams,groups] of presets){
-   for(const width of code==='squad3333'?[393,1365]:[393]){
+   for(const width of code==='squad3333'?[393,1365]:['buddy2','group23','squad2222'].includes(code)?[320,393]:[393]){
     const context=await browser.newContext({viewport:{width,height:width===1365?900:852}});
     await context.addInitScript(()=>{window.requestAnimationFrame=()=>0;});
     const page=await context.newPage(),errors=[];
@@ -46,6 +46,9 @@ const presets=[
     assert.equal(end.organization.blue.reduce((n,g)=>n+g.teams.length,0),teams);
     assert.equal(end.organization.red.reduce((n,g)=>n+g.teams.length,0),teams);
     assert.ok(end.fighters.every(f=>f.memoryCount===count&&f.memoryUnique),'private memories '+code);
+    assert.ok(end.fighters.every(f=>f.peers.every(id=>id[0]===f.id[0])&&f.peers.length<=6),
+     'bounded peer graph and no cross-side links '+code);
+    assert.ok(end.fighters.every(f=>f.teamId&&f.groupId),'every fighter has group membership '+code);
     assert.ok(end.fighters.every(f=>[f.x,f.y,f.hp,f.ammo].every(Number.isFinite)),'finite state '+code);
     assert.ok(end.fighters.every(f=>JSON.stringify(f.stats)===JSON.stringify(end.fighters[0].stats)),
      'exact same AI/weapon stats '+code);
@@ -57,13 +60,18 @@ const presets=[
     await context.close();
    }
   }
-  for(const condition of [{code:'group23',loss:0},{code:'squad2323',loss:100}]){
+  for(const condition of [
+   {code:'group23',mode:'cooperative',loss:0},
+   {code:'squad2323',mode:'cooperative',loss:100},
+   {code:'group23',mode:'adaptive',loss:0},
+   {code:'squad2323',mode:'adaptive',loss:100}
+  ]){
    const context=await browser.newContext({viewport:{width:393,height:852}});
    await context.addInitScript(()=>{window.requestAnimationFrame=()=>0;});
    const page=await context.newPage(),errors=[];
    page.on('pageerror',e=>errors.push(String(e)));
    await page.goto(base+'?mode=duel2&formation='+condition.code+
-    '&dteam=coop&loss='+condition.loss+'&seed=311');
+    '&dteam='+(condition.mode==='adaptive'?'adaptive':'coop')+'&loss='+condition.loss+'&seed=311');
    const report=await page.evaluate(()=>{
     const d=window.__rrtDuel2Debug;
     document.getElementById('mapSelect').value='open';
@@ -72,7 +80,12 @@ const presets=[
     return d.getState();
    });
    assert.deepEqual(errors,[],'page error '+condition.code+errors);
-   assert.equal(report.mode,'cooperative');
+   assert.equal(report.mode,condition.mode);
+   if(condition.mode==='adaptive'){
+    assert.equal(report.peerMesh.active,true,'adaptive PeerMesh active');
+    assert.ok(report.peerMesh.agents.every(p=>Number.isFinite(p.offered)&&p.queued>=0),
+     'private per-agent PeerMesh outboxes');
+   }
    assert.ok(report.radio.sent>0,'transmitted real direct-sensor message '+condition.code);
    if(condition.loss===100){
     assert.equal(report.radio.delivered,0,'no received packets under complete outage');
@@ -83,7 +96,7 @@ const presets=[
     assert.ok(report.fighters.every(b=>b.receivedBids.every(id=>id[0]===b.id[0])),
      'no cross-side received BID');
    }
-   console.log('PASS '+condition.code+' P2P with '+condition.loss+'% loss');
+   console.log('PASS '+condition.code+' '+condition.mode+' P2P with '+condition.loss+'% loss');
    checked++;
    await context.close();
   }
