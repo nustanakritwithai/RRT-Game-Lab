@@ -9,7 +9,7 @@
   $('status').textContent='ไม่สามารถโหลด Simulation Engine กรุณาโหลดหน้าใหม่';
   return;
  }
- const fieldIds=['node-count','protocol','scenario','range','loss','latency','mobile','seed','max-ticks','max-retries'];
+ const fieldIds=['node-count','protocol','scenario','range','loss','latency','mobile','seed','max-ticks','max-retries','adaptive-rumor-peers','adaptive-evidence-peers'];
  const fields=fieldIds.map($);
  const canvas=$('mesh-canvas'),ctx=canvas.getContext('2d');
  const chart=$('coverage-chart'),ch=chart.getContext('2d');
@@ -35,6 +35,8 @@
    loss:Number($('loss').value)/100,latency:Number($('latency').value),
    mobile:$('mobile').checked,seed:Number($('seed').value),
    maxTicks:Number($('max-ticks').value),maxRetries:Number($('max-retries').value),
+   adaptiveRumorPeers:Number($('adaptive-rumor-peers').value),
+   adaptiveEvidencePeers:Number($('adaptive-evidence-peers').value),
    maxTransmissions:150000};
  }
  function note(s){$('status').textContent=s;}
@@ -277,7 +279,10 @@
    const world=sim.evaluation();
    $('water-case-label').textContent='โลกจำลอง: '+(world.waterExists?'มีน้ำจริง':'ไม่มีน้ำจริง')+
     ' · ปล่อยข่าวลือว่า “ตรงนี้มีน้ำ”';
-   $('water-explainer').textContent='ผู้ทดลองเลือกความจริงของโลกไว้ แต่ Agent ต้องไปสำรวจพิกัดด้วยตนเอง ไม่มีสมองกลางให้คำตอบ';
+   $('water-explainer').textContent='ผู้ทดลองเลือกความจริงของโลกไว้ แต่ Agent ต้องไปสำรวจเอง'+
+    (sim.config.protocol==='adaptive-gossip'?' · ข่าวลือให้ส่ง '+sim.config.adaptiveRumorPeers+
+     ' เพื่อน หลักฐาน '+sim.config.adaptiveEvidencePeers+' เพื่อน':'')+
+    ' · ไม่มีสมองกลางให้คำตอบ';
    $('water-progress').textContent='ตรวจพื้นที่แล้ว '+m.fieldInspections+
     ' · กำลังไปตรวจ '+m.scoutsEnRoute+' · ได้ยินข่าวแต่ยังไม่ยืนยัน '+m.rumorOnly;
    $('water-result').textContent='ยืนยันพบ '+m.verifiedWater+' · ยืนยันไม่พบ '+
