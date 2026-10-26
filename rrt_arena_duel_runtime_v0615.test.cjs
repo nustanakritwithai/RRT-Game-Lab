@@ -22,7 +22,7 @@ test('each fighter owns separate per-opponent memories, sensors, RRT planner and
  const sense=block('function senseDuel2World(){','function duel2Shoot(');
  assert.match(sense,/mem\.updateObservation\(brain,/);
  assert.match(sense,/seen=foe\.hp>0&&dist\(bot,foe\)<=S\*1\.12&&clearSight\(bot,foe\)/);
- assert.match(sense,/duel2Core\.chooseTarget\(bot,candidates,previous,\{scale:S\}\)/);
+ assert.match(sense,/duel2Core\.chooseTarget\(bot,candidates,previous,\{\s*scale:S,now:elapsed/);
  assert.match(sense,/teamCore\.receive\(team\.radio,bot\.id,elapsed/);
  assert.match(sense,/leaderless\.negotiate\(bot,visibleNow,selected,bot\.bidInbox/);
  assert.doesNotMatch(sense,/bot\.duelTargetId\s*=\s*peer\.duelTargetId|bot\.duelBrains\s*=\s*peer\.duelBrains/);
