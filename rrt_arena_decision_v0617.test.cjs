@@ -89,3 +89,63 @@ test('research telemetry records target switches, overlaps and skipped redundant
  for(const name of ['targetSwitches','focusOverlapSamples','suppressedSightings'])
   assert.match(report,new RegExp(name));
 });
+
+const L=require('./rrt_arena_leaderless_v0613.js');
+test('target-lock dwell prevents oscillation between minor near-equal visible threats',()=>{
+ const seen=[sight('R1',140,0,0),sight('R2',100,0,0)];
+ assert.equal(D.chooseTarget(me,seen,'R1',{scale:400,now:1,lastSwitchAt:.8,minHoldSeconds:1,emergencyMargin:.4}),'R1');
+ assert.equal(D.chooseTarget(me,seen,'R1',{scale:400,now:2.1,lastSwitchAt:.8,minHoldSeconds:1,emergencyMargin:.4}),'R2');
+});
+test('urgent closing threat can override target lock before dwell completes',()=>{
+ const seen=[sight('R1',100,0,-30),sight('R2',130,0,240)];
+ assert.equal(D.chooseTarget(me,seen,'R1',{scale:400,now:1,lastSwitchAt:.8,minHoldSeconds:1,emergencyMargin:.3}),'R2');
+});
+test('target lock never retains a lost or dead previous target',()=>{
+ const absent=[sight('R2',100,0,0)];
+ assert.equal(D.chooseTarget(me,absent,'R1',{scale:400,now:1,lastSwitchAt:.9,minHoldSeconds:1}),'R2');
+ const memory=[sight('R1',30,0,0,'remembered',1),sight('R2',110,0,0,'visible',0)];
+ assert.equal(D.chooseTarget(me,memory,'R1',{scale:400,now:1,lastSwitchAt:.9,minHoldSeconds:1}),'R2');
+});
+test('unchanged BID proposal rate-limits to stable interval but periodically refreshes',()=>{
+ const from={id:'B1',x:0,y:0,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0};
+ const to={id:'B2',x:10,y:0,hp:120};
+ const seen={R1:{id:'R1',x:80,y:0,status:'visible'}};
+ const opts={range:150,scale:400,interval:.4,stableInterval:.95,qualityDelta:.06,ttl:1.3};
+ const one=L.sendBid(null,from,to,seen,'R1',1,opts);
+ const two=L.sendBid(one,from,to,seen,'R1',1.6,opts);
+ assert.equal(one.queue.length,1);assert.equal(two.queue.length,1);
+ const three=L.sendBid(two,from,to,seen,'R1',2.0,opts);
+ assert.equal(three.queue.length,2,'BID must refresh before TTL expiry');
+});
+test('new target immediately updates BID after regular minimum interval',()=>{
+ const from={id:'B1',x:0,y:0,hp:120,ammo:6},to={id:'B2',x:20,y:0,hp:120};
+ const seen={R1:{id:'R1',x:80,y:0,status:'visible'},R2:{id:'R2',x:90,y:0,status:'visible'}};
+ const opts={range:150,scale:400,interval:.4,stableInterval:.95,qualityDelta:.06};
+ const one=L.sendBid(null,from,to,seen,'R1',1,opts);
+ const two=L.sendBid(one,from,to,seen,'R2',1.5,opts);
+ assert.equal(two.queue.length,2);assert.equal(two.queue[1].targetId,'R2');
+});
+test('meaningful local bid-quality change bypasses stable-message throttle',()=>{
+ const from={id:'B1',x:0,y:0,hp:120,ammo:6},to={id:'B2',x:20,y:0,hp:120};
+ const opts={range:200,scale:400,interval:.4,stableInterval:.95,qualityDelta:.04};
+ const old=L.sendBid(null,from,to,{R1:{id:'R1',x:80,y:0,status:'visible'}},'R1',1,opts);
+ const updated=L.sendBid(old,from,to,{R1:{id:'R1',x:160,y:0,status:'visible'}},'R1',1.5,opts);
+ assert.equal(updated.queue.length,2);
+});
+test('RED R1/R2 stable BID throttles symmetrically and carries no cross-team messages',()=>{
+ const from={id:'R1',x:0,y:0,hp:120,ammo:6},to={id:'R2',x:20,y:0,hp:120};
+ const seen={B1:{id:'B1',x:70,y:0,status:'visible'}};
+ const opts={range:150,scale:400,interval:.4,stableInterval:.95,qualityDelta:.06};
+ const one=L.sendBid(null,from,to,seen,'B1',1,opts);
+ const two=L.sendBid(one,from,to,seen,'B1',1.5,opts);
+ assert.equal(one.queue.length,1);assert.equal(two.queue.length,1);
+ assert.equal(one.queue[0].sender,'R1');assert.equal(one.queue[0].receiver,'R2');
+});
+test('stable BID and sighting throttles are only enabled for Duel2; legacy radio unchanged',()=>{
+ const src=fs.readFileSync(require('node:path').join(__dirname,'index.html'),'utf8');
+ const duel=src.slice(src.indexOf('function senseDuel2World(){'),src.indexOf('function duel2Shoot(bot){'));
+ assert.match(duel,/stableInterval:\.95/);
+ assert.match(duel,/minHoldSeconds:1/);
+ const multi=src.slice(src.indexOf('function senseMultiWorld(){'),src.indexOf('function multiProjectiles(dt){'));
+ assert.doesNotMatch(multi,/stableInterval/);
+});
