@@ -42,6 +42,8 @@
    fanout:Math.trunc(clamp(c.fanout,1,20,3)),
    maxHops:Math.trunc(clamp(c.maxHops,0,48,16)),
    maxRetries:Math.trunc(clamp(c.maxRetries,1,8,4)),
+   adaptiveRumorPeers:Math.trunc(clamp(c.adaptiveRumorPeers,1,12,3)),
+   adaptiveEvidencePeers:Math.trunc(clamp(c.adaptiveEvidencePeers,1,16,6)),
    maxTicks:Math.trunc(clamp(c.maxTicks,1,400,160)),
    maxTransmissions:Math.trunc(clamp(c.maxTransmissions,1,300000,150000))
   });
@@ -66,7 +68,7 @@
   const history=[];
   let t=0;
   let attempts=0,delivered=0,lost=0,duplicates=0,rejected=0,dataPackets=0,controlPackets=0,bytes=0;
-  let retries=0,acknowledgements=0,carrierContacts=0;
+  let retries=0,acknowledgements=0,carrierContacts=0,advertisements=0,requests=0;
   let lastTopology=null;
   const primaryId='r0';
   // Reports are authored by independent simulated witnesses, not by relays.
@@ -158,7 +160,7 @@
     rumorOnly,verifying,verifiedWater,refutedRumor,disputed,fieldInspections,scoutsEnRoute,
     factFirst,uncorrectedRumor,factReached,evidenceWithoutRumor,
     sourceComponent,isolated,averageDegree:Math.round(degreeSum/config.count*10)/10,
-    retries,acknowledgements,carrierContacts,
+    retries,acknowledgements,carrierContacts,advertisements,requests,
     transmissions:attempts,delivered,lost,duplicates,rejected,
     dataPackets,controlPackets,estimatedBytes:bytes,
     queued:[...pending.values()].reduce((n,arr)=>n+arr.length,0),
@@ -198,6 +200,8 @@
    const size=kind==='data'?96:24+8*(payload.ids?payload.ids.length:0);
    bytes+=size;
    if(kind==='data')dataPackets++;else controlPackets++;
+   if(kind==='have')advertisements++;
+   if(kind==='request')requests++;
    const key=kind+':'+(payload.report?payload.report.id:payload.reportId||(payload.ids||[]).join(','));
    if(sample(config.seed,'radio',kind,from,to,key,t,attempts)<config.loss){lost++;return true;}
    const due=t+config.latency;
@@ -219,7 +223,9 @@
    const previous=ledger.get(peer);
    if(previous&&(previous.confirmed||previous.attempts>=config.maxRetries||
       t<previous.nextAt))return false;
-   const ok=data(a.id,peer,report);
+   const ok=config.protocol==='adaptive-gossip'
+    ?transmit('have',a.id,peer,{reportId:report.id})
+    :data(a.id,peer,report);
    if(!ok)return false;
    const tries=(previous?.attempts||0)+1;
    ledger.set(peer,{attempts:tries,nextAt:t+
@@ -234,6 +240,15 @@
    delivered++;
    trace.push({tick:t,from:packet.from,to:packet.to,kind:packet.kind});
    if(trace.length>100)trace.shift();
+   if(packet.kind==='have'){
+    const id=packet.payload?.reportId;
+    if(typeof id!=='string'||!/^r\d{1,4}$/.test(id)){
+     rejected++;return;
+    }
+    if(a.seen.has(id))transmit('ack',a.id,other.id,{reportId:id});
+    else transmit('request',a.id,other.id,{ids:[id]});
+    return;
+   }
    if(packet.kind==='data'){
     const r=packet.payload.report;
     if(!r||!Number.isInteger(r.origin)||r.origin<0||r.origin>=agents.length||
@@ -347,8 +362,15 @@
       // contact/tick and a low independent chance; verified first-hand
       // inspection messages use up to four contacts per tick.
       const high=report.kind==='inspection';
-      const capacity=c.protocol==='fanout'?c.fanout:high?4:1;
-      const chance=c.protocol==='adaptive-gossip'?(high?1:report.kind==='rumor'?.35:.6):1;
+      const capacity=c.protocol==='fanout'?c.fanout:high?5:1;
+      const chance=c.protocol==='adaptive-gossip'?(high?1:report.kind==='rumor'?.5:.65):1;
+      if(c.protocol==='adaptive-gossip'){
+       // Broadcast to a bounded number of neighbors, not every peer in dense
+       // networks. Slow anti-entropy repairs missed or newly met contacts.
+       const confirmed=[...sent.values()].filter(x=>x.confirmed).length;
+       const target=high?c.adaptiveEvidencePeers:c.adaptiveRumorPeers;
+       if(confirmed>=target)continue;
+      }
       const offset=Math.floor(sample(c.seed,c.protocol,a.id,report.id,t)*neighbors.length);
       let accepted=0;
       for(let i=0;i<neighbors.length&&accepted<capacity;i++){
