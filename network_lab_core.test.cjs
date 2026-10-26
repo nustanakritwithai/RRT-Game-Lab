@@ -67,7 +67,7 @@ test('hop limit prevents all forwarding, no infinite flooding',()=>{
  assert.equal(sim.metrics().transmissions,0);
 });
 test('all four protocols operate and remain within bounded traffic',()=>{
- assert.deepEqual(PROTOCOLS,['flood','gossip','fanout','anti-entropy']);
+ assert.deepEqual(PROTOCOLS,['flood','gossip','fanout','anti-entropy','adaptive-gossip']);
  for(const protocol of PROTOCOLS){
   const sim=trial({count:80,protocol,loss:0.1,range:1500},60);
   assert.ok(sim.metrics().primaryReached>1,protocol);
@@ -169,4 +169,110 @@ test('seed replay and throughput cap hold for the moving 1,000-agent water trial
  assert.deepEqual(a.snapshot(),b.snapshot());
  assert.ok(a.metrics().transmissions<=85000);
  assert.equal(a.metrics().count,1000);
+});
+
+
+test('Gossip never loses its only chance because first random draw skips a connected peer',()=>{
+ // Seed 2 previously gave zero transmissions forever despite zero loss, radio range 1500.
+ const s=createSimulation({count:2,seed:2,scenario:'single',protocol:'gossip',
+  range:1500,loss:0,latency:1,maxTicks:70});
+ s.run(70);
+ assert.equal(s.metrics().primaryReached,2);
+ assert.ok(s.metrics().transmissions>0);
+});
+test('Gossip loss retry is bounded, acknowledged and can recover',()=>{
+ const s=createSimulation({count:2,seed:311,scenario:'single',protocol:'gossip',
+  range:1500,loss:.35,latency:1,maxTicks:100,maxRetries:5});
+ s.run(100);
+ const m=s.metrics();
+ assert.equal(m.primaryReached,2,'must eventually deliver across connected pair');
+ assert.ok(m.acknowledgements>=1,'receiver confirms via actual packet');
+ assert.ok(m.transmissions>0&&m.transmissions<40,'bounded data/ACK cost');
+ assert.ok(m.retries>=0&&m.acknowledgements<=m.delivered);
+});
+test('100% loss never fabricates delivery and respects retry budget',()=>{
+ const s=createSimulation({count:2,seed:2,scenario:'single',protocol:'gossip',
+  range:1500,loss:1,latency:1,maxTicks:160,maxRetries:4});
+ s.run(160);
+ assert.equal(s.metrics().primaryReached,1);
+ assert.equal(s.metrics().delivered,0);
+ assert.ok(s.metrics().dataPackets<=4,'max four actual sends to one neighbor');
+ assert.equal(s.metrics().acknowledgements,0);
+});
+test('static sparse topology stays disconnected without magical message jumps',()=>{
+ const s=createSimulation({count:10,seed:311,scenario:'water-false',
+  protocol:'adaptive-gossip',range:40,loss:0,mobile:false,maxTicks:100});
+ const initial=s.metrics();
+ assert.equal(initial.sourceComponent,1);
+ s.run(100);
+ assert.equal(s.metrics().primaryReached,1);
+ assert.equal(s.metrics().fieldInspections,0);
+ assert.ok(s.metrics().isolated>=0);
+});
+test('mobile store-carry-forward delivers on later encounters at the same short radius',()=>{
+ const settings={count:50,seed:311,scenario:'water-false',
+  protocol:'adaptive-gossip',range:40,loss:0,latency:1,maxTicks:160};
+ const fixed=createSimulation({...settings,mobile:false});
+ const moving=createSimulation({...settings,mobile:true});
+ fixed.run(160);moving.run(160);
+ assert.equal(moving.config.range,40);
+ assert.ok(moving.metrics().primaryReached>=fixed.metrics().primaryReached);
+ assert.ok(moving.metrics().sourceComponent<=50);
+ assert.ok(moving.metrics().carrierContacts>=0);
+});
+test('adaptive transmission gives field evidence its own priority, no central truth shortcut',()=>{
+ const s=createSimulation({count:100,seed:311,scenario:'water-false',
+  protocol:'adaptive-gossip',range:1500,loss:0,latency:1,maxTicks:160});
+ const before=s.metrics();
+ assert.equal(before.verifiedWater,0);
+ assert.equal(before.refutedRumor,0);
+ assert.equal(before.factFirst,0);
+ s.run(155);
+ const m=s.metrics();
+ assert.ok(m.fieldInspections>=2);
+ assert.ok(m.refutedRumor>1);
+ assert.equal(m.verifiedWater,0);
+ assert.equal(m.disputed,0);
+ assert.ok(m.factFirst>=0&&m.factFirst<=100);
+ assert.ok(m.uncorrectedRumor>=0&&m.uncorrectedRumor<=100);
+ assert.equal(s.agents.every(a=>!('waterExists' in a)),true);
+});
+test('new metrics are bounded for reproducible 1,000 mobile nodes',()=>{
+ const input={count:1000,seed:528,scenario:'water-true',protocol:'adaptive-gossip',
+  range:85,loss:.2,mobile:true,maxTicks:60,maxTransmissions:85000};
+ const a=createSimulation(input),b=createSimulation(input);
+ a.run(60);b.run(60);
+ assert.deepEqual(a.snapshot(),b.snapshot());
+ const m=a.metrics();
+ assert.equal(m.count,1000);
+ assert.ok(m.transmissions<=85000);
+ assert.ok(m.factFirst>=0&&m.factFirst<=1000);
+ assert.ok(m.acknowledgements>=0);
+ assert.ok(m.sourceComponent>=1&&m.sourceComponent<=1000);
+ assert.ok(m.isolated>=0&&m.isolated<=999);
+});
+
+test('adaptive IHAVE/IWANT sends message IDs first and downloads evidence on demand',()=>{
+ const s=createSimulation({count:80,seed:311,protocol:'adaptive-gossip',scenario:'water-false',
+  range:1500,loss:0,latency:1,maxTicks:100});
+ s.run(70);
+ const m=s.metrics();
+ assert.ok(m.advertisements>0,'peers announce ID before full payload');
+ assert.ok(m.requests>0,'receiver explicitly asks for missing evidence');
+ assert.ok(m.acknowledgements>0,'ack confirms delivery');
+ assert.ok(m.dataPackets<m.advertisements,'many announcements avoid duplicate full payloads');
+ assert.ok(m.refutedRumor>0,'evidence reaches multiple agents');
+ assert.ok(m.estimatedBytes>0);
+});
+test('adaptive tunable rumor/evidence fanout is bounded and part of reproducible config',()=>{
+ const c={count:150,seed:777,protocol:'adaptive-gossip',scenario:'water-true',
+  range:75,loss:.25,mobile:true,maxTicks:80,
+  maxRetries:3,adaptiveRumorPeers:2,adaptiveEvidencePeers:8};
+ const a=createSimulation(c),b=createSimulation(c);
+ a.run(80);b.run(80);
+ assert.deepEqual(a.snapshot(),b.snapshot());
+ assert.equal(a.config.adaptiveRumorPeers,2);
+ assert.equal(a.config.adaptiveEvidencePeers,8);
+ assert.equal(a.config.maxRetries,3);
+ assert.ok(a.metrics().factFirst<=a.metrics().factReached);
 });

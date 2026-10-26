@@ -9,7 +9,7 @@
   $('status').textContent='ไม่สามารถโหลด Simulation Engine กรุณาโหลดหน้าใหม่';
   return;
  }
- const fieldIds=['node-count','protocol','scenario','range','loss','latency','mobile','seed','max-ticks'];
+ const fieldIds=['node-count','protocol','scenario','range','loss','latency','mobile','seed','max-ticks','max-retries','adaptive-rumor-peers','adaptive-evidence-peers'];
  const fields=fieldIds.map($);
  const canvas=$('mesh-canvas'),ctx=canvas.getContext('2d');
  const chart=$('coverage-chart'),ch=chart.getContext('2d');
@@ -34,7 +34,9 @@
    scenario:$('scenario').value,range:Number($('range').value),
    loss:Number($('loss').value)/100,latency:Number($('latency').value),
    mobile:$('mobile').checked,seed:Number($('seed').value),
-   maxTicks:Number($('max-ticks').value),
+   maxTicks:Number($('max-ticks').value),maxRetries:Number($('max-retries').value),
+   adaptiveRumorPeers:Number($('adaptive-rumor-peers').value),
+   adaptiveEvidencePeers:Number($('adaptive-evidence-peers').value),
    maxTransmissions:150000};
  }
  function note(s){$('status').textContent=s;}
@@ -67,7 +69,7 @@
   $('comparison').textContent='';
   const el=document.createElement('p');
   el.className='hint';
-  el.textContent='กด “เทียบ 4 วิธี” เพื่อทดลองทุก Protocol ในสภาพแวดล้อมเดียวกัน';
+  el.textContent='กด “เทียบ 5 วิธี” เพื่อทดลองทั้งโปรโตคอลเดิมและ Adaptive Gossip';
   $('comparison').append(el);
   $('compare-progress').textContent='Seed เดียวกัน';
   labels();refresh();
@@ -248,6 +250,20 @@
   $('m-coverage').textContent=m.coveragePct.toFixed(1)+'%';
   $('m-transmissions').textContent=pretty(m.transmissions);
   $('m-duplicates').textContent=pretty(m.duplicates);
+  $('m-fact-first').textContent=pretty(m.factFirst);
+  $('m-topology').textContent=pretty(m.sourceComponent)+' / '+pretty(m.count);
+  $('m-retries').textContent=pretty(m.retries)+' / '+pretty(m.acknowledgements);
+  const noteBox=$('topology-note');
+  const disconnected=m.sourceComponent<m.count;
+  noteBox.classList.toggle('warn',disconnected);
+  if(disconnected){
+   noteBox.textContent='⚠ ขณะนี้ Agent ต้นทางเชื่อมต่อถึง '+pretty(m.sourceComponent)+
+    '/'+pretty(m.count)+' ตัว (แยกเดี่ยว '+pretty(m.isolated)+
+    ') · '+(sim.config.mobile?'ระบบจะลองส่งเมื่อการเคลื่อนที่ทำให้พบกัน':
+     'Agent ที่อยู่นอกเส้นทางจะไม่ได้รับข่าวจนกว่าจะเปิดการเคลื่อนที่หรือปรับระยะสัญญาณ');
+  }else{
+   noteBox.textContent='✓ เครือข่ายเชื่อมถึงกันในขณะนี้ · แยกข่าวลือกับหลักฐานภาคสนาม และขอซ่อมข้อมูลที่ตกหล่นตามโปรโตคอล';
+  }
   const water=isWater();
   $('m-agree-label').textContent=water?'ยืนยันพบแหล่งน้ำ':'ยืนยันตรงกัน';
   $('m-conflict-label').textContent=water?'ยืนยันไม่พบน้ำ':'ข้อมูลขัดแย้ง';
@@ -263,7 +279,10 @@
    const world=sim.evaluation();
    $('water-case-label').textContent='โลกจำลอง: '+(world.waterExists?'มีน้ำจริง':'ไม่มีน้ำจริง')+
     ' · ปล่อยข่าวลือว่า “ตรงนี้มีน้ำ”';
-   $('water-explainer').textContent='ผู้ทดลองเลือกความจริงของโลกไว้ แต่ Agent ต้องไปสำรวจพิกัดด้วยตนเอง ไม่มีสมองกลางให้คำตอบ';
+   $('water-explainer').textContent='ผู้ทดลองเลือกความจริงของโลกไว้ แต่ Agent ต้องไปสำรวจเอง'+
+    (sim.config.protocol==='adaptive-gossip'?' · ข่าวลือให้ส่ง '+sim.config.adaptiveRumorPeers+
+     ' เพื่อน หลักฐาน '+sim.config.adaptiveEvidencePeers+' เพื่อน':'')+
+    ' · ไม่มีสมองกลางให้คำตอบ';
    $('water-progress').textContent='ตรวจพื้นที่แล้ว '+m.fieldInspections+
     ' · กำลังไปตรวจ '+m.scoutsEnRoute+' · ได้ยินข่าวแต่ยังไม่ยืนยัน '+m.rumorOnly;
    $('water-result').textContent='ยืนยันพบ '+m.verifiedWater+' · ยืนยันไม่พบ '+
@@ -296,7 +315,7 @@
   const t=document.createElement('table');
   const thead=document.createElement('thead');
   const head=document.createElement('tr');
-  for(const name of ['Protocol','ถึง (%)','ส่ง (ครั้ง)','ซ้ำ','สูญหาย','P90 tick','ข้อมูลประมาณ']){
+  for(const name of ['Protocol','ถึง (%)','หลักฐานก่อนข่าว','ยังค้างข่าวลือ','ส่ง (ครั้ง)','ซ้ำ','สูญหาย','P90 tick','ข้อมูลประมาณ']){
    const th=document.createElement('th');th.textContent=name;head.append(th);
   }
   thead.append(head);t.append(thead);
@@ -306,6 +325,7 @@
   for(const m of rows){
    const tr=document.createElement('tr');
    td(tr,m.name);td(tr,m.coverage.toFixed(1)+'%',m.coverage===topCoverage?'best':'');
+   td(tr,pretty(m.factFirst));td(tr,pretty(m.rumorOnly));
    td(tr,pretty(m.sent),m.sent===minTx?'best':'');
    td(tr,pretty(m.dup));td(tr,pretty(m.lost));td(tr,m.p90===null?'—':m.p90);
    td(tr,(m.bytes/1024).toFixed(1)+' KB');
@@ -329,14 +349,14 @@
    if(token!==comparisonIteration)return;
    if(!protocols.length){
     comparing=false;setLive(false);table(comparisonRows);
-    progress.textContent='ครบ 4 วิธี · Seed '+baseline.seed;
-    note('เปรียบเทียบครบ 4 Protocol · เงื่อนไขเหมือนกัน ข้อมูลเป็นผลจำลอง');
+    progress.textContent='ครบ 5 วิธี · Seed '+baseline.seed;
+    note('เปรียบเทียบครบ 5 Protocol · เงื่อนไขเหมือนกัน ข้อมูลเป็นผลจำลอง');
     return;
    }
    const method=protocols.shift();
    const trial=engine.createSimulation({...baseline,protocol:method});
-   const label=method==='anti-entropy'?'Anti-Entropy':method[0].toUpperCase()+method.slice(1);
-   note('กำลังเปรียบเทียบ '+label+' · '+(4-protocols.length)+'/4');
+   const label=method==='anti-entropy'?'Anti-Entropy':method==='adaptive-gossip'?'Adaptive Gossip':method[0].toUpperCase()+method.slice(1);
+   note('กำลังเปรียบเทียบ '+label+' · '+(engine.PROTOCOLS.length-protocols.length)+'/'+engine.PROTOCOLS.length);
    progress.textContent=label+' · tick 0 / '+trial.config.maxTicks;
    const pump=()=>{
     if(token!==comparisonIteration)return;
@@ -349,7 +369,8 @@
     if(!trial.done){requestAnimationFrame(pump);return;}
     const m=trial.metrics();
     comparisonRows.push({name:label,coverage:m.coveragePct,sent:m.transmissions,dup:m.duplicates,
-     lost:m.lost,bytes:m.estimatedBytes,p90:percentile90(trial.agents)});
+     lost:m.lost,bytes:m.estimatedBytes,factFirst:m.factFirst,rumorOnly:m.rumorOnly,
+     p90:percentile90(trial.agents)});
     requestAnimationFrame(next);
    };
    requestAnimationFrame(pump);

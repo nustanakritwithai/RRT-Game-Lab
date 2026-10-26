@@ -10,7 +10,7 @@
  else root.PeerMeshCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
- const PROTOCOLS=Object.freeze(['flood','gossip','fanout','anti-entropy']);
+ const PROTOCOLS=Object.freeze(['flood','gossip','fanout','anti-entropy','adaptive-gossip']);
  const W=1000,H=620;
  const WATER_SITE=Object.freeze({x:500,y:310});
  const WATER_RADIUS=20;
@@ -41,6 +41,9 @@
    gossipChance:clamp(c.gossipChance,0,1,0.52),
    fanout:Math.trunc(clamp(c.fanout,1,20,3)),
    maxHops:Math.trunc(clamp(c.maxHops,0,48,16)),
+   maxRetries:Math.trunc(clamp(c.maxRetries,1,8,4)),
+   adaptiveRumorPeers:Math.trunc(clamp(c.adaptiveRumorPeers,1,12,5)),
+   adaptiveEvidencePeers:Math.trunc(clamp(c.adaptiveEvidencePeers,1,16,10)),
    maxTicks:Math.trunc(clamp(c.maxTicks,1,400,160)),
    maxTransmissions:Math.trunc(clamp(c.maxTransmissions,1,300000,150000))
   });
@@ -65,6 +68,7 @@
   const history=[];
   let t=0;
   let attempts=0,delivered=0,lost=0,duplicates=0,rejected=0,dataPackets=0,controlPackets=0,bytes=0;
+  let retries=0,acknowledgements=0,carrierContacts=0,advertisements=0,requests=0;
   let lastTopology=null;
   const primaryId='r0';
   // Reports are authored by independent simulated witnesses, not by relays.
@@ -75,7 +79,7 @@
    a.seen.set(report.id,report);
    a.reports.set(origin,value);
    a.evidence.set(origin,Object.freeze({kind,value,observedAt:0}));
-   a.sent.set(report.id,new Set());
+   a.sent.set(report.id,new Map());
    a.firstAt.set(report.id,0);
   }
   seed(0,'A',isWater?'rumor':'claim');
@@ -117,6 +121,7 @@
   function metrics(){
    let primaryReached=0,unknown=0,conflicted=0,corroborated=0,wrongCorroborated=0,anyReached=0;
    let rumorOnly=0,verifying=0,verifiedWater=0,refutedRumor=0,disputed=0,fieldInspections=0,scoutsEnRoute=0;
+   let factFirst=0,uncorrectedRumor=0,factReached=0,evidenceWithoutRumor=0;
    for(const a of agents){
     if(a.seen.has(primaryId))primaryReached++;
     if(a.seen.size)anyReached++;
@@ -132,19 +137,37 @@
     if(isWater){
      if(a.inspected)fieldInspections++;
      if(a.isScout&&a.seen.has(primaryId)&&!a.inspected)scoutsEnRoute++;
+     const heard=a.firstAt.get(primaryId);
+     const firstFact=Math.min(Infinity,...[...a.firstAt.entries()].filter(([key])=>key!==primaryId).map(([,tick])=>tick));
+     if(Number.isFinite(firstFact)){
+      factReached++;
+      if(!Number.isFinite(heard))evidenceWithoutRumor++;
+      if(firstFact<(heard??Infinity))factFirst++;
+     }else if(Number.isFinite(heard))uncorrectedRumor++;
     }
+   }
+   const neighbors=peers(),visited=new Uint8Array(config.count),queue=[0];
+   let sourceComponent=0,isolated=0,degreeSum=0;
+   visited[0]=1;
+   for(const list of neighbors){degreeSum+=list.length;if(list.length===0)isolated++;}
+   while(sourceComponent<queue.length){
+    const id=queue[sourceComponent++];
+    for(const peer of neighbors[id])if(!visited[peer]){visited[peer]=1;queue.push(peer);}
    }
    return {tick:t,count:config.count,primaryReached,anyReached,
     coveragePct:Math.round(primaryReached/config.count*1000)/10,
     unknown,conflicted,corroborated,wrongCorroborated,
     rumorOnly,verifying,verifiedWater,refutedRumor,disputed,fieldInspections,scoutsEnRoute,
+    factFirst,uncorrectedRumor,factReached,evidenceWithoutRumor,
+    sourceComponent,isolated,averageDegree:Math.round(degreeSum/config.count*10)/10,
+    retries,acknowledgements,carrierContacts,advertisements,requests,
     transmissions:attempts,delivered,lost,duplicates,rejected,
     dataPackets,controlPackets,estimatedBytes:bytes,
     queued:[...pending.values()].reduce((n,arr)=>n+arr.length,0),
     budgetExhausted:attempts>=config.maxTransmissions};
   }
   function peers(){
-   if(lastTopology&&!config.mobile)return lastTopology;
+   if(lastTopology)return lastTopology;
    const cells=new Map(),cell=Math.max(config.range,1);
    for(const a of agents){
     const x=Math.floor(a.x/cell),y=Math.floor(a.y/cell),key=x+','+y;
@@ -171,11 +194,15 @@
   function transmit(kind,from,to,payload){
    if(attempts>=config.maxTransmissions)return false;
    if(from===to||from<0||to<0||to>=agents.length)return false;
+   const sender=agents[from],receiver=agents[to];
+   if(Math.hypot(sender.x-receiver.x,sender.y-receiver.y)>config.range)return false;
    attempts++;
    const size=kind==='data'?96:24+8*(payload.ids?payload.ids.length:0);
    bytes+=size;
    if(kind==='data')dataPackets++;else controlPackets++;
-   const key=kind+':'+(payload.report?payload.report.id:(payload.ids||[]).join(','));
+   if(kind==='have')advertisements++;
+   if(kind==='request')requests++;
+   const key=kind+':'+(payload.report?payload.report.id:payload.reportId||(payload.ids||[]).join(','));
    if(sample(config.seed,'radio',kind,from,to,key,t,attempts)<config.loss){lost++;return true;}
    const due=t+config.latency;
    if(!pending.has(due))pending.set(due,[]);
@@ -187,12 +214,41 @@
    return transmit('data',from,to,{report:{id:report.id,origin:report.origin,value:report.value,
     kind:report.kind||'claim',site:report.site||null,observedAt:report.observedAt||0,hop:report.hop+1}});
   }
+  function ackMode(){return ['gossip','fanout','adaptive-gossip'].includes(config.protocol);}
+  // Per-agent per-message per-neighbor retry state. Failed probability draws do
+  // NOT consume an attempt or mark a neighbor as sent; lost packets may retry.
+  function offer(a,peer,report){
+   const ledger=a.sent.get(report.id);
+   if(!ledger)return false;
+   const previous=ledger.get(peer);
+   if(previous&&(previous.confirmed||previous.attempts>=config.maxRetries||
+      t<previous.nextAt))return false;
+   const ok=config.protocol==='adaptive-gossip'
+    ?transmit('have',a.id,peer,{reportId:report.id})
+    :data(a.id,peer,report);
+   if(!ok)return false;
+   const tries=(previous?.attempts||0)+1;
+   ledger.set(peer,{attempts:tries,nextAt:t+
+    Math.max(2,config.latency*2)*Math.pow(2,Math.min(tries-1,4)),confirmed:false});
+   if(tries>1)retries++;
+   if(config.mobile&&t>(a.firstAt.get(report.id)??t)+4)carrierContacts++;
+   return true;
+  }
   function receive(packet){
    const a=agents[packet.to],other=agents[packet.from];
    if(!a||!other){rejected++;return;}
    delivered++;
    trace.push({tick:t,from:packet.from,to:packet.to,kind:packet.kind});
    if(trace.length>100)trace.shift();
+   if(packet.kind==='have'){
+    const id=packet.payload?.reportId;
+    if(typeof id!=='string'||!/^r\d{1,4}$/.test(id)){
+     rejected++;return;
+    }
+    if(a.seen.has(id))transmit('ack',a.id,other.id,{reportId:id});
+    else transmit('request',a.id,other.id,{ids:[id]});
+    return;
+   }
    if(packet.kind==='data'){
     const r=packet.payload.report;
     if(!r||!Number.isInteger(r.origin)||r.origin<0||r.origin>=agents.length||
@@ -203,7 +259,11 @@
         !Number.isFinite(r.site.x)||!Number.isFinite(r.site.y)))||
        (isWater&&r.kind==='rumor'&&(!r.site||
         !Number.isFinite(r.site.x)||!Number.isFinite(r.site.y)))){rejected++;return;}
-    if(a.seen.has(r.id)){duplicates++;return;}
+    if(a.seen.has(r.id)){
+     duplicates++;
+     if(ackMode())transmit('ack',a.id,other.id,{reportId:r.id});
+     return;
+    }
     // Preserve first received claim from one origin; independent votes are by origin only.
     if(a.reports.has(r.origin)){duplicates++;return;}
     const item=Object.freeze({id:r.id,origin:r.origin,value:r.value,kind:r.kind||'claim',
@@ -215,8 +275,18 @@
     if(item.kind==='inspection'){
      if(item.value==='A')a.fieldVotes.water++;else a.fieldVotes.dry++;
     }
-    a.sent.set(item.id,new Set());
+    a.sent.set(item.id,new Map());
     a.firstAt.set(item.id,t);
+    if(ackMode())transmit('ack',a.id,other.id,{reportId:r.id});
+    return;
+   }
+   if(packet.kind==='ack'){
+    const id=packet.payload?.reportId;
+    const entry=typeof id==='string'&&a.sent.get(id)?.get(packet.from);
+    if(entry&&!entry.confirmed){
+     entry.confirmed=true;
+     acknowledgements++;
+    }
     return;
    }
    if(packet.kind==='digest'){
@@ -246,7 +316,7 @@
    a.reports.set(a.id,observation.value);
    a.evidence.set(a.id,Object.freeze({kind:'inspection',value:observation.value,observedAt:t}));
    if(observation.value==='A')a.fieldVotes.water++;else a.fieldVotes.dry++;
-   a.sent.set(observation.id,new Set());
+   a.sent.set(observation.id,new Map());
    a.firstAt.set(observation.id,t);
   }
   function move(){
@@ -278,38 +348,65 @@
    for(const a of agents){
     const neighbors=neighborhood[a.id];
     if(!a.seen.size||!neighbors.length)continue;
-    for(const report of a.seen.values()){
+    const ordered=c.protocol==='adaptive-gossip'
+     ?[...a.seen.values()].sort((u,v)=>
+       (u.kind==='inspection'?0:1)-(v.kind==='inspection'?0:1)||
+       (u.observedAt||0)-(v.observedAt||0)||u.origin-v.origin)
+     :a.seen.values();
+    for(const report of ordered){
      if(report.hop>=c.maxHops)continue;
      const sent=a.sent.get(report.id);
      if(!sent)continue;
-     if(c.protocol==='fanout'){
-      if(t-a.firstAt.get(report.id)>4)continue;
-      const offset=Math.floor(sample(c.seed,'fanout',a.id,report.id,t)*neighbors.length);
-      let selected=0;
-      for(let i=0;i<neighbors.length&&selected<c.fanout;i++){
-       const id=neighbors[(offset+i)%neighbors.length];
-       if(sent.has(id))continue;
-       sent.add(id);data(a.id,id,report);selected++;
+     if(c.protocol==='fanout'||c.protocol==='adaptive-gossip'){
+      // Evidence moves quicker than rumors in adaptive mode. Rumors use one
+      // contact/tick and a low independent chance; verified first-hand
+      // inspection messages use up to four contacts per tick.
+      const high=report.kind==='inspection';
+      const capacity=c.protocol==='fanout'?c.fanout:high?5:1;
+      const chance=c.protocol==='adaptive-gossip'?(high?1:report.kind==='rumor'?.5:.65):1;
+      if(c.protocol==='adaptive-gossip'){
+       // Broadcast to a bounded number of neighbors, not every peer in dense
+       // networks. Slow anti-entropy repairs missed or newly met contacts.
+       const confirmed=[...sent.values()].filter(x=>x.confirmed).length;
+       const target=high?c.adaptiveEvidencePeers:c.adaptiveRumorPeers;
+       if(confirmed>=target)continue;
       }
-     }else{
+      const offset=Math.floor(sample(c.seed,c.protocol,a.id,report.id,t)*neighbors.length);
+      let accepted=0;
+      for(let i=0;i<neighbors.length&&accepted<capacity;i++){
+       const id=neighbors[(offset+i)%neighbors.length];
+       if(sent.get(id)?.confirmed)continue;
+       if(sample(c.seed,c.protocol,'select',a.id,id,report.id,t)>=chance)continue;
+       if(offer(a,id,report))accepted++;
+      }
+     }else if(c.protocol==='gossip'){
+      for(const id of neighbors){
+       if(sample(c.seed,'gossip',a.id,id,report.id,t)<c.gossipChance){
+        offer(a,id,report);
+       }
+      }
+     }else if(c.protocol==='flood'){
+      // Flooding is retained as a one-shot high-bandwidth baseline.
       for(const id of neighbors){
        if(sent.has(id))continue;
-       sent.add(id);
-       if(c.protocol==='flood'||sample(c.seed,'gossip',a.id,id,report.id)<c.gossipChance)
-        data(a.id,id,report);
+       if(data(a.id,id,report)){
+        sent.set(id,{confirmed:true,attempts:1,nextAt:Infinity});
+        if(config.mobile&&t>(a.firstAt.get(report.id)??t)+4)carrierContacts++;
+       }
       }
      }
     }
    }
   }
-  function sync(neighborhood){
-   if(t%4!==0)return;
+  function sync(neighborhood,maxPeers=3,interval=4){
+   if(t%interval!==0)return;
    for(const a of agents){
     if(!neighborhood[a.id].length)continue;
+    if(config.protocol==='adaptive-gossip'&&a.seen.size===0)continue;
     const neighbors=neighborhood[a.id];
     const offset=Math.floor(sample(config.seed,'sync',t,a.id)*neighbors.length);
     const ids=[...a.seen.keys()];
-    for(let i=0;i<Math.min(3,neighbors.length);i++){
+    for(let i=0;i<Math.min(maxPeers,neighbors.length);i++){
      const peer=neighbors[(offset+i)%neighbors.length];
      transmit('digest',a.id,peer,{ids});
     }
@@ -325,7 +422,13 @@
    move();
    if(config.mobile||isWater)lastTopology=null;
    const neighborhood=peers();
-   if(config.protocol==='anti-entropy')sync(neighborhood);else push(neighborhood);
+   if(config.protocol==='anti-entropy')sync(neighborhood);
+   else{
+    push(neighborhood);
+    // Slow digest-based repair for adaptive peers; this also permits a
+    // moving agent to store data and reconcile with newly encountered peers.
+    if(config.protocol==='adaptive-gossip')sync(neighborhood,2,12);
+   }
    const m=metrics();
    history.push({tick:t,coveragePct:m.coveragePct,primaryReached:m.primaryReached,
     corroborated:m.corroborated,conflicted:m.conflicted,transmissions:m.transmissions,duplicates:m.duplicates});

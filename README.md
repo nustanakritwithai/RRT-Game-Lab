@@ -1,3 +1,29 @@
+# PeerMesh Lab V1.2 — Reliable / Evidence-Aware Adaptive Gossip
+
+**[เปิดหน้าเกม PeerMesh Lab](https://nustanakritwithai.github.io/RRT-Game-Lab/network-lab.html)** (หลังรวมโค้ดและ Deploy Pages สำเร็จ; branch นี้ไม่ใช่ Production จนกว่าจะยืนยัน URL จริง)
+
+## วัตถุประสงค์
+แก้ปัญหาจากการทดลองจริงเมื่อสัญญาณสั้น: Agent บางตัวอยู่นอกเส้นทางวิทยุ (Sparse Topology), Gossip รุ่นก่อนทำเครื่องหมาย peer ว่า *ส่งแล้ว* แม้สุ่มไม่ส่งจริง, และข้อมูลหลักฐานภาคสนามที่ตรวจแล้วกระจายช้าไม่ต่างจากข่าวลือ.
+
+## สิ่งที่เปลี่ยน
+- **Gossip ส่งซ้ำได้อย่างมีขอบเขต**: ถ้าตัดสินไม่ส่งใน Tick นี้ จะยังไม่ทำเครื่องหมาย peer ว่าได้รับแล้ว; ถ้าพยายามส่งจริงแต่ Packet หาย ใช้ ACK และ exponential backoff, จำกัดจำนวนครั้งต่อ peer/message (`maxRetries`) ไม่ค้างไม่ส่งเพราะสุ่มพลาดครั้งเดียว.
+- **Adaptive Gossip ใหม่เป็นโหมดเลือกได้**: ข่าวลือ `rumor` ได้งบส่งต่อเริ่มต้น **5 peer**, รายงานภาคสนาม `inspection` ได้ **10 peer** และถูกประมวลผลก่อนข้อความข่าวลือ. ผู้ใช้ปรับทั้งสองงบผ่านหน้าเกมได้. ค่าเหล่านี้เป็นเพดาน *จำนวนเพื่อนยืนยันแล้ว* ต่อ origin/report; ไม่รับรองว่าจะถึงทุก Agent ในเครือข่ายเบาบาง.
+- **IHAVE / IWANT / ACK**: Adaptive ส่งเพียง Message ID ก่อน ผู้รับขอ Payload เต็มเฉพาะข้อความที่ยังไม่มี (มี ACK และ retry ถ้า control packet หาย). มี **digest repair** ไปหาเพื่อน 2 ตัวทุก 12 ticks เพื่อซ่อมข้อมูลที่พลาด หรือส่งให้เพื่อนที่เจอใหม่.
+- **Store–Carry–Forward (simulated)**: แต่ละ Agent เก็บหลักฐานแยกกัน และเมื่อเปิดการเคลื่อนที่ สามารถส่ง/ซ่อมเมื่อเกิดการพบเพื่อนใหม่โดยไม่เพิ่มระยะวิทยุปลอม. *ไม่ใช่ DTN production implementation*, ยังไม่มีการจัดการแบตเตอรี่และ buffer อายุข้อความในระยะยาว.
+- **Network diagnostics**: แสดงจำนวน Agent ที่มีเส้นทางเชื่อมกับต้นทาง *ณ Tick ปัจจุบัน*, จำนวน isolated, ACK/Retry และจำนวน Agent ที่ได้รับรายงานตรวจพื้นที่ก่อนข่าวลือ. เมื่อไม่เชื่อมกันจะแสดงคำเตือนอย่างชัดเจน (ไม่มีการเทเลพอร์ต Packet).
+- **Experiment comparison**: เปรียบเทียบ 5 Protocol คือ Flooding, Gossip (reliable), Fanout, Anti-Entropy, Adaptive Gossip ด้วย world/seed/range/loss/latency ชุดเดียวกัน. เพิ่มคอลัมน์ `factFirst` และ `rumorOnly` เพื่อไม่ให้หลงเข้าใจว่าแค่ส่งน้อยที่สุดคือดีสุด. วิธีที่ใช้ ACK มี overhead control packets; อย่าเปรียบเทียบกับรุ่นเก่าที่ไม่ได้รวม ACK โดยไม่ระบุเงื่อนไข.
+
+## ข้อควรระวัง
+- เครือข่าย **ไม่ต่อถึงกันจริง** ที่สัญญาณสั้น แม้โปรโตคอลดี ก็ส่งข้ามไม่ได้จน Agent เคลื่อนที่เข้ามาพบกัน
+- **หลักฐานภาคสนามมาก่อนข่าว** ถือเป็นตัวชี้วัดงานวิจัย ไม่ใช่หลักฐานว่าตัว Agent สรุปความจริงถูกต้องทุกกรณี
+- เครื่องจำลองใช้เซนเซอร์ที่ตอบความจริงเสมอ ยังไม่มี sensor error, authenticated origin, cryptographic proof, adversarial nodes หรือการพิสูจน์อิสระของผู้รายงานในโลกจริง
+- การตั้งงบส่งข่าวลือให้ต่ำลดความเสี่ยงข่าวลือแพร่เร็ว แต่ย่อมอาจทำให้ Scout ได้ข่าวช้าและผู้รับหลักฐานน้อยลงได้; **ไม่มีโปรโตคอลใดชนะทุกมิติ** ให้ดู Coverage, Fact-first, Verified, Rumor-only, Bytes, Retries พร้อมกัน
+- แก้เฉพาะ PeerMesh Lab; ไม่แก้ HP, RRT, การยิง หรือฟิสิกส์ของ RRT Arena
+
+**Validation**: `node --test network_lab_core.test.cjs`, `node tools/network_lab_browser.cjs` (Playwright/Chromium 320/393/1365px), GitHub Actions ยืนยันทุกชุดทดสอบก่อน Merge. New regression includes two connected peers with seed 2 and no loss (old Gossip never sent), 100% loss bounded, water true/false, mobile sparse, 1,000 agents replay and UI five-protocol comparison.
+
+---
+
 # PeerMesh Lab V1.1 — ข่าวลือเรื่องแหล่งน้ำ: มีจริง / ไม่มีจริง
 
 **[เปิดทดลองบนเว็บ](https://nustanakritwithai.github.io/RRT-Game-Lab/network-lab.html)**
