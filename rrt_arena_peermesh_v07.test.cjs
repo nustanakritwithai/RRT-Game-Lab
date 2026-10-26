@@ -29,17 +29,17 @@ test('dropped first packet is retried with backoff; real ACK stops retries',()=>
  assert.equal(M.offer(a,sight(1),1).accepted,true);
  const [first]=M.due(a,1,{receiver:'B2',inRange:true});
  assert.equal(M.due(a,1.1,{receiver:'B2',inRange:true}).length,0);
- const later=M.due(a,1.5,{receiver:'B2',inRange:true});
+ const later=M.due(a,2.05,{receiver:'B2',inRange:true});
  assert.equal(later.length,1);
  assert.equal(later[0].meshId,first.meshId,'retransmits same observation');
- const received=M.receive(b,later[0],1.9);
+ const received=M.receive(b,later[0],2.4);
  assert.equal(received.deliver,true);
  assert.equal(received.ack.type,'PM_ACK');
- M.offer(b,received.ack,1.9);
- const [ack]=M.due(b,1.9,{receiver:'B1',inRange:true});
+ M.offer(b,received.ack,2.4);
+ const [ack]=M.due(b,2.4,{receiver:'B1',inRange:true});
  assert.equal(ack.type,'PM_ACK');
- assert.equal(M.receive(a,ack,2.3).reason,'ACKED');
- assert.equal(M.due(a,2,{receiver:'B2',inRange:true}).length,0);
+ assert.equal(M.receive(a,ack,2.8).reason,'ACKED');
+ assert.equal(M.due(a,2.9,{receiver:'B2',inRange:true}).length,0);
  assert.equal(M.stats(a).acknowledged,1);
  assert.equal(M.stats(a).retries,1);
 });
@@ -85,6 +85,18 @@ test('received SUPPORT is only a short-lived voluntary search hint, not a sighti
  assert.deepEqual(M.supportGoal(b,1.4,()=>true),{x:80,y:50});
  assert.equal(M.supportGoal(b,3,()=>true),null);
  assert.equal(M.supportGoal(b,1.3,()=>false),null);
+});
+test('short-lived BID is best-effort, does not trigger ACK storm or repeated retries',()=>{
+ const a=M.createPeer('B1'),b=M.createPeer('B2');
+ const bid={type:'BID',source:'own_sensor',sender:'B1',receiver:'B2',targetId:'R1',
+  quality:.8,seenAt:1,deliverAt:1.3,expiresAt:2.3};
+ assert.equal(M.offer(a,bid,1).accepted,true);
+ const [p]=M.due(a,1,{receiver:'B2',inRange:true});
+ assert.equal(M.receive(b,p,1.4).deliver,true);
+ assert.equal(M.receive(b,p,1.4).ack,null);
+ assert.deepEqual(M.due(a,2,{receiver:'B2',inRange:true}),[]);
+ assert.equal(M.stats(a).retries,0);
+ assert.equal(M.stats(a).queued,0);
 });
 test('SIGHTING has finite TTL and cannot be emitted if not first-hand',()=>{
  const a=M.createPeer('B1');
