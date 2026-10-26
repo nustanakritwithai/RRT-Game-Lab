@@ -70,9 +70,26 @@ test('runtime exposes formation choice while original duel2 remains the default'
  const html=fs.readFileSync(require('node:path').join(__dirname,'index.html'),'utf8');
  assert.match(html,/id="duel2Formation"/);
  assert.match(html,/formationCore=globalThis\.RRTArenaFormation/);
- assert.match(html,/team\.formation=formationCore\.createFormation/);
- assert.match(html,/formationCore\.peersFor\(team\.formation,bot\.id\)/);
+ assert.match(html,/formationCore\.createFormation\(duel2UI\.formation\.value/);
+ assert.match(html,/formationCore\.peersFor\(team\.formations\[bot\.team\],bot\.id\)/);
  assert.match(html,/window\.__rrtDuel2Debug=/);
  assert.match(html,/function setupDuel2\(\)/);
  assert.match(html,/function loopDuel2Step\(dt\)/);
+});
+
+test('extended identity modules admit B12/R12 but reject fake cross-team radio',()=>{
+ const D=require('./rrt_arena_duel_v0615.js'),L=require('./rrt_arena_leaderless_v0613.js');
+ const self={id:'B12',team:'blue',hp:120,x:0,y:0,ammo:6,maxAmmo:6,maxHp:120};
+ const mate={id:'B11',team:'blue',hp:120,x:20,y:0};
+ const enemy={id:'R12',team:'red',hp:120,x:100,y:0};
+ assert.equal(D.chooseTarget(self,[{id:'R12',status:'visible',position:{x:100,y:0},age:0}]),'R12');
+ const own=D.sendSightings(null,self,mate,{
+ R12:{id:'R12',x:100,y:0,status:'visible',lastSeen:1,confidence:1}},1,{range:50});
+ assert.equal(own.queue.length,1);
+ assert.equal(D.receive(D.makeInbox(),own.queue,'B11',2).sightings.R12.targetId,'R12');
+ assert.equal(D.sendSightings(null,self,enemy,{
+ R12:{id:'R12',x:100,y:0,status:'visible',lastSeen:1,confidence:1}},1,{range:200}).queue.length,0);
+ const tr={R12:{id:'R12',x:100,y:0,status:'visible'}};
+ assert.equal(L.sendBid(null,self,mate,tr,'R12',1,{range:50}).queue.length,1);
+ assert.equal(L.sendBid(null,self,enemy,tr,'R12',1,{range:200}).queue.length,0);
 });
