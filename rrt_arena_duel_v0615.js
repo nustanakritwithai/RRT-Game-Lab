@@ -19,12 +19,13 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function threatScore(self,track,scale){
  const near=1-clamp(distance(self,track.position)/Math.max(1,scale*.8),0,1);
  const rate=Number.isFinite(track.closingRate)?track.closingRate:0;
- const approaching=.36*clamp(rate/Math.max(1,scale*.28),0,1);
+ const approaching=.40*clamp(rate/Math.max(1,scale*.28),0,1);
  const departing=.09*clamp(-rate/Math.max(1,scale*.25),0,1);
  const stale=track.status==='remembered'?.55*clamp(track.age/4,0,1):0;
  return near+approaching-departing-stale;
 }
-function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12}={}){
+function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12,
+ now=null,lastSwitchAt=-Infinity,minHoldSeconds=0,emergencyMargin=.32}={}){
  if(!point(self))return null;
  const known=(tracks||[]).filter(t=>t&&(red(t.id)||blue(t.id)))
   .filter(t=>point(t.position)&&['visible','remembered'].includes(t.status)&&Number.isFinite(t.age));
@@ -34,9 +35,16 @@ function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12}={}){
   threatScore(self,b,arena)-threatScore(self,a,arena)||
   a.age-b.age||a.id.localeCompare(b.id));
  const best=known[0],previous=known.find(t=>t.id===current);
- if(previous&&previous.status===best.status&&
-  threatScore(self,best,arena)-threatScore(self,previous,arena)<
-    (Number.isFinite(switchMargin)?Math.max(0,switchMargin):.12))return previous.id;
+ if(previous&&previous.status===best.status){
+  const advantage=threatScore(self,best,arena)-threatScore(self,previous,arena);
+  // Hold the current visible threat briefly to avoid restarting RRT for a
+  // tiny advantage. Unseen/dead previous targets are NOT protected by dwell.
+  if(Number.isFinite(now)&&Number.isFinite(lastSwitchAt)&&
+     now-lastSwitchAt<Math.max(0,minHoldSeconds)&&
+     advantage<Math.max(0,emergencyMargin))return previous.id;
+  if(advantage<(Number.isFinite(switchMargin)?Math.max(0,switchMargin):.12))
+   return previous.id;
+ }
  return best.id;
 }
 function resolve(bots,elapsed,limit=150){
