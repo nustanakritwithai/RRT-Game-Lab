@@ -96,22 +96,23 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  <select id="scenarioMode"><option value="duel">⚔️ ดวล 1 ต่อ 1</option><option value="duel2">⚔️⚔️ Buddy / Group / Squad</option><option value="multi">🛡️ BLUE ระยะไกล VS ฝูงประชิด</option></select></div>
  <div id="duel2Panel" class="duel2Panel" hidden>
   <div class="duel2Controls">
-   <label for="duel2Formation">หน่วยที่แข่งขัน<select id="duel2Formation">
+   <label for="duel2Formation">ขนาดหน่วย<select id="duel2Formation">
     <option value="buddy2">Buddy 2 · 2v2</option>
     <option value="buddy3">Buddy 3 · 3v3</option>
     <option value="group22">Group 2+2 · 4v4</option>
     <option value="group23">Group 2+3 · 5v5</option>
     <option value="group33">Group 3+3 · 6v6</option>
-    <option value="squad2222">Squad (2+2)+(2+2) · 8v8</option>
-    <option value="squad2323">Squad (2+3)+(2+3) · 10v10</option>
-    <option value="squad3333">Squad (3+3)+(3+3) · 12v12</option>
+    <option value="squad2222">Squad 2+2 | 2+2 · 8v8</option>
+    <option value="squad2323">Squad 2+3 | 2+3 · 10v10</option>
+    <option value="squad3333">Squad 3+3 | 3+3 · 12v12</option>
    </select></label>
-   <label for="duel2TeamMode">BLUE Team<select id="duel2TeamMode"><option value="independent">🔷🔷 แยกกันตัดสินใจ</option><option value="cooperative">📡 สื่อสาร P2P</option></select></label>
+   <label for="duel2TeamMode">BLUE Team<select id="duel2TeamMode"><option value="independent">🔷🔷 แยกกันตัดสินใจ</option><option value="cooperative">📡 สื่อสาร P2P เดิม</option><option value="adaptive">🧠 PeerMesh Tactical V0.7</option></select></label>
    <label for="duel2RadioLoss">ข้อความสูญหาย<select id="duel2RadioLoss"><option value="0">0%</option><option value="20">20%</option><option value="50">50%</option><option value="100">100%</option></select></label>
    <label for="duel2RadioDelay">ความหน่วงเพิ่ม<select id="duel2RadioDelay"><option value="0">0s</option><option value="0.3">0.3s</option><option value="0.6">0.6s</option><option value="1.2">1.2s</option></select></label>
   </div>
   <div id="duel2Status" class="duel2Status" aria-live="polite">B1 · B2 vs R1 · R2 — พร้อมเริ่มการต่อสู้</div>
-  <p class="duel2Hint">AI รุ่นเดียวกันทุกตัว · ทีม Buddy 2/3 · สองทีมเป็นหนึ่งกลุ่ม · สองกลุ่มเป็นหนึ่งหมู่ · วิทยุไม่ให้สิทธิ์ยิง</p>
+  <div id="duel2MeshStatus" class="duel2Status" aria-live="polite" hidden>PeerMesh: ไม่มีข้อมูล</div>
+  <p class="duel2Hint">Buddy 2/3 · สองทีมต่อกลุ่ม · สองกลุ่มต่อหมู่ · AI ส่วนตัวทุกตัว · วิทยุไม่อนุญาตให้ยิง</p>
  </div>
  <div id="multiPanel" class="multiPanel" hidden>
   <div class="multiSummary"><span class="multiChip" id="multiVisible">เห็น 0</span><span class="multiChip" id="multiKnown">จำได้ 0</span><span class="multiChip" id="multiFocus">เป้าหมาย: —</span><span class="multiChip" id="multiEliminated">กำจัด 0</span></div>
@@ -1961,6 +1962,152 @@ function exploreGoal(inbox,self,now,free=()=>false){
 return Object.freeze({chooseTarget,resolve,projectileContact,makeInbox,prune,sendSightings,receive,exploreGoal});
 });
 </script>
+<script id="peerMeshTacticalCore">
+/* RRT Arena PeerMesh Tactical V0.7.
+ * Private per-agent outbox and dedup memory. The common arena simulates only
+ * physical radio delivery/loss; there is no shared tactical brain or truth oracle.
+ */
+(function(root,factory){'use strict';const api=factory();root.RRTArenaPeerMesh=api;
+ if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+'use strict';
+const actor=id=>typeof id==='string'&&/^[BR][1-9]\d{0,2}$/.test(id);
+const teammates=(a,b)=>actor(a)&&actor(b)&&a!==b&&a[0]===b[0];
+const enemy=(a,b)=>actor(b)&&b[0]!==a[0];
+const finite=n=>typeof n==='number'&&Number.isFinite(n);
+const point=p=>p&&finite(p.x)&&finite(p.y);
+const types=['SIGHTING','BID','ACK','NACK','NEED_SUPPORT','PM_ACK'];
+const rank={PM_ACK:0,NEED_SUPPORT:1,NACK:2,ACK:2,BID:3,SIGHTING:4};
+const maxAttempts=3;
+ // RTT-sensitive team chat: sighting and urgent self-status deserve delivery
+ // receipts; newer BID/ACK/NACK quickly supersede older tactical negotiation.
+ const needsAck=type=>type==='SIGHTING'||type==='NEED_SUPPORT';
+const counters=()=>({offered:0,suppressed:0,sent:0,retries:0,acknowledged:0,
+ duplicates:0,stale:0,received:0,expired:0,invalid:0,supports:0});
+function createPeer(id){
+ if(!actor(id))throw Error('Invalid peer');
+ return {id,nextId:1,pending:new Map(),seen:new Map(),supportHint:null,counters:counters()};
+}
+function support(self,to,now){
+ if(!self||!actor(self.id)||!teammates(self.id,to)||!point(self)||!finite(self.hp)||!finite(now))return null;
+ return {type:'NEED_SUPPORT',source:'own_status',sender:self.id,receiver:to,
+  x:self.x,y:self.y,hp:Math.max(0,self.hp),seenAt:now,deliverAt:now+.3,expiresAt:now+1.15};
+}
+function valid(peer,m,now){
+ if(!m||!types.includes(m.type)||m.sender!==peer.id||
+  !teammates(m.sender,m.receiver)||!finite(now)||!finite(m.seenAt)||
+  m.seenAt>now||!finite(m.expiresAt)||m.expiresAt<=now||
+  !finite(m.deliverAt)||m.deliverAt>m.expiresAt||m.deliverAt<m.seenAt)return false;
+ if(m.type==='PM_ACK')
+  return m.source==='own_decision'&&typeof m.replyTo==='string'&&/^pm-[BR][1-9]\d{0,2}-\d+$/.test(m.replyTo);
+ if(m.type==='NEED_SUPPORT')
+  return m.source==='own_status'&&point(m)&&finite(m.hp)&&m.hp>=0;
+ if(!enemy(peer.id,m.targetId))return false;
+ if(m.type==='SIGHTING')
+  return m.source==='own_sensor'&&m.originId===peer.id&&point(m)&&
+   finite(m.confidence)&&m.confidence>=0&&m.confidence<=1;
+ if(m.type==='BID')
+  return m.source==='own_sensor'&&finite(m.quality)&&m.quality>=0&&m.quality<=1;
+ return m.source==='own_decision';
+}
+const keyFor=m=>m.receiver+':'+m.type+':'+(m.targetId||m.replyTo||'self');
+function offer(peer,packet,now){
+ if(!valid(peer,packet,now)){
+  peer.counters.invalid++;return {accepted:false,reason:'INVALID'};
+ }
+ const key=keyFor(packet),old=peer.pending.get(key);
+ if(old&&packet.type!=='PM_ACK'&&packet.seenAt<=old.message.seenAt+1e-6){
+  peer.counters.suppressed++;return {accepted:false,reason:'COALESCED'};
+ }
+ const msg={...packet,meshId:'pm-'+peer.id+'-'+peer.nextId++};
+ peer.pending.set(key,{message:msg,attempts:0,nextAt:now,priority:rank[packet.type]});
+ peer.counters.offered++;
+ return {accepted:true,id:msg.meshId};
+}
+function prune(peer,now){
+ for(const [key,p] of peer.pending){
+  if(p.message.expiresAt<=now){peer.pending.delete(key);peer.counters.expired++;}
+ }
+ for(const [key,expiry] of peer.seen)if(expiry<=now)peer.seen.delete(key);
+ if(peer.supportHint&&peer.supportHint.expiresAt<=now)peer.supportHint=null;
+}
+function due(peer,now,{receiver=null,inRange=true,maxPackets=3}={}){
+ if(!finite(now))return [];
+ prune(peer,now);
+ if(!inRange||!teammates(peer.id,receiver))return [];
+ const options=[...peer.pending.values()].filter(p=>
+  p.message.receiver===receiver&&p.nextAt<=now&&p.attempts<maxAttempts);
+ options.sort((a,b)=>a.priority-b.priority||
+  a.message.seenAt-b.message.seenAt||a.message.meshId.localeCompare(b.message.meshId));
+ const packets=[],limit=Math.max(0,Math.min(5,Math.trunc(maxPackets)||0));
+ for(const p of options.slice(0,limit)){
+  const delay=Math.max(0,p.message.deliverAt-p.message.seenAt);
+  const deliverAt=now+delay;
+  if(deliverAt>=p.message.expiresAt)continue; // never schedule already expired evidence
+  p.attempts++;
+  peer.counters.sent++;
+  if(p.attempts>1)peer.counters.retries++;
+  p.nextAt=needsAck(p.message.type)?
+   now+.96*Math.pow(2,p.attempts-1):Infinity;
+  packets.push({...p.message,deliverAt});
+ }
+ // Noncritical negotiations and PM_ACK are best-effort one-shot packets.
+ // If a delivery receipt is lost, the source may retry its original SIGHTING.
+ for(const [key,p] of peer.pending)if(!needsAck(p.message.type)&&p.nextAt===Infinity)
+  peer.pending.delete(key);
+ return packets;
+}
+function receive(peer,packet,now){
+ if(!packet||!finite(now)||!teammates(packet.sender,peer.id)||
+  packet.receiver!==peer.id||!finite(packet.seenAt)||!finite(packet.deliverAt)||
+  packet.deliverAt>now||!finite(packet.expiresAt)||packet.expiresAt<=now){
+  peer.counters.stale++;return {deliver:false,reason:'STALE',ack:null};
+ }
+ if(packet.type==='PM_ACK'){
+  if(packet.source!=='own_decision'||typeof packet.replyTo!=='string')
+   return {deliver:false,reason:'INVALID_ACK',ack:null};
+  for(const [key,p] of peer.pending){
+   if(p.message.meshId===packet.replyTo&&p.message.receiver===packet.sender){
+    peer.pending.delete(key);peer.counters.acknowledged++;
+    return {deliver:false,reason:'ACKED',ack:null};
+   }
+  }
+  return {deliver:false,reason:'UNKNOWN_ACK',ack:null};
+ }
+ if(typeof packet.meshId!=='string'||!/^pm-[BR][1-9]\d{0,2}-\d+$/.test(packet.meshId)||
+  !types.includes(packet.type)||packet.type==='PM_ACK'||
+  (packet.type==='SIGHTING'&&
+   (packet.source!=='own_sensor'||packet.originId!==packet.sender||
+    !enemy(peer.id,packet.targetId)||!point(packet)))||
+  (packet.type==='BID'&&(packet.source!=='own_sensor'||!enemy(peer.id,packet.targetId)))||
+  (['ACK','NACK'].includes(packet.type)&&
+   (packet.source!=='own_decision'||!enemy(peer.id,packet.targetId)))||
+  (packet.type==='NEED_SUPPORT'&&(packet.source!=='own_status'||!point(packet)))){
+  peer.counters.invalid++;return {deliver:false,reason:'INVALID',ack:null};
+ }
+ const ack=needsAck(packet.type)?{type:'PM_ACK',source:'own_decision',sender:peer.id,
+  receiver:packet.sender,replyTo:packet.meshId,seenAt:now,
+  deliverAt:now+.30,expiresAt:now+1.1}:null;
+ if((peer.seen.get(packet.meshId)||-Infinity)>now){
+  peer.counters.duplicates++;return {deliver:false,reason:'DUPLICATE',ack};
+ }
+ peer.seen.set(packet.meshId,Math.min(packet.expiresAt,now+4));
+ peer.counters.received++;
+ if(packet.type==='NEED_SUPPORT'){
+  peer.supportHint={x:packet.x,y:packet.y,from:packet.sender,
+   expiresAt:Math.min(packet.expiresAt,packet.seenAt+1.15)};
+  peer.counters.supports++;
+ }
+ return {deliver:true,reason:'ACCEPTED',ack};
+}
+function supportGoal(peer,now,free=()=>false){
+ const s=peer?.supportHint;
+ return s&&finite(now)&&s.expiresAt>now&&point(s)&&free(s)?{x:s.x,y:s.y}:null;
+}
+function stats(peer){return {...peer.counters,queued:peer.pending.size,seen:peer.seen.size};}
+return Object.freeze({createPeer,support,offer,prune,due,receive,supportGoal,stats});
+});
+</script>
 <script id="formationCore">
 /* RRT ARENA Experimental Formation Scale — Buddy 2/3 -> Group -> Squad.
  * Pure organizational topology: no sensors, no central tactical commander,
@@ -2043,13 +2190,15 @@ return Object.freeze({PRESETS,createFormation,peersFor,summary});
 const $=id=>document.getElementById(id);
 // Optional ?seed=N for reproducible experiments; without it the game stays truly random.
 const benchmarkSeed=(()=>{const v=new URLSearchParams(location.search).get('seed');if(v===null||!/^\d{1,9}$/.test(v))return null;let a=Number(v)>>>0;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};return Number(v);})();
-const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense,teamCore=globalThis.RRTArenaTeam,coopCore=globalThis.RRTArenaCoop,commsCore=globalThis.RRTArenaPrivateRadio,leaderless=globalThis.RRTArenaLeaderless,evidenceCore=globalThis.RRTArenaEvidence,duel2Core=globalThis.RRTArenaDuel2,formationCore=globalThis.RRTArenaFormation;
+const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense,teamCore=globalThis.RRTArenaTeam,coopCore=globalThis.RRTArenaCoop,commsCore=globalThis.RRTArenaPrivateRadio,leaderless=globalThis.RRTArenaLeaderless,evidenceCore=globalThis.RRTArenaEvidence,duel2Core=globalThis.RRTArenaDuel2,
+ meshCore=globalThis.RRTArenaPeerMesh,formationCore=globalThis.RRTArenaFormation;
 const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),activeDefense:$('activeDefense'),defenseStat:$('defenseStat'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
 let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]},B1:{danger:[],encounters:[]},B2:{danger:[],encounters:[]},R1:{danger:[],encounters:[]},R2:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
 const colors={blue:'#4dcfff',red:'#ff638d'};
 const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict'),enemyMode:$('multiEnemyMode'),rangedDefense:$('multiRangedDefense'),mobile:$('multiMobile'),teamMode:$('blueTeamMode'),teamStatus:$('blueTeamStatus'),evidenceStatus:$('blueEvidenceStatus'),radioLoss:$('teamRadioLoss'),radioDelay:$('teamRadioDelay')};
-const duel2UI={panel:$('duel2Panel'),formation:$('duel2Formation'),teamMode:$('duel2TeamMode'),radioLoss:$('duel2RadioLoss'),radioDelay:$('duel2RadioDelay'),status:$('duel2Status')};
+const duel2UI={panel:$('duel2Panel'),formation:$('duel2Formation'),teamMode:$('duel2TeamMode'),radioLoss:$('duel2RadioLoss'),
+ radioDelay:$('duel2RadioDelay'),status:$('duel2Status'),meshStatus:$('duel2MeshStatus')};
 const multiModes={patrol:'ลาดตระเวน',wander:'เดินสุ่ม',flee:'หนี',stay:'หยุดนิ่ง',approach:'เข้าหา BLUE',hunt:'ไล่ล่าจากที่เคยเห็น'};
 const rangedModes={sentry:'🔫 ป้อมยิง',patrol:'🔫 ลาดตระเวนยิง',hunter:'🔫 ไล่ล่าแล้วยิง'};
 const incomingEnemyMode=new URLSearchParams(location.search).get('enemy');
@@ -2059,7 +2208,8 @@ multiUI.teamMode.value=teamParams.get('blue')==='2'?(teamParams.get('team')==='c
 multiUI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
 multiUI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
 duel2UI.formation.value=Object.hasOwn(formationCore.PRESETS,teamParams.get('formation'))?teamParams.get('formation'):'buddy2';
-duel2UI.teamMode.value=teamParams.get('dteam')==='coop'?'cooperative':'independent';
+duel2UI.teamMode.value=teamParams.get('dteam')==='adaptive'?'adaptive':
+ teamParams.get('dteam')==='coop'?'cooperative':'independent';
 duel2UI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
 duel2UI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
 let scenario=teamParams.get('mode')==='multi'?'multi':teamParams.get('mode')==='duel2'?'duel2':'duel';
@@ -2076,10 +2226,22 @@ function withRngStream(name,fn){
 // Transport operates on outgoing packets only; never makes a tactical decision.
 function sendRadioPacket(build){
  const before=team.radio,attempted=build(before);
- // Sender-side delta suppression is counted, but no skipped packet is
- // delivered or treated as a second independent observation.
+ // Existing observation-change rate limits are preserved for all modes.
  if(duel2Active()&&Number.isFinite(attempted?.suppressed))
   team.suppressedSightings=(team.suppressedSightings||0)+attempted.suppressed;
+ if(duel2Active()&&team.mode==='adaptive'){
+  // Only new packets enter the SENDER's private PeerMesh outbox.
+  // Shared radio queue remains physical transport, never shared decisions.
+  const newPackets=(attempted.queue||[]).filter(p=>!(before.queue||[]).includes(p));
+  for(const packet of newPackets){
+   const sender=bots.find(b=>b.id===packet.sender&&b.hp>0);
+   if(!sender||!sender.peerMesh)continue;
+   const result=meshCore.offer(sender.peerMesh,packet,elapsed);
+   if(!result.accepted)team.peerMeshSuppressed++;
+  }
+  team.radio={queue:before.queue.slice(),lastSent:{...(attempted.lastSent||before.lastSent)}};
+  return {sent:0,dropped:0,queued:newPackets.length};
+ }
  const net=leaderless.applyNetwork(before,attempted,{
   loss:Number((duel2Active()?duel2UI.radioLoss:multiUI.radioLoss).value)/100,
   delay:Number((duel2Active()?duel2UI.radioDelay:multiUI.radioDelay).value),
@@ -2089,8 +2251,34 @@ function sendRadioPacket(build){
  team.radioDropped=(team.radioDropped||0)+net.dropped;
  return net;
 }
+// PeerMesh V0.7: each agent decides what to send and whether retry is due.
+// This function only applies physical radio range/loss/delay to those packets.
+function flushDuel2PeerMesh(){
+ if(!duel2Active()||team.mode!=='adaptive')return;
+ for(const bot of bots){
+  if(bot.hp<=0||!bot.peerMesh)continue;
+  const peers=formationCore.peersFor(team.formations[bot.team],bot.id);
+  for(const peerId of peers){
+   const peer=bots.find(p=>p.id===peerId&&p.hp>0);
+   if(!peer)continue;
+   const packets=meshCore.due(bot.peerMesh,elapsed,{receiver:peer.id,
+    inRange:dist(bot,peer)<=S*.95,maxPackets:2});
+   if(!packets.length)continue;
+   const before=team.radio,attempted={queue:before.queue.concat(packets),lastSent:{...before.lastSent}};
+   const net=leaderless.applyNetwork(before,attempted,{
+    loss:Number(duel2UI.radioLoss.value)/100,
+    delay:Number(duel2UI.radioDelay.value),
+    rand:()=>rngStreams.next('radio'),queueLimit:Math.max(240,bots.length*48)});
+   team.radio=net.radio;team.radioSent+=net.sent;team.radioDropped+=net.dropped;
+   team.bidsSent+=packets.filter(p=>p.type==='BID').length;
+   team.peerAcks+=packets.filter(p=>p.type==='ACK').length;
+  }
+ }
+}
 const multiActive=()=>scenario==='multi';
 const duel2Active=()=>scenario==='duel2';
+const duel2TeamRadioOn=()=>duel2Active()&&
+ (team.mode==='cooperative'||team.mode==='adaptive');
 const teamDuo=()=>multiActive()&&team.blues.length===2;
 const livingBlues=()=>team.blues.filter(b=>b.hp>0);
 function teamFriendClear(actor,point,radius=2.05){return !teamDuo()||team.blues.every(b=>b===actor||b.hp<=0||dist(point,b)>=R*radius);}
@@ -2135,12 +2323,12 @@ function setupDuel2(){
     const a=step*Math.PI/6,radiusPx=radius*R*1.6;
     const p={x:clamp(W*slot.x+Math.cos(a)*radiusPx,R+4,W-R-4),
      y:clamp(H*slot.y+Math.sin(a)*radiusPx,R+4,H-R-4)};
-    if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>R*2.75)){chosen=p;break;}
+    if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(formations.blue.agents.length>8?R*2.30:R*2.75))){chosen=p;break;}
    }
   }
   if(!chosen){for(let y=R+5;y<H-R-5&&!chosen;y+=R*1.3)
    for(let x=R+5;x<W-R-5;x+=R*1.3){
-    const p={x,y};if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>R*2.75)){chosen=p;break;}
+    const p={x,y};if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(formations.blue.agents.length>8?R*2.30:R*2.75))){chosen=p;break;}
    }}
   if(!chosen)throw new Error('No collision-free formation spawn '+slot.id);
   const b=spawnBot('blue',chosen.x,chosen.y,slot.id);
@@ -2161,6 +2349,7 @@ function setupDuel2(){
   bot.brain=bot.duelSearchBrain;bot.duelTargetId=null;bot.duelVisible=Object.create(null);
   bot.duelInbox=duel2Core.makeInbox();bot.bidInbox=leaderless.emptyInbox();
   bot.evidenceLedger=evidenceCore.emptyLedger();
+  bot.peerMesh=meshCore.createPeer(bot.id);bot.meshLastSupportAt=-Infinity;
   bot.duelRangeHistory=Object.create(null);bot.duelSwitches=0;bot.duelLastSwitchAt=-Infinity;
   bot.duelDefense={
    cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,
@@ -2173,6 +2362,7 @@ function setupDuel2(){
   evidenceAccepted:0,evidenceDuplicate:0,evidenceConflict:0,evidenceRejected:0,
   bidsSent:0,bidsReceived:0,negotiatedYields:0,peerAcks:0,heldFire:0,laneMoves:0,
   blockedFriendlyShots:0,suppressedSightings:0,targetSwitches:0,focusOverlapSamples:0,focusOverlap:0,
+  peerMeshSuppressed:0,peerMeshDelivered:0,peerMeshSupports:0,peerMeshInvalid:0,
   shotsFired:Object.fromEntries(bots.map(b=>[b.id,0]))};
 }
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
@@ -2214,7 +2404,7 @@ function exportReplay(){if(!timeline.length)return;
 function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
 function updateControls(){ui.start.textContent=phase==='ended'?'▶ รอบต่อไป':phase==='paused'?'▶ เล่นต่อ':phase==='running'?'▶ กำลังดวล':'▶ เริ่มดวล';ui.start.disabled=phase==='running';duel2UI.teamMode.disabled=duel2Active()&&phase==='running';if(multiActive()){multiUI.plus.disabled=multiUI.minus.disabled=multi.melee&&phase==='running';multiUI.preset.disabled=multi.melee&&phase==='running';multiUI.teamMode.disabled=phase==='running';}ui.pause.disabled=phase==='ready'||phase==='ended';ui.pause.textContent=phase==='paused'?'▶ เล่นต่อ':'⏸ หยุด';ui.dot.classList.toggle('on',phase==='running');ui.live.textContent=({ready:'ยังไม่เริ่ม',running:'กำลังต่อสู้',paused:'หยุดชั่วคราว',ended:'จบรอบแล้ว'})[phase];ui.wall.classList.toggle('active',tool==='wall');ui.order.classList.toggle('active',tool==='order');stage.classList.toggle('editing',tool!=='none');}
 function startGame(){if(phase==='ended'){round++;setupRound();phase='running';log('เริ่มรอบที่ '+round);}
- else if(phase==='ready'){phase='running';log(duel2Active()?'B1/B2 ปะทะ R1/R2 · เริ่มดวล 2 ต่อ 2':'บอตทั้งสองออกปฏิบัติการ เริ่มค้นหาเส้นทาง RRT');}
+ else if(phase==='ready'){phase='running';log(duel2Active()?('Buddy/Group/Squad '+(team.formations?.blue.agents.length||2)+'v'+(team.formations?.red.agents.length||2)+' · เริ่มดวล'):'บอตทั้งสองออกปฏิบัติการ เริ่มค้นหาเส้นทาง RRT');}
  else if(phase==='paused'){phase='running';log('เล่นต่อ');}hideOverlay();updateControls();}
 function pauseGame(){if(phase==='running'){phase='paused';showOverlay('⏸️','หยุดชั่วคราว','กด “เล่นต่อ” เพื่อให้บอตกลับมาค้นหาเส้นทางและต่อสู้');}else if(phase==='paused'){phase='running';hideOverlay();}updateControls();}
 function resetGame(){multi.waveHistory=[];storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]},B1:{danger:[],encounters:[]},B2:{danger:[],encounters:[]},R1:{danger:[],encounters:[]},R2:{danger:[],encounters:[]}};round=1;scores={blue:0,red:0};phase='ready';setupRound();ui.log.innerHTML='';log('รีเซ็ตเกมและคะแนนทั้งหมด');showOverlay('⚔️',multiActive()?'BLUE ตัวเดิมกับหลายเป้าหมาย':'พร้อมให้บอตดวลกัน!',multiActive()?'BLUE ยิงระยะไกลปะทะบอตประชิดหลายตัว มีผลแพ้ชนะชัดเจน':'กด “เริ่มดวล” แล้วชมการตัดสินใจและเส้นทาง RRT ของทั้งสองตัว');showNotice('รีเซ็ตเรียบร้อย — กดเริ่มทดลอง');updateControls();}
@@ -3079,9 +3269,17 @@ function chooseGoal(bot){
   if(g&&dist(bot,g)>R*2){bot.reason='ค้นหาพื้นที่ที่ยังไม่ได้มองนานที่สุด';return g;}
  }
  if(kind==='search'||!foe){
+  if(duel2Active()&&team.mode==='adaptive'&&bot.hp>0&&
+     !Object.keys(bot.duelVisible||{}).length){
+   const hint=meshCore.supportGoal(bot.peerMesh,elapsed,p=>freePoint(p,R+2));
+   if(hint&&dist(bot,hint)>R*3){
+    bot.reason='PeerMesh: เพื่อนขอช่วย · ค้นหาจุดที่รายงาน (ยังยิงไม่ได้)';
+    return hint;
+   }
+  }
   // A reported enemy is a time-limited exploration hint, NOT a private
   // memory update and NEVER permission to fire through obstructed sight.
-  if(duel2Active()&&team.mode==='cooperative'){
+  if(duel2TeamRadioOn()){
    const goal=duel2Core.exploreGoal(bot.duelInbox,bot,elapsed,p=>freePoint(p,R+2));
    if(goal&&dist(bot,goal)>R*2){
     bot.reason='กำลังตรวจจุดที่เพื่อนรายงานทางวิทยุ (ยังยิงไม่ได้)';
@@ -3449,11 +3647,27 @@ function senseDuel2World(){
   bot.duelInbox=duel2Core.prune(bot.duelInbox,elapsed);
   bot.bidInbox=leaderless.prune(bot.bidInbox,elapsed);
   // Both teams use IDENTICAL peer transport rules and uncertainty handling.
-  if(team.mode==='cooperative'){
+  if(duel2TeamRadioOn()){
    const incoming=teamCore.receive(team.radio,bot.id,elapsed,{ttl:3.5});
    team.radio=incoming.radio;team.radioDelivered=(team.radioDelivered||0)+incoming.received.length;
    const validated=[],disputed=new Set();
    for(const packet of incoming.received){
+    if(!formationCore.peersFor(team.formations[bot.team],bot.id).includes(packet.sender)){
+     team.evidenceRejected++;continue;
+    }
+    if(team.mode==='adaptive'){
+     const verdict=meshCore.receive(bot.peerMesh,packet,elapsed);
+     if(verdict.ack)meshCore.offer(bot.peerMesh,verdict.ack,elapsed);
+     if(!verdict.deliver){
+      if(verdict.reason==='DUPLICATE')team.peerMeshSuppressed++;
+      else if(verdict.reason==='STALE'||verdict.reason==='INVALID')team.peerMeshInvalid++;
+      continue;
+     }
+     team.peerMeshDelivered++;
+     // Self-reported ally position is a short-lived SEARCH hint, not enemy
+     // visibility, enemy memory, target selection or permission to fire.
+     if(packet.type==='NEED_SUPPORT'){team.peerMeshSupports++;continue;}
+    }
     if(packet.type==='BID'||packet.type==='ACK'||packet.type==='NACK'){
      validated.push(packet);
      continue;
@@ -3485,7 +3699,7 @@ function senseDuel2World(){
    scale:S,now:elapsed,lastSwitchAt:bot.duelLastSwitchAt,
    minHoldSeconds:1,emergencyMargin:.3
   }),resolution=null;
-  if(team.mode==='cooperative'&&selected&&visibleNow[selected]){
+  if(duel2TeamRadioOn()&&selected&&visibleNow[selected]){
    resolution=leaderless.negotiate(bot,visibleNow,selected,bot.bidInbox,elapsed,
     {scale:S,criticalDistance:R*3.25,maxExtraDistance:.25});
    if(resolution.changed&&visibleNow[resolution.targetId]){
@@ -3502,45 +3716,50 @@ function senseDuel2World(){
    if(selected)log(bot.id+' เลือกเป้าหมายที่ตนเองรับรู้ '+selected,bot.team);
   }else if(selected)bot.brain=bot.duelBrains[selected];
   bot.seenStatus=botKnowledge(bot).status;
-  if(team.mode==='cooperative'){
-   // Topology is known membership only, not a world-truth teammate target
-   // registry. All radio packets carry observations from THIS fighter's sensor.
-   const neighborIds=formationCore.peersFor(team.formations[bot.team],bot.id);
+  if(duel2TeamRadioOn()){
+   const peers=formationCore.peersFor(team.formations[bot.team],bot.id);
    const reports=bots.length<=4?visibleNow:Object.fromEntries(
-    Object.entries(visibleNow).sort((a,b)=>(a[0]===selected?-1:0)-(b[0]===selected?-1:0)
-     ||dist(bot,a[1])-dist(bot,b[1])).slice(0,3));
-   for(const neighborId of neighborIds){
-    const peer=bots.find(p=>p.id===neighborId);
+    Object.entries(visibleNow).sort((a,b)=>dist(bot,a[1])-dist(bot,b[1])||
+     a[0].localeCompare(b[0])).slice(0,3));
+   const needsSupport=team.mode==='adaptive'&&bot.lastDamageAt>0&&
+    elapsed-bot.lastDamageAt<.65&&bot.hp<bot.maxHp*.90&&
+    elapsed-(bot.meshLastSupportAt??-Infinity)>.7;
+   for(const peerId of peers){
+    const peer=bots.find(p=>p.id===peerId&&p.hp>0);
     if(!peer)continue;
-    const limit=Math.max(240,bots.length*48);
+    if(needsSupport){
+     const report=meshCore.support(bot,peer.id,elapsed);
+     if(report)meshCore.offer(bot.peerMesh,report,elapsed);
+    }
     sendRadioPacket(r=>duel2Core.sendSightings(r,bot,peer,reports,elapsed,
      {range:S*.95,latency:.3,ttl:3.5,interval:.65,
-      minDisplacement:R*1.4,maxRefreshSeconds:2.25,queueLimit:limit}));
+      minDisplacement:R*1.4,maxRefreshSeconds:2.25,queueLimit:Math.max(240,bots.length*48)}));
     if(selected&&visibleNow[selected]){
      const attempt=sendRadioPacket(r=>leaderless.sendBid(r,bot,peer,visibleNow,selected,elapsed,
-      {range:S*.95,latency:.3,scale:S,interval:.4,stableInterval:.95,qualityDelta:.06,queueLimit:limit}));
+      {range:S*.95,latency:.3,scale:S,interval:.4,stableInterval:.95,
+       qualityDelta:.06,queueLimit:Math.max(240,bots.length*48)}));
      team.bidsSent=(team.bidsSent||0)+attempt.sent;
     }
     if(resolution?.type&&resolution.peerId===peer.id&&(resolution.previousTargetId||selected)){
      const attempt=sendRadioPacket(r=>leaderless.sendResponse(r,bot,peer,
-      resolution.previousTargetId||selected,resolution.type,elapsed,{range:S*.95,latency:.3,queueLimit:limit}));
+      resolution.previousTargetId||selected,resolution.type,elapsed,
+      {range:S*.95,latency:.3,queueLimit:Math.max(240,bots.length*48)}));
      if(resolution.type==='ACK')team.peerAcks=(team.peerAcks||0)+attempt.sent;
     }
    }
+   if(needsSupport)bot.meshLastSupportAt=elapsed;
   }
  }
+ flushDuel2PeerMesh();
  // Sample shared-target overlap for each team without sharing focus into an
  // agent's decision state. This is post-decision research telemetry only.
  for(const color of ['blue','red']){
   const members=bots.filter(b=>b.hp>0&&b.team===color&&b.duelTargetId);
   if(members.length<2)continue;
-  // Pairwise target overlap scales comparably from 2v2 to 12v12.
-  const pairs=members.length*(members.length-1)/2;
-  const count=Object.create(null);
-  for(const b of members)count[b.duelTargetId]=(count[b.duelTargetId]||0)+1;
+  const pairs=members.length*(members.length-1)/2,counts=Object.create(null);
+  for(const member of members)counts[member.duelTargetId]=(counts[member.duelTargetId]||0)+1;
   team.focusOverlapSamples=(team.focusOverlapSamples||0)+pairs;
-  team.focusOverlap=(team.focusOverlap||0)+Object.values(count)
-   .reduce((n,v)=>n+v*(v-1)/2,0);
+  team.focusOverlap=(team.focusOverlap||0)+Object.values(counts).reduce((n,k)=>n+k*(k-1)/2,0);
  }
 }
 function duel2Shoot(bot){
@@ -3726,8 +3945,8 @@ function updateDuel2HUD(){
  const teams=['blue','red'];
  for(const color of teams){
   const members=bots.filter(b=>b.team===color),alive=members.filter(b=>b.hp>0);
-  const maxHp=members.reduce((n,b)=>n+b.maxHp,0),maxAmmo=members.reduce((n,b)=>n+b.maxAmmo,0);
   const hp=members.reduce((n,b)=>n+Math.max(0,b.hp),0);
+  const maxHp=members.reduce((n,b)=>n+b.maxHp,0),maxAmmo=members.reduce((n,b)=>n+b.maxAmmo,0);
   const ammo=members.reduce((n,b)=>n+b.ammo,0);
   const lead=alive[0]||members[0],memInfo=botKnowledge(lead);
   ui[color+'Hp'].textContent=Math.ceil(hp)+'/'+maxHp;
@@ -3743,12 +3962,21 @@ function updateDuel2HUD(){
  }
  const blueAlive=bots.filter(b=>b.team==='blue'&&b.hp>0).length,
   redAlive=bots.filter(b=>b.team==='red'&&b.hp>0).length;
- const count=team.formations?.blue.agents.length||2;
- duel2UI.status.textContent='B '+blueAlive+'/'+count+' · R '+redAlive+'/'+count+' · '+
-  (team.mode==='cooperative'?'📡 P2P':'อิสระ')+
+ const total=team.formations?.blue.agents.length||2;
+ duel2UI.status.textContent='B '+blueAlive+'/'+total+' · R '+redAlive+'/'+total+' · '+
+  (team.mode==='adaptive'?'🧠 PeerMesh':team.mode==='cooperative'?'📡 P2P':'อิสระ')+
   ' · ส่ง '+(team.radioSent||0)+' · ถึง '+(team.radioDelivered||0)+
   ' · หลุด '+(team.radioDropped||0)+' · เป้า↔ '+(team.targetSwitches||0)+' · ลดซ้ำ '+(team.suppressedSightings||0)+' · ขัดแย้ง '+(team.evidenceConflict||0)+
   ' · 🧭 มุมยิงใหม่ '+(team.laneMoves||0);
+ const pm=duel2Active()&&team.mode==='adaptive';
+ duel2UI.meshStatus.hidden=!pm;
+ if(pm){
+  const m=bots.filter(b=>b.peerMesh).map(b=>meshCore.stats(b.peerMesh));
+  const sum=k=>m.reduce((n,s)=>n+(s[k]||0),0);
+  duel2UI.meshStatus.textContent='PeerMesh ทีม B/R เท่าเทียม · ส่งซ้ำ '+sum('retries')+
+   ' · ยืนยัน '+sum('acknowledged')+' · ตัดซ้ำ '+sum('duplicates')+
+   ' · รอ '+sum('queued')+' · ขอช่วย '+sum('supports');
+ }
 }
 function updateHUD(){if(!bots.length)return;
  if(duel2Active())updateDuel2HUD();else for(const bot of (multiActive()?[bots[0]]:bots)){const id=bot.team;
@@ -3903,11 +4131,14 @@ window.__rrtDuel2Debug={
   const members=duel2Active()?bots:[];
   return {scenario,phase,time:elapsed,version:document.title,
    mode:team.mode,formation:duel2UI.formation.value,
-   organization:team.formations?{blue:team.formations.blue.groups,red:team.formations.red.groups,links:team.formations.blue.links}:null,
+   organization:team.formations?{blue:team.formations.blue.groups,red:team.formations.red.groups,
+    links:team.formations.blue.links}:null,
    packetLoss:Number(duel2UI.radioLoss.value),
    delay:Number(duel2UI.radioDelay.value),winner:finalResult,
    fighters:members.map(b=>({id:b.id,team:b.team,hp:b.hp,ammo:b.ammo,
     x:b.x,y:b.y,planCount:b.planCount,intent:b.intent,
+    peers:team.formations?formationCore.peersFor(team.formations[b.team],b.id):[],
+    groupId:b.formationMember?.groupId,teamId:b.formationMember?.teamId,
     target:b.duelTargetId,visible:Object.keys(b.duelVisible||{}),
     received:Object.keys(b.duelInbox?.sightings||{}),receivedBids:Object.keys(leaderless.prune(b.bidInbox,elapsed).bids),
     memoryCount:Object.keys(b.duelBrains||{}).length,
@@ -3917,6 +4148,11 @@ window.__rrtDuel2Debug={
      rangedDefense:rangedDefenseActive(),keepMoving:mobileActive()},
     stats:{hp:b.maxHp,ammo:b.maxAmmo,speed:b.moveSpeed,fire:b.baseFire,range:b.range,aim:b.aim},
     shots:team.shotsFired?.[b.id]||0,laneHolds:b.duelLaneHolds||0,focusSwitches:b.duelSwitches||0})),
+   peerMesh:{active:team.mode==='adaptive',
+    agents:members.map(b=>({id:b.id,team:b.team,
+     ...(b.peerMesh?meshCore.stats(b.peerMesh):{})})),
+    suppressed:team.peerMeshSuppressed||0,received:team.peerMeshDelivered||0,
+    supports:team.peerMeshSupports||0,invalid:team.peerMeshInvalid||0},
    radio:{sent:team.radioSent||0,delivered:team.radioDelivered||0,dropped:team.radioDropped||0,
     queued:team.radio?.queue?.length||0,bids:team.bidsSent||0,
     acks:team.peerAcks||0,negotiations:team.negotiatedYields||0,
@@ -3928,7 +4164,7 @@ window.__rrtDuel2Debug={
    suppressedSightings:team.suppressedSightings||0,
    bullets:bullets.length,score:{...scores}};
  },
- setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative'].includes(mode))return false;
+ setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative','adaptive'].includes(mode))return false;
   duel2UI.teamMode.value=mode;resetGame();return true;},
  forceHp:(id,hp)=>{const b=duel2Active()?bots.find(x=>x.id===id):null;
   if(!b||!Number.isFinite(hp)||hp<0||hp>b.maxHp)return false;

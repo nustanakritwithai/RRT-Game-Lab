@@ -93,3 +93,18 @@ test('extended identity modules admit B12/R12 but reject fake cross-team radio',
  assert.equal(L.sendBid(null,self,mate,tr,'R12',1,{range:50}).queue.length,1);
  assert.equal(L.sendBid(null,self,enemy,tr,'R12',1,{range:200}).queue.length,0);
 });
+
+test('PeerMesh Tactical supports 12-member IDs and refuses cross-side support/sightings',()=>{
+ const Mesh=require('./rrt_arena_peermesh_v07.js');
+ const a=Mesh.createPeer('B12'),b=Mesh.createPeer('B11');
+ assert.equal(Mesh.createPeer('R12').id,'R12');
+ const packet={type:'SIGHTING',source:'own_sensor',sender:'B12',receiver:'B11',
+  originId:'B12',targetId:'R12',x:12,y:15,confidence:1,seenAt:1,deliverAt:1.3,expiresAt:3};
+ assert.equal(Mesh.offer(a,packet,1).accepted,true);
+ const due=Mesh.due(a,1,{receiver:'B11',maxPackets:2});
+ assert.equal(due.length,1);
+ const received=Mesh.receive(b,{...due[0],deliverAt:1.3},1.4);
+ assert.equal(received.deliver,true);
+ assert.equal(received.ack.receiver,'B12');
+ assert.equal(Mesh.offer(a,{...packet,receiver:'R12',seenAt:1.5},1.5).accepted,false);
+});
