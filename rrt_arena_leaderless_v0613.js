@@ -57,18 +57,30 @@
   const reload=self.reload>0?-.10:0;
   return Math.round(clamp(.2+position+health+ammo+reload,0,1)*10000)/10000;
  }
- function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400}={}){
+ function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400,
+  stableInterval=null,qualityDelta=.06}={}){
   const original=radio||{queue:[],lastSent:{}},queue=(original.queue||[]).slice(),lastSent={...(original.lastSent||{})};
   const local=tracks?.[selectedId];
   if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||
    !Number.isFinite(now)||!targetId(selectedId)||!finite(local)||local.status!=='visible'||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
   const key='BID:'+from.id+'>'+to.id;
-  if(now-(lastSent[key]??-Infinity)<interval)return {queue,lastSent};
+  const quality=bidQuality(from,local,scale),prior=lastSent[key];
+  const previousAt=Number.isFinite(prior)?prior:
+   prior&&Number.isFinite(prior.at)?prior.at:-Infinity;
+  // Duplex two-agent Duel uses event-based updates: changed target/quality
+  // can refresh after the original minimum interval. Stable BID packets
+  // refresh before TTL expiry and cannot create extra independent evidence.
+  const stable=Number.isFinite(stableInterval)&&prior&&
+   prior.targetId===selectedId&&Number.isFinite(prior.quality)&&
+   Math.abs(prior.quality-quality)<Math.max(0,Number.isFinite(qualityDelta)?qualityDelta:.06);
+  const gate=stable?Math.max(interval,stableInterval):interval;
+  if(now-previousAt<gate)return {queue,lastSent};
   queue.push({type:'BID',sender:from.id,receiver:to.id,targetId:selectedId,
-   quality:bidQuality(from,local,scale),source:'own_sensor',seenAt:now,
+   quality,source:'own_sensor',seenAt:now,
    deliverAt:now+Math.max(0,latency),expiresAt:now+Math.max(0,ttl)});
-  lastSent[key]=now;
+  // Legacy modes retain their numeric lastSent book and unchanged timing.
+  lastSent[key]=Number.isFinite(stableInterval)?{at:now,targetId:selectedId,quality}:now;
   return {queue:queue.slice(-240),lastSent};
  }
  function sendResponse(radio,from,to,target,kind,now,{range=Infinity,latency=.3,ttl=1.3,interval=.9}={}){
