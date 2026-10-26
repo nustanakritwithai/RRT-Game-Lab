@@ -11,7 +11,7 @@ const conditions=[
  {name:'radio_outage',query:'&dteam=coop&loss=100'}
 ];
 const file='file://'+path.resolve(__dirname,'../index.html');
-const output=path.resolve(__dirname,'../benchmarks/duel2-v0616.json');
+const output=path.resolve(__dirname,'../benchmarks/duel2-v0617.json');
 const sum=(items,key)=>items.reduce((n,a)=>n+(a[key]||0),0);
 async function run(){
  const browser=await chromium.launch();
@@ -52,6 +52,7 @@ async function run(){
      blueHp:last.fighters.filter(b=>b.team==='blue').reduce((n,b)=>n+b.hp,0),
      redHp:last.fighters.filter(b=>b.team==='red').reduce((n,b)=>n+b.hp,0),
      friendlyBlocks:last.blockedFriendly,heldFire:last.heldFire,
+     targetSwitches:last.targetSwitches,focusOverlap:last.focusOverlap,focusOverlapSamples:last.focusOverlapSamples,\n     suppressedSightings:last.suppressedSightings,
      laneMoves:last.laneMoves,
      sent:last.radio.sent,delivered:last.radio.delivered,dropped:last.radio.dropped,
      evidenceAccepted:last.radio.evidenceAccepted,conflicts:last.radio.conflicts,
@@ -77,9 +78,13 @@ async function run(){
    averageBlueShots:sum(rr,'shotsBlue')/rr.length,averageRedShots:sum(rr,'shotsRed')/rr.length,
    averageLaneMoves:sum(rr,'laneMoves')/rr.length,
    averageFriendlyBlocks:sum(rr,'friendlyBlocks')/rr.length,
+   averageTargetSwitches:sum(rr,'targetSwitches')/rr.length,
+   averageSuppressedSightings:sum(rr,'suppressedSightings')/rr.length,
+   focusOverlapPercent:sum(rr,'focusOverlapSamples')?100*sum(rr,'focusOverlap')/sum(rr,'focusOverlapSamples'):null,
+   averageRadioSent:sum(rr,'sent')/rr.length,
    accepted:sum(rr,'evidenceAccepted'),conflicts:sum(rr,'conflicts')};
  });
- const report={type:'simulation-only',version:'0.6.16',seedCount:seeds.length,
+ const report={type:'simulation-only',version:'0.6.17',seedCount:seeds.length,
   seedPolicy:'paired deterministic world, independent named random streams',
   viewport:[393,852],horizonSeconds:25,
   caveat:'Smoke sample only; no causal or general win-rate claim. Unfinished matches are NOT losses.',
