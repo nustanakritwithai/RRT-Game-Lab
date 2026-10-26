@@ -13,16 +13,38 @@ const blue=id=>id==='B1'||id==='B2';
 const red=id=>id==='R1'||id==='R2';
 const sameTeam=(a,b)=>fighter(a)&&fighter(b)&&a[0]===b[0]&&a!==b;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function chooseTarget(self,tracks,current=null){
+// Threat priority from each fighter's own observations: visible > remembered.
+// Closing speed is RELATIVE range change from that fighter's sensor, not world velocity.
+// Significant hysteresis prevents RRT resets for nearly equal targets.
+function threatScore(self,track,scale){
+ const near=1-clamp(distance(self,track.position)/Math.max(1,scale*.8),0,1);
+ const rate=Number.isFinite(track.closingRate)?track.closingRate:0;
+ const approaching=.40*clamp(rate/Math.max(1,scale*.28),0,1);
+ const departing=.09*clamp(-rate/Math.max(1,scale*.25),0,1);
+ const stale=track.status==='remembered'?.55*clamp(track.age/4,0,1):0;
+ return near+approaching-departing-stale;
+}
+function chooseTarget(self,tracks,current=null,{scale=400,switchMargin=.12,
+ now=null,lastSwitchAt=-Infinity,minHoldSeconds=0,emergencyMargin=.32}={}){
  if(!point(self))return null;
- const known=(tracks||[]).filter(t=>t&&red(t.id)||t&&blue(t.id))
+ const known=(tracks||[]).filter(t=>t&&(red(t.id)||blue(t.id)))
   .filter(t=>point(t.position)&&['visible','remembered'].includes(t.status)&&Number.isFinite(t.age));
  if(!known.length)return null;
+ const arena=Math.max(1,Number.isFinite(scale)?scale:400);
  known.sort((a,b)=>(a.status==='visible'?0:1)-(b.status==='visible'?0:1)||
-  distance(self,a.position)-distance(self,b.position)||a.age-b.age||a.id.localeCompare(b.id));
+  threatScore(self,b,arena)-threatScore(self,a,arena)||
+  a.age-b.age||a.id.localeCompare(b.id));
  const best=known[0],previous=known.find(t=>t.id===current);
- if(previous&&previous.status===best.status&&
-    distance(self,previous.position)<=distance(self,best.position)*1.18+4)return previous.id;
+ if(previous&&previous.status===best.status){
+  const advantage=threatScore(self,best,arena)-threatScore(self,previous,arena);
+  // Hold the current visible threat briefly to avoid restarting RRT for a
+  // tiny advantage. Unseen/dead previous targets are NOT protected by dwell.
+  if(Number.isFinite(now)&&Number.isFinite(lastSwitchAt)&&
+     now-lastSwitchAt<Math.max(0,minHoldSeconds)&&
+     advantage<Math.max(0,emergencyMargin))return previous.id;
+  if(advantage<(Number.isFinite(switchMargin)?Math.max(0,switchMargin):.12))
+   return previous.id;
+ }
  return best.id;
 }
 function resolve(bots,elapsed,limit=150){
@@ -58,22 +80,35 @@ function prune(inbox,now){
   if(fighter(id)&&v?.expiresAt>now&&v.seenAt<=now&&point(v))result.sightings[id]={...v};
  return result;
 }
-function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3.5,interval=.65}={}){
+function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3.5,interval=.65,minDisplacement=16,maxRefreshSeconds=2.25}={}){
  const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
+ let suppressed=0;
  if(!from||!to||!sameTeam(from.id,to.id)||
   from.hp<=0||to.hp<=0||!point(from)||!point(to)||!Number.isFinite(now)||distance(from,to)>range)
-  return {queue,lastSent};
+  return {queue,lastSent,suppressed};
  for(const tr of Object.values(tracks||{})){
   if(!tr||!fighter(tr.id)||tr.id[0]===from.id[0]||tr.status!=='visible'||!point(tr)||!Number.isFinite(tr.lastSeen)||
     tr.lastSeen>now||now-tr.lastSeen>ttl)continue;
   const key='D2:'+from.id+'>'+to.id+':'+tr.id;
-  if(now-(lastSent[key]??-Infinity)<interval)continue;
+  const previous=lastSent[key];
+  const lastAt=Number.isFinite(previous)?previous:
+   previous&&Number.isFinite(previous.at)?previous.at:-Infinity;
+  if(now-lastAt<interval)continue;
+  // Origin is still the sender's own sensor. A repeat isn't independent
+  // evidence. Send a bounded heartbeat so packet loss cannot silence a track.
+  const refresh=Math.max(interval,Number.isFinite(maxRefreshSeconds)?maxRefreshSeconds:2.25);
+  const movement=Math.max(0,Number.isFinite(minDisplacement)?minDisplacement:16);
+  if(previous&&point(previous)&&now-lastAt<refresh&&distance(previous,tr)<movement){
+   suppressed++;continue;
+  }
   queue.push({type:'SIGHTING',source:'own_sensor',sender:from.id,receiver:to.id,
    originId:from.id,targetId:tr.id,x:tr.x,y:tr.y,confidence:clamp(tr.confidence??1,0,1),
    seenAt:tr.lastSeen,deliverAt:now+Math.max(0,latency),expiresAt:tr.lastSeen+ttl});
-  lastSent[key]=now;
+  // Stored in the sender-side transport rate book, NOT peer shared memory.
+  // Network loss still consumes this transmission, like a real packet.
+  lastSent[key]={at:now,x:tr.x,y:tr.y};
  }
- return {queue:queue.slice(-240),lastSent};
+ return {queue:queue.slice(-240),lastSent,suppressed};
 }
 function receive(inbox,messages,owner,now,{ttl=3.5}={}){
  const result=prune(inbox,now);
