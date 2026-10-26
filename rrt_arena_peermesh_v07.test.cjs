@@ -38,7 +38,7 @@ test('dropped first packet is retried with backoff; real ACK stops retries',()=>
  M.offer(b,received.ack,1.6);
  const [ack]=M.due(b,1.6,{receiver:'B1',inRange:true});
  assert.equal(ack.type,'PM_ACK');
- assert.equal(M.receive(a,ack,1.7).reason,'ACKED');
+ assert.equal(M.receive(a,ack,2.0).reason,'ACKED');
  assert.equal(M.due(a,2,{receiver:'B2',inRange:true}).length,0);
  assert.equal(M.stats(a).acknowledged,1);
  assert.equal(M.stats(a).retries,1);
