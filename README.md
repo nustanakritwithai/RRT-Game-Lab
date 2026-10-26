@@ -1,3 +1,15 @@
+# RRT ARENA V0.6.17 — Local Threat Targeting & Radio Information Efficiency
+
+- **[เปิดโหมดต่อสู้ 2v2](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2)** · [รายงานวิจัย V0.6.17](COMBAT_INTELLIGENCE_V0617_TH.md)
+- BLUE B1/B2 และ RED R1/R2 ใช้ AI และสมรรถนะชุดเดิมทั้งหมด ไม่มีการเพิ่ม HP/Speed/Ammo/Damage/Fire Rate
+- Target Selection จัดลำดับภัยที่เคลื่อนเข้าหาจากการวัดระยะด้วยเซนเซอร์ส่วนตัว พร้อม **Target Dwell 1 วินาที** (แต่ตอบสนองฉุกเฉินได้) เพื่อไม่เปลี่ยนเป้าถี่; ข้อมูลจำเก่ามีน้ำหนักลดลง
+- P2P SIGHTING ส่งเมื่อข้อมูลเปลี่ยนพร้อม Heartbeat 2.25 วินาที; BID เดิมซ้ำจะเว้นช่วง 0.95 วินาที แต่เป้าหมายหรือคะแนนเปลี่ยนจะส่งได้เร็วกว่า เพื่อรักษาความสดภายใต้ Packet Loss
+- เก็บ Debug/Replay metrics: จำนวนเปลี่ยนเป้าหมาย, สัดส่วนการเลือกเป้าซ้ำ, จำนวนรายงานซ้ำที่ระบบยับยั้งก่อนส่ง
+- Evidence ยังคงตรวจต้นทาง/อายุข้อมูล; ข้อความวิทยุไม่เปิดสิทธิ์ยิงหรือเข้าถึง World State ของศัตรู
+- ต้องแยกผลจำลองออกจากหลักฐาน Deploy และยังไม่สามารถสรุป Win Rate จาก Smoke Benchmark 4 seeds × 25 วินาทีได้
+
+---
+
 # PeerMesh Lab V1.2 — Reliable / Evidence-Aware Adaptive Gossip
 
 **[เปิดหน้าเกม PeerMesh Lab](https://nustanakritwithai.github.io/RRT-Game-Lab/network-lab.html)** (หลังรวมโค้ดและ Deploy Pages สำเร็จ; branch นี้ไม่ใช่ Production จนกว่าจะยืนยัน URL จริง)
