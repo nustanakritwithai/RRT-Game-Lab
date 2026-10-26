@@ -17,7 +17,7 @@ jobs:
           node-version: '22'
       - name: Test original BLUE agent, multi-target sensor, melee-wave tactics and predictive swarm defense
         run: |
-          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs rrt_arena_private_radio_v0612.test.cjs rrt_arena_private_runtime_v0612.test.cjs rrt_arena_leaderless_v0613.test.cjs rrt_arena_evidence_v0614.test.cjs rrt_arena_duel_v0615.test.cjs rrt_arena_duel_runtime_v0615.test.cjs rrt_arena_combat_quality_v0616.test.cjs
+          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs rrt_arena_private_radio_v0612.test.cjs rrt_arena_private_runtime_v0612.test.cjs rrt_arena_leaderless_v0613.test.cjs rrt_arena_evidence_v0614.test.cjs rrt_arena_duel_v0615.test.cjs rrt_arena_duel_runtime_v0615.test.cjs rrt_arena_combat_quality_v0616.test.cjs rrt_arena_decision_v0617.test.cjs
       - name: Run PeerMesh deterministic simulation tests (1–1000 agents)
         run: node --test network_lab_core.test.cjs
       - name: Validate PeerMesh browser UI and smoke-test syntax
@@ -33,7 +33,7 @@ jobs:
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.16' index.html
+          grep -q 'RRT ARENA 06.17' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
@@ -85,8 +85,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: duel2-v0616-quality-report
-          path: benchmarks/duel2-v0616.json
+          name: duel2-v0617-quality-report
+          path: benchmarks/duel2-v0617.json
           if-no-files-found: warn
           retention-days: 30
 
