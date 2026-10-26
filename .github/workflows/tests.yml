@@ -33,7 +33,7 @@ jobs:
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.16' index.html
+          grep -q 'RRT ARENA 06.17' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
@@ -85,8 +85,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: duel2-v0616-quality-report
-          path: benchmarks/duel2-v0616.json
+          name: duel2-v0617-quality-report
+          path: benchmarks/duel2-v0617.json
           if-no-files-found: warn
           retention-days: 30
 
