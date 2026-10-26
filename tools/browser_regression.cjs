@@ -114,6 +114,30 @@ async function main(){
 
 
 
+  // Live browser: the same inline tactical module must prioritize a locally
+  // observed closing threat, and avoid radio copies without starving heartbeats.
+  const v617=await page.evaluate(()=>{
+   const mod=window.RRTArenaDuel2;
+   const self={id:'B1',x:0,y:0,hp:120},ally={id:'B2',x:10,y:0,hp:120};
+   const threat=mod.chooseTarget(self,[
+    {id:'R1',position:{x:62,y:0},status:'visible',age:0,closingRate:-30},
+    {id:'R2',position:{x:88,y:0},status:'visible',age:0,closingRate:150}
+   ],null,{scale:400});
+   const options={range:100,interval:.65,ttl:3.5,minDisplacement:18,maxRefreshSeconds:2.25};
+   const track=(at,x)=>({R1:{id:'R1',x,y:20,status:'visible',lastSeen:at,confidence:1}});
+   const one=mod.sendSightings(null,self,ally,track(1,100),1,options);
+   const two=mod.sendSightings(one,self,ally,track(1.8,100),1.8,options);
+   const three=mod.sendSightings(two,self,ally,track(3.5,100),3.5,options);
+   return {threat,initial:one.queue.length,unchanged:two.queue.length,
+    suppressed:two.suppressed,heartbeat:three.queue.length};
+  });
+  check(v617.threat==='R2','duel2: 2v2 local closing-threat priority works inside deployed HTML');
+  check(v617.initial===1&&v617.unchanged===1&&v617.suppressed===1&&
+   v617.heartbeat===2,'duel2: static SIGHTING deduplicated with bounded heartbeat');
+  check(['targetSwitches','focusOverlapSamples','suppressedSightings'].every(key=>
+   Number.isFinite(radioUp[key])&&radioUp[key]>=0),
+   'duel2: live research telemetry reports target focus and radio suppression');
+
   // Real combat regression: local visual ally B2/R2 blocks the line of fire.
   // On both teams the original RRT must find a NEW lateral lane without radio.
   for(const side of ['blue','red']){
