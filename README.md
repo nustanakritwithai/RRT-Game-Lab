@@ -1,3 +1,23 @@
+# RRT Arena — PeerMesh Tactical Team Radio V0.7 (Duel 2v2)
+
+**[ทดลอง 2v2 แบบ PeerMesh](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&dteam=adaptive&seed=83)** · [ระบบ Cooperative เดิม](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&dteam=coop&seed=83) · [Independent](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&seed=83)
+
+> **Release gate:** link changes are not live until the branch merges into `main`, GitHub Pages deploy succeeds at the exact merge SHA, and the page is checked. See [technical handoff](PEERMESH_TACTICAL_V07_HANDOFF_TH.md).
+
+- **Purpose:** Connect tested PeerMesh reliability and message-quality ideas to the existing **real** RRT Arena Duel 2v2. This is an optional symmetric mode, not a replacement for Cooperative or a change to Agent combat stats.
+- **Private PeerMesh per fighter:** packet priorities (urgent support > negotiation > sighting), bounded ACK/Retry/backoff, short TTL, retransmission dedup, freshness/coalescing and a voluntary ally search hint using only own reported coordinates.
+- **No central brain:** each B1/B2/R1/R2 retains separate sensors, memories and RRT decisions. The arena radio scheduler may measure range, loss and latency but cannot choose a target or teleport information.
+- **Safety invariant:** A P2P radio sighting is a search hint, not local vision or shoot permission. Existing evidence provenance/TTL and projectile/friendly-fire safety remain in effect. All four fighters run the same AI policies and stats.
+- **Compare:** `?mode=duel2&seed=83` Independent, `&dteam=coop` Cooperative, `&dteam=adaptive` PeerMesh, `&dteam=adaptive&loss=100` total outage. Do not infer tactical superiority from a few smoke matches.
+
+## QA
+
+`node --test rrt_arena_peermesh_v07.test.cjs` · `node tools/peermesh_duel2_browser.cjs` · `node tools/browser_regression.cjs` · `node tools/benchmark_duel2_quality.cjs`.
+
+The new PeerMesh module is bundled **inline** in `index.html` for offline support; source and inlined policy must match exactly, asserted by unit tests. GitHub Pages keeps the existing single HTML game artifact.
+
+---
+
 # RRT ARENA V0.6.17 — Local Threat Targeting & Radio Information Efficiency
 
 - **[เปิดโหมดต่อสู้ 2v2](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2)** · [รายงานวิจัย V0.6.17](COMBAT_INTELLIGENCE_V0617_TH.md)
