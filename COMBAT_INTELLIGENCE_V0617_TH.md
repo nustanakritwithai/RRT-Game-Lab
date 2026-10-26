@@ -15,13 +15,14 @@ Duel2 quality artifact 4 seeds × 3 รูปแบบ = 12 simulations, 25 seco
 
 ## สิ่งที่ปรับ
 1. **Local closing-threat priority** — ใช้การเปลี่ยนแปลงระยะทางจาก sensor ที่แต่ละตัวเห็นจริงสองครั้งติดต่อกัน; เป้าหมายที่กำลังปิดระยะอย่างรวดเร็วสามารถมีความเร่งด่วนสูงกว่าเป้าที่อยู่ใกล้แต่กำลังถอย
-2. **Target persistence / freshness** — ยังคงเป้าหมายก่อนเมื่อคะแนนต่างกันน้อย; เป้าที่มองเห็นจริงยังมีลำดับเหนือ memory; ข้อมูลจำที่เก่าเกินไปถูกลดน้ำหนัก
-3. **Delta + bounded heartbeat radio** — ไม่ส่งรายงานตำแหน่งที่ขยับไม่ถึง threshold ซ้ำ เพียงเพราะครบ interval แต่ต้องส่ง heartbeat ใหม่ภายใน 2.25 วินาทีเพื่อรองรับ Packet Loss (ข้อความเดิม TTL 3.5s)
+2. **Target persistence / freshness** — ยังคงเป้าหมายก่อนเมื่อคะแนนต่างกันน้อย; เพิ่มช่วงคงเป้าหมาย (1.0 วินาที) พร้อมทางออกฉุกเฉินเมื่อคะแนนภัยใหม่เหนือกว่าอย่างมีนัย หรือเป้าเก่าตาย/มองไม่เห็น; เป้าที่มองเห็นจริงมีลำดับเหนือ memory; ข้อมูลจำที่เก่าเกินไปถูกลดน้ำหนัก
+3. **Delta + bounded heartbeat radio** — ไม่ส่งรายงานตำแหน่งที่ขยับไม่ถึง threshold ซ้ำ เพียงเพราะครบ interval แต่ต้องส่ง heartbeat ใหม่ภายใน 2.25 วินาทีเพื่อรองรับ Packet Loss (ข้อความเดิม TTL 3.5s); BID ที่เป้าและคะแนนไม่เปลี่ยนมากยืด interval จาก 0.4 เป็น 0.95 วินาที (TTL 1.3s) แต่เป้า/คะแนนเปลี่ยนยังส่งเร็ว
 4. **Symmetry** — ทั้ง BLUE และ RED ใช้ policy และค่าที่สมมาตรกัน; ไม่เปลี่ยนการยิง สิทธิ์มองเห็น ระยะอาวุธ ฟิสิกส์ หรือเซนเซอร์ของอีกฝ่าย
 5. **Telemetry** — เก็บจำนวนครั้งเปลี่ยนเป้า ความซ้ำการเลือกเป้าหมายภายในทีม และจำนวนรายงานซ้ำที่ไม่ส่ง; แสดงผ่าน Debug, Replay และ Benchmark เพื่อวัดการเปลี่ยนแปลงจริง
 
 ## TDD & Release Gate
 - RED: PR #17 commit `0be17243b7603b7217cca502c36fa1d7b8e5c24b` Unit Tests ล้มเหลวที่ threat ranking / stale memory / duplicate packet / missing instrumentation ตามคาด
+- RED อีกครั้ง: Candidate แรก [CI #40336892672](https://github.com/nustanakritwithai/RRT-Game-Lab/actions/runs/40336892672) ผ่าน 4/4 Jobs แต่จาก 4 seeds พบว่า Cooperative ยังส่งวิทยุเฉลี่ย 345.25 เทียบ baseline 341.75 ข้อความต่อแมตช์ (ถึงแม้ยับยั้ง SIGHTING 26 ครั้ง) และมี Focus Switches เฉลี่ย ~70 ครั้งใน 25 วินาที — จึงเพิ่ม Target Dwell และ Stable BID ตามผลจริง
 - GREEN: ต้องผ่าน targeted tests และ regression บน exact HEAD ล่าสุด ทั้ง Node, Chromium 320/393/1365, original 1v1/swarm, PeerMesh และ Independent/Cooperative simulations
 - Release: Merge โดยตรวจ expected head SHA, GitHub Pages Deploy success, public title V0.6.17 และตรวจหน้าจอแบบ live
 - รายงานผลแยก SIMULATION ออกจาก PRODUCTION READBACK — ไม่มีการอ้างว่ารุ่นใหม่ชนะมากขึ้นหรือเกิด intelligence แบบเรียนรู้ด้วยตนเองหากไม่มีหลักฐาน
