@@ -302,3 +302,20 @@ test('an HQ falls only after a long uncontested siege',()=>{
  for(let k=0;k<C.RULES.hqSiegeTurns-1;k++){s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;assert.equal(s.sectors.find(x=>x.id==='C3').owner,'enemy','turn '+k);}
  s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;assert.equal(s.sectors.find(x=>x.id==='C3').owner,'player');
 });
+test('a contested victory sector scores for nobody',()=>{
+ let s=nova({vpLead:50});s.sectors.find(x=>x.id==='C2').owner='enemy';
+ const pu=s.units.find(u=>u.faction==='player');pu.sector='C2';s.sectors.find(x=>x.id==='C2').fort=2;
+ for(const u of s.units.filter(x=>x.faction==='enemy'))u.sector='S3';
+ s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;
+ assert.equal(s.factions.enemy.vp,0,'enemy holds C2 but it is contested');
+});
+test('unattended forts decay to their base level; attended ones do not',()=>{
+ let s=nova();const PL=s.sectors.find(x=>x.id==='S1');PL.fort=2;const N3=s.sectors.find(x=>x.id==='N3');N3.fort=2;
+ s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ assert.equal(s.sectors.find(x=>x.id==='S1').fort,1);assert.equal(s.sectors.find(x=>x.id==='N3').fort,1);
+ s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ assert.equal(s.sectors.find(x=>x.id==='S1').fort,0);assert.equal(s.sectors.find(x=>x.id==='N3').fort,1,'outpost keeps its base fort');
+ assert.equal(s.sectors.find(x=>x.id==='C1').fort,C.RULES.hqFort,'HQ keeps its base fort');
+ let t=nova();const u=t.units.find(x=>x.faction==='player');u.sector='S1';t.sectors.find(x=>x.id==='S1').fort=2;
+ t=C.resolveTurn(t,{player:[{unit:u.id,type:'hold'}],enemy:[]},noBattles).state;assert.equal(t.sectors.find(x=>x.id==='S1').fort,2);
+});

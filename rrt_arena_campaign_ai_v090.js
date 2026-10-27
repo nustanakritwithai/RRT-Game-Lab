@@ -62,7 +62,10 @@
    for(const n of nb(u.sector)){const s=sec(n),known=enemyAt(n),unknown=s.owner!==f&&s.confidence===0?1:0;
     const assault=s.owner===foe,p=winProb(u.size,known+(assault&&unknown?2:0),assault,s.fort??1);
     const gain=(s.owner===f?.25:1)*value(s),forward=((toFoe.get(u.sector)??9)-(toFoe.get(n)??9))*.6;
-    opts.push({o:{unit:u.id,type:'move',to:n},score:W.attack*(gain*p+forward)-W.risk*(1-p)*u.size*.5});}
+    // When behind on points, stepping into an enemy-held victory sector blocks its scoring (contest rule),
+    // which is worth doing even when the fight there is likely lost.
+    const block=behind&&s.victory&&s.owner===foe?3.5:0;
+    opts.push({o:{unit:u.id,type:'move',to:n},score:W.attack*(gain*p+forward)+block-W.risk*(1-p)*u.size*.5});}
    const threat=threatNear(u.sector);
    const holdOwn=here.owner===f?W.defend*value(here)*Math.min(2,threat/Math.max(1,u.size))+(threat>0&&(here.fort??0)<2?W.dig*1.2:0):W.attack*value(here)*.9;
    opts.push({o:{unit:u.id,type:'hold'},score:holdOwn});

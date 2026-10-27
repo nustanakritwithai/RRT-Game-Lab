@@ -9,7 +9,7 @@
 (function(root,factory){'use strict';const api=factory();root.RRTArenaCampaign=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const RULES=Object.freeze({maxUnits:4,supplyCap:12,startSupply:4,towerCost:3,injuryTurns:2,encircledInjuryTurns:3,
-  intelExpiry:4,maxFort:2,vpLead:10,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2,maxAgents:16,factoryEvery:2,battleRounds:3,hqSiegeTurns:4});
+  intelExpiry:4,maxFort:2,vpLead:8,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2,maxAgents:16,factoryEvery:2,battleRounds:3,hqSiegeTurns:4,contestedVpBlocked:true,fortDecay:true});
  const PRESET_BY_SIZE=Object.freeze({2:'buddy2',3:'buddy3',4:'group22',5:'group23',6:'group33',8:'squad2222',10:'squad2323',12:'squad3333'});
  const RADIO=Object.freeze([{loss:50,delay:0.6},{loss:20,delay:0.3},{loss:0,delay:0}]);
  const FACTIONS=Object.freeze(['player','enemy']);
@@ -42,7 +42,7 @@
  function create({seed=1,template='frontlineBasin',maxTurns=RULES.maxTurns,vpLead=RULES.vpLead,vpNeedsSupply=RULES.vpNeedsSupply}={}){
   const t=TEMPLATES[template];if(!t)throw new RangeError('Unknown map template '+template);
   const sectors=t.sectors.map(([id,name,terrain,owner,yieldPerTurn,special={}])=>({id,name,terrain,owner,yield:yieldPerTurn,
-   fort:special.hq?RULES.hqFort:(special.fort|0),tower:null,victory:!!special.victory,hq:special.hq||null,radioHill:!!special.radioHill,depot:!!special.depot,
+   fort:special.hq?RULES.hqFort:(special.fort|0),baseFort:special.hq?RULES.hqFort:(special.fort|0),tower:null,victory:!!special.victory,hq:special.hq||null,radioHill:!!special.radioHill,depot:!!special.depot,
    relay:!!special.relay,power:!!special.power,factory:!!special.factory,sensor:!!special.sensor}));
   const roster=[],units=[],factions={};
   for(const f of FACTIONS){
@@ -243,7 +243,12 @@
   for(const f of FACTIONS){const fac=s.factions[f];const connected=connectedSectors(s,f);
    fac.supply=Math.min(RULES.supplyCap,fac.supply+s.sectors.filter(x=>x.owner===f&&connected.has(x.id)).reduce((n,x)=>n+x.yield,0));
    // Victory sectors only score while linked to HQ by the faction's own supply line (overextension risk).
-   fac.vp+=s.sectors.filter(x=>x.victory&&x.owner===f&&(!s.vpNeedsSupply||connected.has(x.id))).length;}
+   // A victory sector with an enemy unit inside it (under attack / siege) scores for nobody.
+   fac.vp+=s.sectors.filter(x=>x.victory&&x.owner===f&&(!s.vpNeedsSupply||connected.has(x.id))&&
+    !(RULES.contestedVpBlocked&&s.units.some(u=>u.sector===x.id&&u.faction!==f))).length;}
+  // Unattended fortifications decay one level per turn down to the sector's built-in base.
+  if(RULES.fortDecay)for(const x of s.sectors){const base=x.baseFort|0;
+   if(x.fort>base&&x.owner&&!s.units.some(u=>u.sector===x.id&&u.faction===x.owner))x.fort--;}
   for(const a of s.roster)if(a.injuredTurns>0&&--a.injuredTurns===0)s.factions[a.faction].reserve.push(a.id);
   // A powered Factory produces one fresh agent (no experience) every few turns, up to the roster cap.
   if(s.turn%RULES.factoryEvery===0)for(const f of FACTIONS){const fac=s.factions[f];
