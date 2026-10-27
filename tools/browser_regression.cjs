@@ -31,7 +31,7 @@ async function main(){
   await page.goto(base);
   const duel=await page.evaluate(()=>{const d=window.__rrtArenaDebug;document.getElementById('start').click();const l0=null;d.advance(25);const s=d.getState(),v=d.validate();
    return {title:document.title,scenario:s.scenario,bots:s.bots.length,finite:s.bots.every(b=>[b.x,b.y,b.hp].every(Number.isFinite)),plans:s.bots.map(b=>b.planCount),v,phase:s.phase,scroll:document.documentElement.scrollWidth-document.documentElement.clientWidth};});
-  check(/RRT ARENA 08\.00/.test(duel.title),'title shows V0.8.0: '+duel.title);
+  check(/RRT ARENA 09\.00/.test(duel.title),'title shows V0.9.0: '+duel.title);
   check(duel.scenario==='duel'&&duel.bots===2,'duel mode has BLUE and RED');
   check(duel.finite&&duel.v.fightersFree&&duel.v.waypointsClear,'duel: finite state, fighters outside walls, waypoints collision-free');
   check(duel.plans.every(n=>n>0),'duel: both agents planned RRT routes '+duel.plans.join('/'));

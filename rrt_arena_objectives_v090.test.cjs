@@ -88,6 +88,8 @@ test('offline game page exposes mission mode, local runner goal and read-only de
   "missionCore.resolve(mission,bots,elapsed,150)",
   "missionCore.isRunner(bot.formationMember)"])
   assert.ok(html.includes(text),'missing gameplay integration: '+text);
+ assert.match(html,/timeline\.push\(\{t:stamp,objective:mission\?\.active/);
+ assert.match(html,/drawControlZone\(replayActive\?timeline/);
  const goal=html.slice(html.indexOf('function chooseGoal(bot){'),html.indexOf('function checkPlanning(bot,dt){'));
  assert.match(goal,/kind==='objective'/);
  const ai=html.slice(html.indexOf('function currentIntent(bot){'),html.indexOf('function chooseGoal(bot){'));
