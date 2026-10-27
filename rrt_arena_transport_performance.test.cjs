@@ -78,17 +78,16 @@ test('sender-local rate books preserve global radio throttle per source',()=>{
  const duel=require('./rrt_arena_duel_v0615.js');
  const from=(id)=>({id,team:'blue',hp:120,maxHp:120,ammo:6,maxAmmo:6,x:id==='B1'?0:15,y:0});
  const peer=from('B3'),tracks={R1:{id:'R1',x:100,y:50,status:'visible',lastSeen:1,confidence:1}};
- let global={queue:[],lastSent:{}},local=Object.create(null);
+ let global={queue:[],lastSent:{}},localBooks={B1:Object.create(null),B2:Object.create(null)};
  for(const bot of [from('B1'),from('B2'),from('B1'),from('B2')]){
   const now=bot.id==='B1'?2:2.2;
   const result=duel.sendSightings(global,bot,peer,tracks,now,{range:50});
   global=result;
-  const ownBook=bot.id==='B1'?local:(global.__other||Object.create(null));
-  const individual=duel.sendSightings({queue:[],lastSent:ownBook},bot,peer,tracks,now,{range:50});
-  if(bot.id==='B1')local=individual.lastSent;else global.__other=individual.lastSent;
+  const individual=duel.sendSightings({queue:[],lastSent:localBooks[bot.id]},bot,peer,tracks,now,{range:50});
+  localBooks[bot.id]=individual.lastSent;
  }
  for(const [key,value] of Object.entries(global.lastSent)){
-  const owner=key.startsWith('D2:B1>')?local:global.__other;
+  const owner=key.startsWith('D2:B1>')?localBooks.B1:localBooks.B2;
   assert.deepEqual(value,owner[key],'same rate state for '+key);
  }
 });
