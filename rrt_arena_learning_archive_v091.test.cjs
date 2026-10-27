@@ -12,7 +12,7 @@ const lessons=()=>{
 test('policy exports only a bounded tactical state, never HP/position/sensor or radio',()=>{
  const b=lessons(),policy=Archive.snapshot(b);
  assert.ok(policy);
- assert.equal(policy.style,'aggressive');
+ assert.equal(policy.style,'balanced','UCB tries balanced after cautious feedback');
  assert.equal(policy.contexts.contact.cautious.samples,1);
  const json=JSON.stringify(policy);
  for(const name of ['hp','position','ammo','targetId','duelVisible','radio','duelBrains'])
@@ -25,7 +25,7 @@ test('each fighter independently restores learned UCB scores across rounds',()=>
  const b=Archive.decode(Archive.encode(file));
  const fresh=L.create(true,'balanced');
  assert.equal(Archive.apply(fresh,b.policies.B1),true);
- assert.equal(fresh.style,'aggressive');
+ assert.equal(fresh.style,'balanced','restore must preserve learned next strategy');
  assert.equal(fresh.contexts.contact.cautious.samples,1);
  const r=L.create(true,'balanced');
  assert.equal(Archive.apply(r,b.policies.R1),false);
