@@ -61,7 +61,11 @@ async function run(){
    assert.ok(archive.policies[b.id]);
    const expected=archive.policies[b.id];
    assert.equal(b.learning.style,expected.style);
-   assert.deepEqual(b.learning.contexts,expected.contexts);
+   for(const key of ['contact','under_fire'])for(const style of ['balanced','aggressive','cautious']){
+    const observed=b.learning.contexts[key][style],prior=expected.contexts[key][style];
+    assert.equal(observed.samples,prior.samples);
+    assert.ok(Math.abs(observed.mean-prior.mean)<.00006,'published summary rounds means to 4 decimals');
+   }
   }
   const cleared=await page.evaluate(()=>{
    document.getElementById('duel2ClearTraining').click();
