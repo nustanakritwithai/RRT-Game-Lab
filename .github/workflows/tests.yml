@@ -34,6 +34,7 @@ jobs:
           node --check tools/benchmark_duel2_quality.cjs
           node --check rrt_arena_formation_v0618.js
           node --check tools/formation_browser.cjs
+          node --check tools/benchmark_formation_fullmatch.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
@@ -129,3 +130,30 @@ jobs:
           name: team-v0611-${{ matrix.team }}
           path: benchmarks/team-v0611/${{ matrix.team }}.json
           retention-days: 30
+
+formation-fullmatch:
+    name: Hierarchical Buddy / Group full-match research (150s)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium and Playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Complete seed-paired 150 second matches
+        run: |
+          node tools/benchmark_formation_fullmatch.cjs --seeds=83,311 --formations=buddy2,group23 --modes=independent,adaptive --out=benchmarks/formation-fullmatch-v08.json
+      - name: Upload full-match simulation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formation-v08-fullmatch-pilot
+          path: benchmarks/formation-fullmatch-v08.json
+          if-no-files-found: warn
+          retention-days: 30
+
