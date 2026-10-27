@@ -99,7 +99,11 @@
   const chosen=localTracks?.[chosenId];
   if(!finite(self)||!chosenId||!finite(chosen)||chosen.status!=='visible'||!Number.isFinite(now))return result;
   const peer=Object.values(prune(inbox,now).bids)
-   .find(b=>b.targetId===chosenId&&teammates(b.sender,self.id));
+   .filter(b=>b.targetId===chosenId&&teammates(b.sender,self.id))
+   // Local, received BID comparison only: never global enemy truth or a commander.
+   // Compare all peers, not the first packet that happened to arrive.
+   .sort((a,b)=>b.quality-a.quality||b.seenAt-a.seenAt||
+    Number(a.sender.slice(1))-Number(b.sender.slice(1)))[0];
   if(!peer)return result;
   result.peerId=peer.sender;
   const localBid=bidQuality(self,chosen,scale);

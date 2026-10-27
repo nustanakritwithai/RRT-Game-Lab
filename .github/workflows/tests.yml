@@ -30,7 +30,8 @@ jobs:
       - name: Verify benchmark script syntax
         run: node --check tools/benchmark_swarm.cjs
       - name: Verify Duel2 quality benchmark syntax
-        run: node --check tools/benchmark_duel2_quality.cjs
+        run: |
+          node --check tools/benchmark_duel2_quality.cjs
           node --check rrt_arena_formation_v0618.js
           node --check tools/formation_browser.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
