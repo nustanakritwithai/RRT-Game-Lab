@@ -2259,6 +2259,10 @@ function sendRadioPacket(build){
 // This function only applies physical radio range/loss/delay to those packets.
 function flushDuel2PeerMesh(){
  if(!duel2Active()||team.mode!=='adaptive')return;
+ // Simulation-only network transport: batch all already-selected peer packets
+ // into ONE loss/latency pass. The sender's private PeerMesh still chooses,
+ // prioritizes, ACKs and retries independently for every receiver.
+ const pendingPackets=[];
  for(const bot of bots){
   if(bot.hp<=0||!bot.peerMesh)continue;
   const peers=formationCore.peersFor(team.formations[bot.team],bot.id);
@@ -2267,17 +2271,20 @@ function flushDuel2PeerMesh(){
    if(!peer)continue;
    const packets=meshCore.due(bot.peerMesh,elapsed,{receiver:peer.id,
     inRange:dist(bot,peer)<=S*.95,maxPackets:2});
-   if(!packets.length)continue;
-   const before=team.radio,attempted={queue:before.queue.concat(packets),lastSent:{...before.lastSent}};
-   const net=leaderless.applyNetwork(before,attempted,{
-    loss:Number(duel2UI.radioLoss.value)/100,
-    delay:Number(duel2UI.radioDelay.value),
-    rand:()=>rngStreams.next('radio'),queueLimit:Math.max(240,bots.length*48)});
-   team.radio=net.radio;team.radioSent+=net.sent;team.radioDropped+=net.dropped;
-   team.bidsSent+=packets.filter(p=>p.type==='BID').length;
-   team.peerAcks+=packets.filter(p=>p.type==='ACK').length;
+   pendingPackets.push(...packets);
   }
  }
+ if(!pendingPackets.length)return;
+ const before=team.radio,attempted={
+  queue:before.queue.concat(pendingPackets),lastSent:{...before.lastSent}};
+ const net=leaderless.applyNetwork(before,attempted,{
+  loss:Number(duel2UI.radioLoss.value)/100,
+  delay:Number(duel2UI.radioDelay.value),
+  rand:()=>rngStreams.next('radio'),queueLimit:Math.max(240,bots.length*48)
+ });
+ team.radio=net.radio;team.radioSent+=net.sent;team.radioDropped+=net.dropped;
+ team.bidsSent+=pendingPackets.filter(p=>p.type==='BID').length;
+ team.peerAcks+=pendingPackets.filter(p=>p.type==='ACK').length;
 }
 const multiActive=()=>scenario==='multi';
 const duel2Active=()=>scenario==='duel2';
