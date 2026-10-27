@@ -170,7 +170,7 @@ test('coarse model is deterministic per seed and favours the larger side',()=>{
  assert.ok(big>280,'8 vs 4 attacker wins '+big+'/400');
 });
 test('coarse model: forts help the defender',()=>{
- let a0=0,a2=0;for(let k=0;k<400;k++){const b={attacker:{size:4},defender:{size:4},terrain:'ruins',seed:k};
+ let a0=0,a2=0;for(let k=0;k<400;k++){const b={kind:'assault',attacker:{size:6},defender:{size:4},terrain:'ruins',seed:k};
   if(C.coarseBattle({...b,fort:0}).winner==='attacker')a0++;if(C.coarseBattle({...b,fort:2}).winner==='attacker')a2++;}
  assert.ok(a2<a0);
 });
@@ -227,4 +227,15 @@ test('coarse model matches the measured real-battle table (M0-S3) within toleran
   let w=0;const N=400;for(let k=0;k<N;k++)if(C.coarseBattle({attacker:{size:row.a},defender:{size:row.b},fort:0,terrain:row.map,seed:k*31+7}).winner==='attacker')w++;
   assert.ok(Math.abs(w/N-row.pA)<=.12,`${row.a}v${row.b} ${row.map}: model ${(w/N).toFixed(2)} vs measured ${row.pA}`);
  }
+});
+test('assault model matches the measured fort table (pooled over terrains) within tolerance',()=>{
+ const rows=require('./benchmarks/v090_map/m0_fort_calibration.json').table;const pool={};
+ for(const x of rows){const k=x.a+':'+x.b+':'+x.fort;pool[k]=pool[k]||{a:x.a,b:x.b,fort:x.fort,w:0,n:0};pool[k].w+=x.aWins;pool[k].n+=x.n;}
+ for(const c of Object.values(pool)){let w=0;const N=600;
+  for(let k=0;k<N;k++)if(C.coarseBattle({kind:'assault',attacker:{size:c.a},defender:{size:c.b},fort:c.fort,terrain:'ruins',seed:k*13+5}).winner==='attacker')w++;
+  assert.ok(Math.abs(w/N-c.w/c.n)<=.12,`${c.a}v${c.b} fort ${c.fort}: model ${(w/N).toFixed(2)} vs measured ${(c.w/c.n).toFixed(2)}`);}
+});
+test('assault losers keep most of their unit (zone battles end on points)',()=>{
+ for(let k=0;k<200;k++){const r=C.coarseBattle({kind:'assault',attacker:{size:6},defender:{size:4},fort:1,terrain:'lanes',seed:k});
+  const lost=r.winner==='attacker'?r.casualties.defender:r.casualties.attacker,size=r.winner==='attacker'?4:6;assert.ok(lost<size,'loser not wiped');}
 });
