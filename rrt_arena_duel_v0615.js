@@ -8,9 +8,9 @@
 'use strict';
 const point=p=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const fighter=id=>/^(?:B|R)[12]$/.test(String(id));
-const blue=id=>id==='B1'||id==='B2';
-const red=id=>id==='R1'||id==='R2';
+const fighter=id=>/^[BR][1-9]\d{0,2}$/.test(String(id));
+const blue=id=>fighter(id)&&id[0]==='B';
+const red=id=>fighter(id)&&id[0]==='R';
 const sameTeam=(a,b)=>fighter(a)&&fighter(b)&&a[0]===b[0]&&a!==b;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Threat priority from each fighter's own observations: visible > remembered.
@@ -80,7 +80,7 @@ function prune(inbox,now){
   if(fighter(id)&&v?.expiresAt>now&&v.seenAt<=now&&point(v))result.sightings[id]={...v};
  return result;
 }
-function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3.5,interval=.65,minDisplacement=16,maxRefreshSeconds=2.25}={}){
+function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3.5,interval=.65,minDisplacement=16,maxRefreshSeconds=2.25,queueLimit=240}={}){
  const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
  let suppressed=0;
  if(!from||!to||!sameTeam(from.id,to.id)||
@@ -108,7 +108,7 @@ function sendSightings(radio,from,to,tracks,now,{range=Infinity,latency=.3,ttl=3
   // Network loss still consumes this transmission, like a real packet.
   lastSent[key]={at:now,x:tr.x,y:tr.y};
  }
- return {queue:queue.slice(-240),lastSent,suppressed};
+ return {queue:queue.slice(-Math.max(240,Math.floor(queueLimit)||240)),lastSent,suppressed};
 }
 function receive(inbox,messages,owner,now,{ttl=3.5}={}){
  const result=prune(inbox,now);

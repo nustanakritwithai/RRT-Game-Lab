@@ -17,7 +17,7 @@ jobs:
           node-version: '22'
       - name: Test original BLUE agent, multi-target sensor, melee-wave tactics and predictive swarm defense
         run: |
-          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs rrt_arena_private_radio_v0612.test.cjs rrt_arena_private_runtime_v0612.test.cjs rrt_arena_leaderless_v0613.test.cjs rrt_arena_evidence_v0614.test.cjs rrt_arena_duel_v0615.test.cjs rrt_arena_duel_runtime_v0615.test.cjs rrt_arena_combat_quality_v0616.test.cjs rrt_arena_decision_v0617.test.cjs rrt_arena_peermesh_v07.test.cjs
+          node --test rrt_arena_v05_core.test.cjs rrt_arena_memory_v061.test.cjs rrt_arena_guided_v061.test.cjs rrt_arena_tactics_v062.test.cjs rrt_arena_defense_v063.test.cjs rrt_arena_multi_v064.test.cjs rrt_arena_melee_v065.test.cjs rrt_arena_swarm_v066.test.cjs rrt_arena_inline_sync.test.cjs rrt_arena_ranged_v067.test.cjs rrt_arena_ranged_runtime_v067.test.cjs rrt_arena_rangeddef_v068.test.cjs rrt_arena_team_v069.test.cjs rrt_arena_unified_v0610.test.cjs rrt_arena_coop_v0611.test.cjs rrt_arena_private_radio_v0612.test.cjs rrt_arena_private_runtime_v0612.test.cjs rrt_arena_leaderless_v0613.test.cjs rrt_arena_evidence_v0614.test.cjs rrt_arena_duel_v0615.test.cjs rrt_arena_duel_runtime_v0615.test.cjs rrt_arena_combat_quality_v0616.test.cjs rrt_arena_decision_v0617.test.cjs rrt_arena_peermesh_v07.test.cjs rrt_arena_formation_v0618.test.cjs
       - name: Run PeerMesh deterministic simulation tests (1–1000 agents)
         run: node --test network_lab_core.test.cjs
       - name: Validate PeerMesh browser UI and smoke-test syntax
@@ -30,11 +30,15 @@ jobs:
       - name: Verify benchmark script syntax
         run: node --check tools/benchmark_swarm.cjs
       - name: Verify Duel2 quality benchmark syntax
-        run: node --check tools/benchmark_duel2_quality.cjs
+        run: |
+          node --check tools/benchmark_duel2_quality.cjs
+          node --check rrt_arena_formation_v0618.js
+          node --check tools/formation_browser.cjs
+          node --check tools/benchmark_formation_fullmatch.cjs
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.17' index.html
+          grep -q 'RRT ARENA 08.00' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
@@ -43,6 +47,8 @@ jobs:
           grep -q 'RRTArenaEvidence' index.html
           grep -q 'RRTArenaDuel2' index.html
           grep -q 'RRTArenaPeerMesh' index.html
+          grep -q 'RRTArenaFormation' index.html
+          grep -q 'id="duel2Formation"' index.html
           grep -q 'value="adaptive"' index.html
           grep -q 'id="duel2MeshStatus"' index.html
           grep -q 'id="duel2TeamMode"' index.html
@@ -77,7 +83,16 @@ jobs:
           node tools/browser_regression.cjs
           node tools/network_lab_browser.cjs
           node tools/peermesh_duel2_browser.cjs
+          node tools/formation_browser.cjs
           node tools/benchmark_duel2_quality.cjs
+      - name: Upload Hierarchical Squad 12v12 mobile screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hierarchical-squad-mobile-screenshot
+          path: artifacts/formation-*.png
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload PeerMesh real Chromium screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -123,3 +138,30 @@ jobs:
           name: team-v0611-${{ matrix.team }}
           path: benchmarks/team-v0611/${{ matrix.team }}.json
           retention-days: 30
+
+  formation-fullmatch:
+    name: Buddy / Group / Squad full-match research (150s)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium and Playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Complete seed-paired 150 second matches
+        run: |
+          node tools/benchmark_formation_fullmatch.cjs --seeds=83,311 --formations=buddy2,group23,squad3333 --modes=independent,adaptive --out=benchmarks/formation-fullmatch-v08.json
+      - name: Upload full-match simulation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formation-v08-fullmatch-pilot
+          path: benchmarks/formation-fullmatch-v08.json
+          if-no-files-found: warn
+          retention-days: 30
+

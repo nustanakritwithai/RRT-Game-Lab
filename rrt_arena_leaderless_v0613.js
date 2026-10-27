@@ -10,8 +10,8 @@
  const finite=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
- const targetId=id=>typeof id==='string'&&/^(?:T\d{1,3}|[BR][12])$/.test(id);
- const validAgent=id=>/^[BR][12]$/.test(String(id));
+ const targetId=id=>typeof id==='string'&&/^(?:T\d{1,3}|[BR][1-9]\d{0,2})$/.test(id);
+ const validAgent=id=>/^[BR][1-9]\d{0,2}$/.test(String(id));
  const teammates=(a,b)=>validAgent(a)&&validAgent(b)&&a!==b&&a[0]===b[0];
  const emptyInbox=()=>({bids:{},responses:{}});
  function prune(inbox,now){
@@ -58,7 +58,7 @@
   return Math.round(clamp(.2+position+health+ammo+reload,0,1)*10000)/10000;
  }
  function sendBid(radio,from,to,tracks,selectedId,now,{range=Infinity,latency=.3,interval=.4,ttl=1.3,scale=400,
-  stableInterval=null,qualityDelta=.06}={}){
+  stableInterval=null,qualityDelta=.06,queueLimit=240}={}){
   const original=radio||{queue:[],lastSent:{}},queue=(original.queue||[]).slice(),lastSent={...(original.lastSent||{})};
   const local=tracks?.[selectedId];
   if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||
@@ -81,9 +81,9 @@
    deliverAt:now+Math.max(0,latency),expiresAt:now+Math.max(0,ttl)});
   // Legacy modes retain their numeric lastSent book and unchanged timing.
   lastSent[key]=Number.isFinite(stableInterval)?{at:now,targetId:selectedId,quality}:now;
-  return {queue:queue.slice(-240),lastSent};
+  return {queue:queue.slice(-Math.max(240,Math.floor(queueLimit)||240)),lastSent};
  }
- function sendResponse(radio,from,to,target,kind,now,{range=Infinity,latency=.3,ttl=1.3,interval=.9}={}){
+ function sendResponse(radio,from,to,target,kind,now,{range=Infinity,latency=.3,ttl=1.3,interval=.9,queueLimit=240}={}){
   const old=radio||{queue:[],lastSent:{}},queue=(old.queue||[]).slice(),lastSent={...(old.lastSent||{})};
   if(!finite(from)||!finite(to)||!teammates(from.id,to.id)||!targetId(target)||!['ACK','NACK'].includes(kind)||!Number.isFinite(now)||
    from.hp<=0||to.hp<=0||distance(from,to)>range)return {queue,lastSent};
@@ -92,14 +92,18 @@
   queue.push({type:kind,source:'own_decision',sender:from.id,receiver:to.id,targetId:target,
    seenAt:now,deliverAt:now+Math.max(0,latency),expiresAt:now+Math.max(0,ttl)});
   lastSent[key]=now;
-  return {queue:queue.slice(-240),lastSent};
+  return {queue:queue.slice(-Math.max(240,Math.floor(queueLimit)||240)),lastSent};
  }
  function negotiate(self,localTracks,chosenId,inbox,now,{scale=400,criticalDistance=20,maxExtraDistance=.25,margin=.025}={}){
   const result={targetId:chosenId||null,changed:false,reason:'no_conflict',type:null,peerId:null};
   const chosen=localTracks?.[chosenId];
   if(!finite(self)||!chosenId||!finite(chosen)||chosen.status!=='visible'||!Number.isFinite(now))return result;
   const peer=Object.values(prune(inbox,now).bids)
-   .find(b=>b.targetId===chosenId&&teammates(b.sender,self.id));
+   .filter(b=>b.targetId===chosenId&&teammates(b.sender,self.id))
+   // Local, received BID comparison only: never global enemy truth or a commander.
+   // Compare all peers, not the first packet that happened to arrive.
+   .sort((a,b)=>b.quality-a.quality||b.seenAt-a.seenAt||
+    Number(a.sender.slice(1))-Number(b.sender.slice(1)))[0];
   if(!peer)return result;
   result.peerId=peer.sender;
   const localBid=bidQuality(self,chosen,scale);
@@ -120,7 +124,7 @@
   * The named 'radio' RNG is independent from world/enemy/B1/B2 streams.
   * Rate-limits remain consumed for dropped packets, like real transmissions.
   */
- function applyNetwork(previous,candidate,{loss=0,delay=0,rand=Math.random}={}){
+ function applyNetwork(previous,candidate,{loss=0,delay=0,rand=Math.random,queueLimit=240}={}){
   const old=previous||{queue:[],lastSent:{}},next=candidate||old;
   const earlier=old.queue||[],candidateQueue=next.queue||[];
   const retained=candidateQueue.filter(m=>earlier.includes(m));
@@ -131,7 +135,7 @@
    if(pct>0&&rand()<pct){dropped++;continue;}
    retained.push({...msg,deliverAt:msg.deliverAt+lag});
   }
-  return {radio:{queue:retained.slice(-240),lastSent:{...(next.lastSent||{})}},
+  return {radio:{queue:retained.slice(-Math.max(240,Math.floor(queueLimit)||240)),lastSent:{...(next.lastSent||{})}},
    sent:outgoing.length,dropped,queued:outgoing.length-dropped};
  }
  return Object.freeze({emptyInbox,prune,receive,bidQuality,sendBid,sendResponse,negotiate,applyNetwork});

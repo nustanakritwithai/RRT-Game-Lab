@@ -6,7 +6,7 @@
  if(typeof module==='object'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const actor=id=>typeof id==='string'&&/^[BR][12]$/.test(id);
+const actor=id=>typeof id==='string'&&/^[BR][1-9]\d{0,2}$/.test(id);
 const teammates=(a,b)=>actor(a)&&actor(b)&&a!==b&&a[0]===b[0];
 const enemy=(a,b)=>actor(b)&&b[0]!==a[0];
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
@@ -34,7 +34,7 @@ function valid(peer,m,now){
   m.seenAt>now||!finite(m.expiresAt)||m.expiresAt<=now||
   !finite(m.deliverAt)||m.deliverAt>m.expiresAt||m.deliverAt<m.seenAt)return false;
  if(m.type==='PM_ACK')
-  return m.source==='own_decision'&&typeof m.replyTo==='string'&&/^pm-[BR][12]-\d+$/.test(m.replyTo);
+  return m.source==='own_decision'&&typeof m.replyTo==='string'&&/^pm-[BR][1-9]\d{0,2}-\d+$/.test(m.replyTo);
  if(m.type==='NEED_SUPPORT')
   return m.source==='own_status'&&point(m)&&finite(m.hp)&&m.hp>=0;
  if(!enemy(peer.id,m.targetId))return false;
@@ -109,7 +109,7 @@ function receive(peer,packet,now){
   }
   return {deliver:false,reason:'UNKNOWN_ACK',ack:null};
  }
- if(typeof packet.meshId!=='string'||!/^pm-[BR][12]-\d+$/.test(packet.meshId)||
+ if(typeof packet.meshId!=='string'||!/^pm-[BR][1-9]\d{0,2}-\d+$/.test(packet.meshId)||
   !types.includes(packet.type)||packet.type==='PM_ACK'||
   (packet.type==='SIGHTING'&&
    (packet.source!=='own_sensor'||packet.originId!==packet.sender||

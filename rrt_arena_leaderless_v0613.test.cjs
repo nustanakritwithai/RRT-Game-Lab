@@ -105,3 +105,23 @@ test('network fault uses separate supplied random stream only for newly added me
  assert.equal(r.radio.queue.length,1);
  assert.equal(r.sent,1);
 });
+
+
+test('multi-peer leaderless conflict arbitration is deterministic regardless of packet arrival order',()=>{
+ const self=bot('B5',0),tracks={R1:tr('R1',110),R2:tr('R2',115)};
+ const packets=[
+  fresh('B2','B5','R1',.10,10),
+  fresh('B3','B5','R1',.99,10),
+  fresh('B4','B5','R1',.75,10)
+ ];
+ const left=L.receive(L.emptyInbox(),packets,'B5',10.4);
+ const right=L.receive(L.emptyInbox(),packets.slice().reverse(),'B5',10.4);
+ const choose=inbox=>L.negotiate(self,tracks,'R1',inbox,10.4,
+  {scale:400,criticalDistance:12});
+ const a=choose(left),b=choose(right);
+ assert.deepEqual(a,b,'peer-packet arrival must not decide tactical priority');
+ assert.equal(a.peerId,'B3','choose strongest current peer BID, not first received');
+ assert.equal(a.changed,true);
+ assert.equal(a.targetId,'R2','alternative still requires own direct visible track');
+ assert.equal(choose(L.emptyInbox()).changed,false);
+});

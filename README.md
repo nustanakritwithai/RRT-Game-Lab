@@ -1,3 +1,20 @@
+# RRT ARENA V0.8.0 — Hierarchical Buddy / Group / Squad Combat
+
+สร้างสนามทดลอง AI หลายตัวจากพื้นฐาน Duel 2v2 โดยรองรับ **Buddy 2/3, Group (2 ทีม Buddy), Squad (2 Groups)** พร้อม 8 รูปแบบ 2v2, 3v3, 4v4, 5v5, 6v6, 8v8, 10v10 และ 12v12
+
+- [ทดลอง Buddy 3v3](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&formation=buddy3)
+- [ทดลอง Group 5v5 (2+3)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&formation=group23&dteam=adaptive)
+- [ทดลอง Squad 12v12 (3+3)+(3+3)](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&formation=squad3333&dteam=adaptive)
+- [เอกสารโครงสร้างและเกณฑ์ Release](TEAM_FORMATION_V0618_TH.md)
+
+**หมายเหตุการเผยแพร่:** URL ข้างต้นจะใช้เวอร์ชันใหม่จริงหลังผ่าน CI, Merge เข้า main และตรวจ GitHub Pages แล้วเท่านั้น
+
+ทุกร่าง AI ใช้สมรรถนะและความสามารถรุ่นเดียวกันทั้ง BLUE และ RED แยก Private Memory / Perception / RRT / Evidence Ledger; ไม่มี Commander รวมศูนย์ และข้อมูลวิทยุไม่ให้สิทธิ์ยิงแทน Direct Sight ระบบ Adaptive อิง PeerMesh Tactical V0.7 เดิม แต่ส่งเฉพาะเพื่อนบ้านในโครงสร้าง Buddy/Group/Squad พร้อม ACK/Retry, TTL และ provenance
+
+การวิจัยวัดสองแกนแยกกัน: **ความถูกต้องของ Simulation** (Collision-safe / P2P / Complete Match) และ **คุณภาพการตัดสินใจ** (HP คงเหลือ / Damage per Shot / Focus / Radio / Win Rate) ผล Seed-paired pilot ขนาดเล็กไม่ได้พิสูจน์ว่า Adaptive ชนะเหนือ Independent
+
+---
+
 # RRT Arena — PeerMesh Tactical Team Radio V0.7 (Duel 2v2)
 
 **[ทดลอง 2v2 แบบ PeerMesh](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&dteam=adaptive&seed=83)** · [ระบบ Cooperative เดิม](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&dteam=coop&seed=83) · [Independent](https://nustanakritwithai.github.io/RRT-Game-Lab/?mode=duel2&seed=83)
