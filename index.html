@@ -1697,8 +1697,12 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  function applyNetwork(previous,candidate,{loss=0,delay=0,rand=Math.random,queueLimit=240}={}){
   const old=previous||{queue:[],lastSent:{}},next=candidate||old;
   const earlier=old.queue||[],candidateQueue=next.queue||[];
-  const retained=candidateQueue.filter(m=>earlier.includes(m));
-  const outgoing=candidateQueue.filter(m=>!earlier.includes(m));
+  // Identity-based partition is identical to Array.includes(), but avoids
+  // repeated O(queue × queue) scans when many Buddy/Group radio peers are active.
+  const existing=new Set(earlier),retained=[],outgoing=[];
+  for(const msg of candidateQueue){
+   if(existing.has(msg))retained.push(msg);else outgoing.push(msg);
+  }
   const pct=clamp(Number(loss)||0,0,1),lag=Math.max(0,Number(delay)||0);
   let dropped=0;
   for(const msg of outgoing){
