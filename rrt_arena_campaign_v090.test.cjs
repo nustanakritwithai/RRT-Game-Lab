@@ -1,0 +1,223 @@
+'use strict';
+const test=require('node:test');const assert=require('node:assert/strict');
+const C=require('./rrt_arena_campaign_v090.js');
+const fresh=(o={})=>C.create({seed:7,...o});
+const unitsOf=(s,f)=>s.units.filter(u=>u.faction===f);
+const noBattles=()=>{throw new Error('no battle expected');};
+const win=side=>spec=>({winner:side,casualties:{attacker:side==='attacker'?0:1,defender:side==='defender'?0:1}});
+
+// --- Map template and setup ---
+test('Frontline Basin has 11 sectors, symmetric, 3 victory sectors in the middle row',()=>{
+ const s=fresh();assert.equal(s.sectors.length,11);
+ assert.deepEqual(s.sectors.filter(x=>x.victory).map(x=>x.id).sort(),['C','L','R']);
+ for(const [a,b] of s.edges){assert.ok(s.sectors.find(x=>x.id===a)&&s.sectors.find(x=>x.id===b));}
+ const deg=id=>s.edges.filter(e=>e.includes(id)).length;
+ assert.equal(deg('P-HQ'),deg('E-HQ'));assert.equal(deg('P-L'),deg('E-L'));assert.equal(deg('P-R'),deg('E-R'));
+});
+test('both factions start with identical forces, supply and an owned HQ',()=>{
+ const s=fresh();
+ const size=f=>unitsOf(s,f).map(u=>u.agents.length).sort().join(',');
+ assert.equal(size('player'),size('enemy'));assert.equal(s.factions.player.supply,s.factions.enemy.supply);
+ assert.equal(s.sectors.find(x=>x.id==='P-HQ').owner,'player');assert.equal(s.sectors.find(x=>x.id==='E-HQ').owner,'enemy');
+});
+test('unit sizes always match a real battle formation preset',()=>{
+ for(const n of [2,3,4,5,6,8,10,12])assert.ok(C.presetForSize(n));
+ for(const n of [0,1,7,9,11,13])assert.equal(C.presetForSize(n),null);
+});
+
+// --- Fog of war: views never leak hidden truth ---
+test('a faction does not see enemy units it has no contact with',()=>{
+ const v=C.viewFor(fresh(),'player');
+ assert.equal(v.enemyUnits.length,0);
+ assert.ok(!JSON.stringify(v).includes('"faction":"enemy","sector"'));
+});
+test('a faction sees enemy units in sectors adjacent to its own units',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0],eu=unitsOf(s,'enemy')[0];
+ pu.sector='L';eu.sector='E-L';
+ const v=C.viewFor(s,'player');assert.equal(v.enemyUnits.length,1);assert.equal(v.enemyUnits[0].sector,'E-L');assert.equal(v.enemyUnits[0].size,eu.agents.length);
+});
+test('enemy fortification is unknown until observed',()=>{
+ const s=fresh();s.sectors.find(x=>x.id==='E-L').fort=2;
+ const v=C.viewFor(s,'player');assert.equal(v.sectors.find(x=>x.id==='E-L').fort,null);
+});
+test('views of the two factions are built by the same rules (mirror check)',()=>{
+ const s=fresh();const a=C.viewFor(s,'player'),b=C.viewFor(s,'enemy');
+ assert.equal(a.enemyUnits.length,b.enemyUnits.length);assert.equal(a.ownUnits.length,b.ownUnits.length);
+});
+
+// --- Orders validation ---
+test('units may only move to adjacent sectors',()=>{
+ const s=fresh();const u=unitsOf(s,'player')[0];
+ assert.equal(C.validateOrder(s,'player',{unit:u.id,type:'move',to:'P-L'}).ok,true);
+ assert.equal(C.validateOrder(s,'player',{unit:u.id,type:'move',to:'E-HQ'}).ok,false);
+});
+test('a faction cannot order the other faction\'s units',()=>{
+ const s=fresh();assert.equal(C.validateOrder(s,'player',{unit:unitsOf(s,'enemy')[0].id,type:'hold'}).ok,false);
+});
+test('a radio tower costs supply and needs an owned sector',()=>{
+ const s=fresh();const u=unitsOf(s,'player')[0];
+ s.factions.player.supply=2;assert.equal(C.validateOrder(s,'player',{unit:u.id,type:'tower'}).ok,false);
+ s.factions.player.supply=9;assert.equal(C.validateOrder(s,'player',{unit:u.id,type:'tower'}).ok,true);
+});
+test('merging is only legal into a valid formation size',()=>{
+ const s=fresh();const [a,b]=unitsOf(s,'player');b.sector=a.sector;
+ const ok=C.presetForSize(a.agents.length+b.agents.length)!==null;
+ assert.equal(C.validateOrder(s,'player',{unit:a.id,type:'merge',with:b.id}).ok,ok);
+});
+test('one order per unit per turn',()=>{
+ const s=fresh();const u=unitsOf(s,'player')[0];
+ assert.equal(C.validateOrders(s,'player',[{unit:u.id,type:'hold'},{unit:u.id,type:'recon'}]).ok,false);
+});
+
+// --- Turn resolution (WEGO) ---
+test('simultaneous moves without contact need no battle',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0];
+ const r=C.resolveTurn(s,{player:[{unit:pu.id,type:'move',to:'P-L'}],enemy:[]},noBattles);
+ assert.equal(r.state.units.find(u=>u.id===pu.id).sector,'P-L');assert.equal(r.battles.length,0);
+});
+test('resolution does not mutate the input state',()=>{
+ const s=fresh();const before=JSON.stringify(s);const pu=unitsOf(s,'player')[0];
+ C.resolveTurn(s,{player:[{unit:pu.id,type:'move',to:'P-L'}],enemy:[]},noBattles);assert.equal(JSON.stringify(s),before);
+});
+test('units ending in the same sector fight there, owner defends with its fort',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0],eu=unitsOf(s,'enemy')[0];
+ pu.sector='P-L';eu.sector='L';s.sectors.find(x=>x.id==='P-L').fort=1;
+ const specs=[];const r=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[{unit:eu.id,type:'move',to:'P-L'}]},spec=>{specs.push(spec);return win('defender')(spec);});
+ assert.equal(specs.length,1);assert.equal(specs[0].sector,'P-L');assert.equal(specs[0].defender.faction,'player');assert.equal(specs[0].fort,1);
+ assert.equal(specs[0].terrain,s.sectors.find(x=>x.id==='P-L').terrain);
+ assert.equal(r.state.units.find(u=>u.id===eu.id).sector,'L','loser retreats to an owned or origin sector');
+});
+test('units swapping along the same edge meet in the open without a fort',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0],eu=unitsOf(s,'enemy')[0];
+ pu.sector='P-C';eu.sector='C';s.sectors.find(x=>x.id==='C').owner='enemy';
+ const specs=[];C.resolveTurn(s,{player:[{unit:pu.id,type:'move',to:'C'}],enemy:[{unit:eu.id,type:'move',to:'P-C'}]},spec=>{specs.push(spec);return win('attacker')(spec);});
+ assert.equal(specs.length,1);assert.equal(specs[0].terrain,'open');assert.equal(specs[0].fort,0);assert.equal(specs[0].kind,'meeting');
+});
+test('battle specs carry unequal sizes and a deterministic per-battle seed',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0],eu=unitsOf(s,'enemy')[0];
+ pu.sector='L';eu.sector='E-L';eu.agents=eu.agents.slice(0,2);
+ const seeds=[];for(let k=0;k<2;k++)C.resolveTurn(s,{player:[{unit:pu.id,type:'move',to:'E-L'}],enemy:[{unit:eu.id,type:'hold'}]},spec=>{seeds.push(spec.seed);assert.equal(spec.defender.size,2);assert.equal(spec.attacker.size,pu.agents.length);assert.ok(C.presetForSize(spec.defender.size));return win('attacker')(spec);});
+ assert.equal(seeds[0],seeds[1]);
+});
+test('casualties become injured agents removed from their unit',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0],eu=unitsOf(s,'enemy')[0];pu.sector='L';eu.sector='E-L';
+ const r=C.resolveTurn(s,{player:[{unit:pu.id,type:'move',to:'E-L'}],enemy:[{unit:eu.id,type:'hold'}]},spec=>({winner:'defender',casualties:{attacker:2,defender:1}}));
+ const after=r.state.units.find(u=>u.id===pu.id);assert.equal(after.agents.length,pu.agents.length-2);
+ assert.equal(r.state.roster.filter(a=>a.faction==='player'&&a.injuredTurns>0).length,2);
+});
+test('a beaten unit with no friendly sector to retreat to is encircled',()=>{
+ const s=fresh();const pu=unitsOf(s,'player')[0],eu=unitsOf(s,'enemy')[0];
+ for(const x of s.sectors)if(x.id!=='P-HQ')x.owner='enemy';
+ pu.sector='E-L';eu.sector='L';
+ const r=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[{unit:eu.id,type:'move',to:'E-L'}]},spec=>({winner:'attacker',casualties:{attacker:0,defender:1}}));
+ assert.ok(!r.state.units.some(u=>u.id===pu.id),'encircled unit is disbanded');
+ assert.ok(r.events.some(e=>e.type==='encircled'));
+});
+test('capturing a fortified sector takes extra turns of uncontested presence',()=>{
+ let s=fresh();const pu=unitsOf(s,'player')[0];pu.sector='L';const L=s.sectors.find(x=>x.id==='L');L.owner='enemy';L.fort=1;
+ s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;
+ assert.equal(s.sectors.find(x=>x.id==='L').owner,'enemy');
+ s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;
+ assert.equal(s.sectors.find(x=>x.id==='L').owner,'player');
+});
+test('holding an owned sector digs in (+1 fort, max 2)',()=>{
+ let s=fresh();const u=unitsOf(s,'player')[0];u.sector='P-L';
+ for(let k=0;k<3;k++)s=C.resolveTurn(s,{player:[{unit:u.id,type:'hold'}],enemy:[]},noBattles).state;
+ assert.equal(s.sectors.find(x=>x.id==='P-L').fort,2);
+});
+test('recon snapshots the true state, then the intel ages and expires',()=>{
+ let s=fresh();const u=unitsOf(s,'player')[0];u.sector='P-L';s.sectors.find(x=>x.id==='L').fort=2;
+ s=C.resolveTurn(s,{player:[{unit:u.id,type:'recon'}],enemy:[]},noBattles).state;
+ let v=C.viewFor(s,'player');let L=v.sectors.find(x=>x.id==='L');assert.equal(L.fort,2);assert.equal(L.intelAge,0);
+ for(let k=0;k<4;k++)s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ v=C.viewFor(s,'player');L=v.sectors.find(x=>x.id==='L');assert.equal(L.fort,null,'stale intel expires');
+});
+
+// --- Supply lines, radio, victory ---
+test('a sector cut off from HQ yields no supply',()=>{
+ const s=fresh();for(const id of ['P-L','P-C','P-R','L','C','R'])s.sectors.find(x=>x.id===id).owner='enemy';
+ s.sectors.find(x=>x.id==='E-L').owner='player';
+ assert.ok(!C.connectedSectors(s,'player').has('E-L'));assert.ok(C.connectedSectors(s,'player').has('P-HQ'));
+});
+test('supply income comes from connected sectors and is capped',()=>{
+ let s=fresh();s.factions.player.supply=11;
+ s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;assert.equal(s.factions.player.supply,C.RULES.supplyCap);
+});
+test('radio level: tower gives 2 in its sector and 1 next door',()=>{
+ const s=fresh();s.sectors.find(x=>x.id==='P-L').tower='player';
+ assert.equal(C.radioLevel(s,'player','P-L'),2);assert.equal(C.radioLevel(s,'player','L'),1);assert.equal(C.radioLevel(s,'enemy','P-L'),0);
+});
+test('radio level maps to the existing battle loss/delay settings',()=>{
+ assert.deepEqual(C.radioSettings(0),{loss:50,delay:0.6});assert.deepEqual(C.radioSettings(2),{loss:0,delay:0});
+});
+test('victory sectors award points each turn; reaching the target wins',()=>{
+ let s=fresh({vpToWin:2});for(const id of ['L','C'])s.sectors.find(x=>x.id===id).owner='player';
+ s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;assert.equal(s.factions.player.vp,2);assert.equal(s.winner,'player');
+});
+test('capturing the enemy HQ wins immediately',()=>{
+ const s=fresh();s.sectors.find(x=>x.id==='E-HQ').owner='player';assert.equal(C.checkVictory(s).winner,'player');
+});
+test('turn limit ends the campaign on points',()=>{
+ const s=fresh({maxTurns:1});s.factions.enemy.vp=1;
+ const r=C.resolveTurn(s,{player:[],enemy:[]},noBattles);assert.equal(r.state.winner,'enemy');
+});
+
+// --- Coarse battle model (placeholder until calibrated against real battles) ---
+test('coarse model is deterministic per seed and favours the larger side',()=>{
+ const spec=(a,d)=>({attacker:{size:a},defender:{size:d},fort:0,terrain:'open',seed:42});
+ assert.deepEqual(C.coarseBattle(spec(4,4)),C.coarseBattle(spec(4,4)));
+ let big=0;for(let k=0;k<400;k++)if(C.coarseBattle({...spec(8,4),seed:k}).winner==='attacker')big++;
+ assert.ok(big>280,'8 vs 4 attacker wins '+big+'/400');
+});
+test('coarse model: forts help the defender',()=>{
+ let a0=0,a2=0;for(let k=0;k<400;k++){const b={attacker:{size:4},defender:{size:4},terrain:'ruins',seed:k};
+  if(C.coarseBattle({...b,fort:0}).winner==='attacker')a0++;if(C.coarseBattle({...b,fort:2}).winner==='attacker')a2++;}
+ assert.ok(a2<a0);
+});
+test('coarse casualties never exceed unit sizes',()=>{
+ for(let k=0;k<200;k++){const r=C.coarseBattle({attacker:{size:3},defender:{size:6},fort:1,terrain:'lanes',seed:k});
+  assert.ok(r.casualties.attacker>=0&&r.casualties.attacker<=3&&r.casualties.defender>=0&&r.casualties.defender<=6);}
+});
+
+// --- Fuzz: random legal orders for both sides keep every invariant ---
+function randomOrders(s,f,r){
+ const orders=[],used=new Set();
+ for(const u of s.units.filter(x=>x.faction===f)){
+  if(used.has(u.id))continue;
+  const pick=r();let o;
+  if(pick<.55){const n=C.neighbors(s,u.sector);o={unit:u.id,type:'move',to:n[Math.floor(r()*n.length)]};}
+  else if(pick<.70)o={unit:u.id,type:'hold'};else if(pick<.80)o={unit:u.id,type:'recon'};
+  else if(pick<.88)o={unit:u.id,type:'tower'};
+  else{const w=s.units.find(x=>x.faction===f&&x.id!==u.id&&x.sector===u.sector&&!used.has(x.id));o=w?{unit:u.id,type:'merge',with:w.id}:{unit:u.id,type:'split',sizes:[2,u.agents.length-2]};}
+  if(C.validateOrder(s,f,o).ok&&!(o.with&&used.has(o.with))){orders.push(o);used.add(u.id);if(o.with)used.add(o.with);}
+ }
+ return orders;
+}
+test('200 random campaigns: agents conserved, units valid, campaigns always end',()=>{
+ let ends=0;
+ for(let g=0;g<200;g++){
+  let s=C.create({seed:1000+g});let a=g*7919+1;const r=()=>{a=(a*1103515245+12345)>>>0;return a/4294967296;};
+  for(let t=0;t<40&&!s.winner;t++){
+   s=C.resolveTurn(s,{player:randomOrders(s,'player',r),enemy:randomOrders(s,'enemy',r)}).state;
+   for(const f of ['player','enemy']){
+    const inUnits=s.units.filter(u=>u.faction===f).flatMap(u=>u.agents);
+    const injured=s.roster.filter(x=>x.faction===f&&x.injuredTurns>0).map(x=>x.id);
+    const all=[...inUnits,...s.factions[f].reserve,...injured];
+    assert.equal(all.length,12,'agent count g'+g+' t'+t+' '+f);assert.equal(new Set(all).size,12,'agent duplicated g'+g);
+    assert.ok(s.units.filter(u=>u.faction===f).length<=C.RULES.maxUnits);
+   }
+   for(const u of s.units){assert.ok(u.agents.length>=2,'unit too small');assert.ok(s.sectors.some(x=>x.id===u.sector));}
+   for(const x of s.sectors)assert.ok(x.fort>=0&&x.fort<=2);
+   assert.ok(Number.isFinite(s.factions.player.supply)&&s.factions.player.supply<=C.RULES.supplyCap);
+  }
+  assert.ok(s.winner,'campaign '+g+' ended by turn limit at the latest');ends++;
+ }
+ assert.equal(ends,200);
+});
+test('two splits in one turn cannot exceed the unit cap',()=>{
+ const s=fresh();const [a,b]=unitsOf(s,'player');
+ const orders=[{unit:a.id,type:'split',sizes:[2,2]},{unit:b.id,type:'split',sizes:[2,2]}];
+ assert.equal(C.validateOrders(s,'player',orders).ok,false);
+ const r=C.resolveTurn(s,{player:orders,enemy:[]},noBattles);
+ assert.equal(r.state.units.filter(u=>u.faction==='player').length,C.RULES.maxUnits);
+});

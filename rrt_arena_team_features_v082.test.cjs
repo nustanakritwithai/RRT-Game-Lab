@@ -20,3 +20,9 @@ test('per-fighter defense state is swapped in and out around every fighter step'
  assert.match(html,/function withDuel2Defense\(bot,fn\)\{\n const previousBot=duel2CurrentBot;duel2CurrentBot=bot;/);
  assert.match(html,/duel2CurrentBot=previousBot;/);
 });
+test('team mode supports an optional, different RED formation for unequal battles',()=>{
+ assert.match(html,/let duel2RedFormation=Object\.hasOwn\(formationCore\.PRESETS,teamParams\.get\('rformation'\)\)/);
+ assert.match(html,/red:formationCore\.createFormation\(duel2RedPreset\(\),'red'\)/);
+ assert.match(html,/setRedFormation:\(preset\)=>/);
+ assert.match(html,/'B '\+blueAlive\+'\/'\+blueTotal\+' · R '\+redAlive\+'\/'\+redTotal/);
+});

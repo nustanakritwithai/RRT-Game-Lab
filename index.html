@@ -2512,6 +2512,9 @@ multiUI.teamMode.value=teamParams.get('blue')==='2'?(teamParams.get('team')==='c
 multiUI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
 multiUI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
 duel2UI.formation.value=Object.hasOwn(formationCore.PRESETS,teamParams.get('formation'))?teamParams.get('formation'):'buddy2';
+// Optional RED formation for unequal battles (strategic-map battles); default mirrors BLUE.
+let duel2RedFormation=Object.hasOwn(formationCore.PRESETS,teamParams.get('rformation'))?teamParams.get('rformation'):null;
+const duel2RedPreset=()=>duel2RedFormation||duel2UI.formation.value;
 duel2UI.learning.checked=teamParams.get('learn')==='1';
 duel2UI.persist.checked=teamParams.get('persist')==='1';
 duel2UI.objective.value=teamParams.get('mission')==='control'?'control':'elimination';
@@ -2644,7 +2647,7 @@ function setupDuel2(){
  for(const key of equalKeys)red1[key]=blue1[key];
  const formations={
   blue:formationCore.createFormation(duel2UI.formation.value,'blue'),
-  red:formationCore.createFormation(duel2UI.formation.value,'red')
+  red:formationCore.createFormation(duel2RedPreset(),'red')
  };
  // Retain the exact original 2v2 spawn sites for regression. Extra members
  // extend outward from each side using mirrored, collision-safe candidates.
@@ -2662,12 +2665,12 @@ function setupDuel2(){
     const a=step*Math.PI/6,radiusPx=radius*R*1.6;
     const p={x:clamp(W*slot.x+Math.cos(a)*radiusPx,R+4,W-R-4),
      y:clamp(H*slot.y+Math.sin(a)*radiusPx,R+4,H-R-4)};
-    if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(formations.blue.agents.length>8?R*2.30:R*2.75))){chosen=p;break;}
+    if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(Math.max(formations.blue.agents.length,formations.red.agents.length)>8?R*2.30:R*2.75))){chosen=p;break;}
    }
   }
   if(!chosen){for(let y=R+5;y<H-R-5&&!chosen;y+=R*1.3)
    for(let x=R+5;x<W-R-5;x+=R*1.3){
-    const p={x,y};if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(formations.blue.agents.length>8?R*2.30:R*2.75))){chosen=p;break;}
+    const p={x,y};if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(Math.max(formations.blue.agents.length,formations.red.agents.length)>8?R*2.30:R*2.75))){chosen=p;break;}
    }}
   if(!chosen)throw new Error('No collision-free formation spawn '+slot.id);
   const b=spawnBot('blue',chosen.x,chosen.y,slot.id);
@@ -4413,8 +4416,8 @@ function updateDuel2HUD(){
  }
  const blueAlive=bots.filter(b=>b.team==='blue'&&b.hp>0).length,
   redAlive=bots.filter(b=>b.team==='red'&&b.hp>0).length;
- const total=team.formations?.blue.agents.length||2;
- duel2UI.status.textContent='B '+blueAlive+'/'+total+' · R '+redAlive+'/'+total+' · '+
+ const blueTotal=team.formations?.blue.agents.length||2,redTotal=team.formations?.red.agents.length||2;
+ duel2UI.status.textContent='B '+blueAlive+'/'+blueTotal+' · R '+redAlive+'/'+redTotal+' · '+
   (team.mode==='adaptive'?'🧠 PeerMesh':team.mode==='cooperative'?'📡 P2P':'อิสระ')+
   ' · ส่ง '+(team.radioSent||0)+' · ถึง '+(team.radioDelivered||0)+
   ' · หลุด '+(team.radioDropped||0)+' · เป้า↔ '+(team.targetSwitches||0)+' · ลดซ้ำ '+(team.suppressedSightings||0)+' · ขัดแย้ง '+(team.evidenceConflict||0)+
@@ -4534,7 +4537,7 @@ for(const control of [duel2UI.formation,duel2UI.objective,duel2UI.teamMode,duel2
   if(duel2UI.radioDelay.value!=='0')query.set('delay',duel2UI.radioDelay.value);
   history.replaceState(null,'',location.pathname+'?'+query.toString());
  }
- resetGame();showNotice((team.formations?.blue.agents.length||2)+'v'+(team.formations?.blue.agents.length||2)+' · '+(duel2UI.teamMode.value==='cooperative'?'สื่อสารกัน':'อิสระ')+' · Packet Loss '+duel2UI.radioLoss.value+'%');
+ resetGame();showNotice((team.formations?.blue.agents.length||2)+'v'+(team.formations?.red.agents.length||2)+' · '+(duel2UI.teamMode.value==='cooperative'?'สื่อสารกัน':'อิสระ')+' · Packet Loss '+duel2UI.radioLoss.value+'%');
 });
 duel2UI.clearTraining.addEventListener('click',()=>{
  const cleared=clearTrainingArchive();
@@ -4608,6 +4611,7 @@ window.__rrtDuel2Debug={
     radius:mission.radius,targetSeconds:mission.targetSeconds,
     scores:{...mission.scores},presence:{...mission.presence},owner:mission.owner,
     contested:mission.contested}:null,
+   redFormation:duel2RedPreset(),
    organization:team.formations?{blue:team.formations.blue.groups,red:team.formations.red.groups,
     links:team.formations.blue.links}:null,
    packetLoss:Number(duel2UI.radioLoss.value),
@@ -4646,6 +4650,8 @@ window.__rrtDuel2Debug={
    bullets:bullets.length,score:{...scores}};
  },
  // Experiment-only: give one team different V0.6.8 features to measure their effect (A/B with side swap).
+ // Unequal battles: RED formation preset (null mirrors BLUE). Takes effect on reset.
+ setRedFormation:(preset)=>{if(preset!==null&&!Object.hasOwn(formationCore.PRESETS,preset))return false;duel2RedFormation=preset;resetGame();return true;},
  setTeamFeatures:(teamName,features)=>{if(!['blue','red'].includes(teamName))return false;
   duel2FeatureOverride[teamName]=features?{rangedDefense:!!features.rangedDefense,mobile:!!features.mobile}:null;return true;},
  setLearning:(enabled)=>{if(!duel2Active()||typeof enabled!=='boolean')return false;
