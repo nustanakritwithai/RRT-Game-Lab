@@ -8,7 +8,7 @@
 'use strict';
 const MODES=Object.freeze(['elimination','control']);
 const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
-function create(mode='elimination',bounds,free=()=>true,{targetSeconds=24,radius=null}={}){
+function create(mode='elimination',bounds,free=()=>true,{targetSeconds=24,radius=null,site=null}={}){
  if(!MODES.includes(mode))throw new RangeError('Unknown game mode');
  if(mode==='elimination')return {
   mode,active:false,point:null,radius:0,targetSeconds:0,
@@ -19,8 +19,9 @@ function create(mode='elimination',bounds,free=()=>true,{targetSeconds=24,radius
   Math.max(25,Math.min(bounds.w,bounds.h)*.135);
  const locs=[[.5,.5],[.5,.32],[.5,.68],[.36,.5],[.64,.5],
   [.36,.34],[.64,.66],[.36,.66],[.64,.34]];
- const chosen=locs.map(([x,y])=>({x:x*bounds.w,y:y*bounds.h}))
-  .find(p=>free(p)===true);
+ // Optional explicit site (e.g. a defended strategic sector); falls back to the neutral sites if blocked.
+ const chosen=(point(site)&&free(site)===true?{x:site.x,y:site.y}:null)||
+  locs.map(([x,y])=>({x:x*bounds.w,y:y*bounds.h})).find(p=>free(p)===true);
  if(!chosen)throw new Error('No safe control-zone site on this map');
  return {mode,active:true,point:chosen,radius:radiusPx,
   targetSeconds:Number.isFinite(targetSeconds)&&targetSeconds>0?targetSeconds:24,

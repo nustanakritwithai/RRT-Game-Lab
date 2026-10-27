@@ -95,3 +95,8 @@ test('offline game page exposes mission mode, local runner goal and read-only de
  const ai=html.slice(html.indexOf('function currentIntent(bot){'),html.indexOf('function chooseGoal(bot){'));
  assert.match(ai,/missionCore\.isRunner\(bot\.formationMember\)/);
 });
+test('an explicit free site places the zone there; a blocked site falls back to neutral sites',()=>{
+ const {create}=require('./rrt_arena_objectives_v090.js');
+ const z=create('control',{w:800,h:500},()=>true,{site:{x:216,y:250}});assert.deepEqual(z.point,{x:216,y:250});
+ const f=create('control',{w:800,h:500},p=>!(p.x===216&&p.y===250),{site:{x:216,y:250}});assert.notDeepEqual(f.point,{x:216,y:250});
+});

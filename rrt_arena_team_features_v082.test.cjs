@@ -26,3 +26,8 @@ test('team mode supports an optional, different RED formation for unequal battle
  assert.match(html,/setRedFormation:\(preset\)=>/);
  assert.match(html,/'B '\+blueAlive\+'\/'\+blueTotal\+' · R '\+redAlive\+'\/'\+redTotal/);
 });
+test('strategic battles: fort walls come from the pure fort module and the zone sits at the defender anchor',()=>{
+ assert.match(html,/extraWalls=fortCore\.fortWalls\(duel2Fort\.level,duel2Fort\.defender,/);
+ assert.match(html,/site:duel2Fort\.defender\?fortCore\.anchorFor\(duel2Fort\.defender,/);
+ assert.match(html,/setFort:\(defender,level\)=>/);
+});

@@ -2429,7 +2429,7 @@ return Object.freeze({KEY,VERSION,MAX_SAMPLES,STYLES,CONTEXTS,validId,empty,
 'use strict';
 const MODES=Object.freeze(['elimination','control']);
 const point=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
-function create(mode='elimination',bounds,free=()=>true,{targetSeconds=24,radius=null}={}){
+function create(mode='elimination',bounds,free=()=>true,{targetSeconds=24,radius=null,site=null}={}){
  if(!MODES.includes(mode))throw new RangeError('Unknown game mode');
  if(mode==='elimination')return {
   mode,active:false,point:null,radius:0,targetSeconds:0,
@@ -2440,8 +2440,9 @@ function create(mode='elimination',bounds,free=()=>true,{targetSeconds=24,radius
   Math.max(25,Math.min(bounds.w,bounds.h)*.135);
  const locs=[[.5,.5],[.5,.32],[.5,.68],[.36,.5],[.64,.5],
   [.36,.34],[.64,.66],[.36,.66],[.64,.34]];
- const chosen=locs.map(([x,y])=>({x:x*bounds.w,y:y*bounds.h}))
-  .find(p=>free(p)===true);
+ // Optional explicit site (e.g. a defended strategic sector); falls back to the neutral sites if blocked.
+ const chosen=(point(site)&&free(site)===true?{x:site.x,y:site.y}:null)||
+  locs.map(([x,y])=>({x:x*bounds.w,y:y*bounds.h})).find(p=>free(p)===true);
  if(!chosen)throw new Error('No safe control-zone site on this map');
  return {mode,active:true,point:chosen,radius:radiusPx,
   targetSeconds:Number.isFinite(targetSeconds)&&targetSeconds>0?targetSeconds:24,
@@ -2489,13 +2490,82 @@ function resolve(state,bots,elapsed,limit=150){
 return Object.freeze({MODES,create,isRunner,step,resolve});
 });
 </script>
+<script id="fortCore">
+/* RRT ARENA V0.9 — strategic-map fortification for team battles.
+ * Pure geometry: a fort level (0-2) becomes short extra wall pieces on a ring around the defender's
+ * anchor — attacker-facing first, then flanks — each placed only where it fits with clearance, so it
+ * works on dense layouts and small (phone) arenas. Mirror-symmetric for BLUE/RED; gaps stay open.
+ * Walls are ordinary world geometry: sight, bullets and RRT treat them like any other wall.
+ */
+(function(root,factory){'use strict';const api=factory();root.RRTArenaFort=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const PIECES_PER_LEVEL=Object.freeze([0,2,4]);
+ // Angles (degrees) measured from the direction the attacker comes from; order = placement priority.
+ const ANGLES=Object.freeze([28,-28,0,62,-62,95,-95,135,-135]);
+ const RADII=Object.freeze([.13,.16,.19,.10,.22]);
+ const LENGTH=.11,THICK=.03;
+ const ANCHOR_X=.27,ANCHOR_XS=Object.freeze([.27,.22,.32,.18,.36]),ANCHOR_YS=Object.freeze([.5,.44,.56,.38,.62,.32,.68,.26,.74]);
+ const overlap=(a,b,m)=>a.x<b.x+b.w+m&&b.x<a.x+a.w+m&&a.y<b.y+b.h+m&&b.y<a.y+a.h+m;
+ // A piece may attach to (touch/overlap) a wall, extending that cover, or keep a full corridor of
+ // clearance from it — never leave a gap narrower than the clearance that fighters could not pass.
+ const compatible=(r,e,clearance)=>overlap(r,e,0)||!overlap(r,e,clearance);
+ const inside=(r,B)=>r.x>=0&&r.y>=0&&r.x+r.w<=B.w&&r.y+r.h<=B.h;
+ const anchorPoint=(side,ax,ay,B)=>({x:(side==='blue'?ax:1-ax)*B.w,y:ay*B.h});
+ function pieceRect(anchor,side,deg,radius,S){
+  const a=deg*Math.PI/180,dirX=side==='blue'?1:-1; // attacker comes from +x for BLUE, -x for RED
+  const cx=anchor.x+dirX*Math.cos(a)*radius*S,cy=anchor.y+Math.sin(a)*radius*S;
+  const vertical=Math.abs(Math.cos(a))>=.55,len=LENGTH*S,th=THICK*S;
+  const w=vertical?th:len,h=vertical?len:th;
+  return {x:cx-w/2,y:cy-h/2,w,h};
+ }
+ function place(anchor,side,B,existing,clearance,count){
+  const S=Math.min(B.w,B.h),placed=[];
+  for(const deg of ANGLES){
+   if(placed.length>=count)break;
+   for(const r of RADII){
+    const rect=pieceRect(anchor,side,deg,r,S);
+    const zone={x:anchor.x-S*.06,y:anchor.y-S*.06,w:S*.12,h:S*.12};
+    if(!inside(rect,B)||overlap(rect,zone,0)||!existing.every(e=>compatible(rect,e,clearance))||placed.some(p=>overlap(rect,p,clearance)))continue;
+    placed.push(rect);break;
+   }
+  }
+  return placed;
+ }
+ /** Defender anchor: a clear point on the defender's side where the most level-2 pieces fit;
+   * ties go to the earliest (most central) candidate, so the choice is deterministic. */
+ function anchorSearch(side,B,existing,clearance){
+  const S=Math.min(B.w,B.h),margin=Math.max(clearance,S*.04);let best=null,roomiest=null;
+  const room=pt=>existing.reduce((m,e)=>Math.min(m,Math.hypot(Math.max(e.x-pt.x,0,pt.x-e.x-e.w),Math.max(e.y-pt.y,0,pt.y-e.y-e.h))),Infinity);
+  for(const ax of ANCHOR_XS)for(const ay of ANCHOR_YS){
+   const pt=anchorPoint(side,ax,ay,B),space=room(pt);
+   if(!roomiest||space>roomiest.space)roomiest={pt,space,fit:0};
+   if(space<margin)continue;
+   const fit=place(pt,side,B,existing,clearance,PIECES_PER_LEVEL[2]).length;
+   if(!best||fit>best.fit)best={pt,fit};
+  }
+  // Fallback: the candidate farthest from every wall (never a point inside a wall).
+  return best||roomiest;
+ }
+ function anchorFor(side,B,existing=[],{clearance=0}={}){
+  const b=anchorSearch(side,B,existing,clearance);
+  return b?b.pt:anchorPoint(side,ANCHOR_X,.5,B);
+ }
+ function fortWalls(level,side,B,existing=[],{clearance=0}={}){
+  if(!['blue','red'].includes(side)||!(level>0))return [];
+  const lv=Math.min(2,level|0),anchor=anchorFor(side,B,existing,{clearance});
+  return place(anchor,side,B,existing,clearance,PIECES_PER_LEVEL[lv])
+   .map((r,i)=>({...r,id:'fort-'+side+'-'+i,fort:side,manual:false}));
+ }
+ return Object.freeze({PIECES_PER_LEVEL,anchorFor,fortWalls});
+});
+</script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 // Optional ?seed=N for reproducible experiments; without it the game stays truly random.
 const benchmarkSeed=(()=>{const v=new URLSearchParams(location.search).get('seed');if(v===null||!/^\d{1,9}$/.test(v))return null;let a=Number(v)>>>0;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};return Number(v);})();
 const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense,teamCore=globalThis.RRTArenaTeam,coopCore=globalThis.RRTArenaCoop,commsCore=globalThis.RRTArenaPrivateRadio,leaderless=globalThis.RRTArenaLeaderless,evidenceCore=globalThis.RRTArenaEvidence,duel2Core=globalThis.RRTArenaDuel2,
- meshCore=globalThis.RRTArenaPeerMesh,formationCore=globalThis.RRTArenaFormation,onlineCore=globalThis.RRTArenaOnlineLearning,missionCore=globalThis.RRTArenaObjectives,archiveCore=globalThis.RRTArenaLearningArchive;
+ meshCore=globalThis.RRTArenaPeerMesh,formationCore=globalThis.RRTArenaFormation,onlineCore=globalThis.RRTArenaOnlineLearning,missionCore=globalThis.RRTArenaObjectives,fortCore=globalThis.RRTArenaFort,archiveCore=globalThis.RRTArenaLearningArchive;
 const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),activeDefense:$('activeDefense'),defenseStat:$('defenseStat'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
 let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]},B1:{danger:[],encounters:[]},B2:{danger:[],encounters:[]},R1:{danger:[],encounters:[]},R2:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
@@ -2515,6 +2585,10 @@ duel2UI.formation.value=Object.hasOwn(formationCore.PRESETS,teamParams.get('form
 // Optional RED formation for unequal battles (strategic-map battles); default mirrors BLUE.
 let duel2RedFormation=Object.hasOwn(formationCore.PRESETS,teamParams.get('rformation'))?teamParams.get('rformation'):null;
 const duel2RedPreset=()=>duel2RedFormation||duel2UI.formation.value;
+// Strategic-map battle: optional defender side and fort level (0-2). Forts are plain wall geometry
+// around the defender's anchor; with the control mission the zone sits at that anchor.
+let duel2Fort={defender:['blue','red'].includes(teamParams.get('defender'))?teamParams.get('defender'):null,
+ level:Math.max(0,Math.min(2,Number(teamParams.get('fort'))|0))};
 duel2UI.learning.checked=teamParams.get('learn')==='1';
 duel2UI.persist.checked=teamParams.get('persist')==='1';
 duel2UI.objective.value=teamParams.get('mission')==='control'?'control':'elimination';
@@ -2619,7 +2693,9 @@ function resize(){let r=stage.getBoundingClientRect();const oldW=W,oldH=H;W=Math
 }
 function buildWalls(){walls=(layouts[ui.map.value]||layouts.ruins).map(([x,y,w,h],i)=>({x:x*W,y:y*H,w:w*W,h:h*H,id:'b'+i,manual:false}));for(const w of extraWalls)walls.push(w);}
 function spawnBot(team,x,y,stream=null){return withRngStream(stream|| (team==='blue'?'B1':'enemy'),()=>{const key=(team==='blue'&&multiActive()||duel2Active())?(stream||(team==='blue'?'B1':'R1')):team;const lessons=storedLessons[key]||storedLessons[team];return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0,brain:mem.createMemory(ui.carryMemory.checked?lessons.danger:[],ui.carryMemory.checked?lessons.encounters:[]),lastEncounterLog:-99,scanIndex:0,seenStatus:'unknown',searchCooldown:0,tactic:null,tacticGoal:null,tacticScore:null,maneuverHistory:[],lastMoveAt:0,lastExposedAt:-100,lastDamageAt:-100,defenseHistory:[],defenseGoal:null,defenseReason:null,defenseCount:0};});}
-function setupRound(){mission=null;extraWalls=[];buildWalls();bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive()){withRngStream('world',()=>setupMultiTargets());withRngStream('B2',()=>setupBlueTeam());}else if(duel2Active()){setupDuel2();}else{bots[0].id='B1';bots[0].radioInbox=commsCore.makeInbox();bots[0].evidenceLedger=evidenceCore.emptyLedger();team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),blockedFriendlyShots:0};multi.cover=null;multi.coverDecision=null;multi.pendingCover=false;multi.lastCoverAt=-20;multi.coverage=rangedDef.createCoverage(W,H,10);multi.coverageAt=-1;}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
+function setupRound(){mission=null;extraWalls=[];buildWalls();
+ if(duel2Active()&&duel2Fort.defender&&duel2Fort.level>0){extraWalls=fortCore.fortWalls(duel2Fort.level,duel2Fort.defender,{w:W,h:H},walls,{clearance:R*2.2});buildWalls();}
+ bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive()){withRngStream('world',()=>setupMultiTargets());withRngStream('B2',()=>setupBlueTeam());}else if(duel2Active()){setupDuel2();}else{bots[0].id='B1';bots[0].radioInbox=commsCore.makeInbox();bots[0].evidenceLedger=evidenceCore.emptyLedger();team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),blockedFriendlyShots:0};multi.cover=null;multi.coverDecision=null;multi.pendingCover=false;multi.lastCoverAt=-20;multi.coverage=rangedDef.createCoverage(W,H,10);multi.coverageAt=-1;}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
 // Duel 2v2 reuses the original BLUE/RED fighter constructors and tactical planners.
 function readTrainingArchive(){
  try{return archiveCore.decode(window.localStorage.getItem(archiveCore.KEY));}
@@ -2713,7 +2789,8 @@ function setupDuel2(){
   peerMeshSuppressed:0,peerMeshDelivered:0,peerMeshSupports:0,peerMeshInvalid:0,
   stalePathRepairs:0,shotsFired:Object.fromEntries(bots.map(b=>[b.id,0]))};
  mission=missionCore.create(duel2UI.objective.value,{w:W,h:H},
-  p=>freePoint(p,R+3),{radius:Math.max(27,S*.135),targetSeconds:20});
+  p=>freePoint(p,R+3),{radius:Math.max(27,S*.135),targetSeconds:20,
+   site:duel2Fort.defender?fortCore.anchorFor(duel2Fort.defender,{w:W,h:H},walls.filter(w=>!w.fort),{clearance:R*2.2}):null});
 }
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
 function hideOverlay(){ui.overlay.classList.add('hidden');}
@@ -4312,7 +4389,7 @@ function loopStep(dt){if(multiActive()){loopMultiStep(dt);return;}if(duel2Active
  sampleAcc+=dt;if(sampleAcc>=.25&&phase==='running'){sampleAcc=0;snapshot();}
 }
 function drawGrid(){ctx.fillStyle='#071729';ctx.fillRect(0,0,W,H);const s=Math.max(20,S*.055);ctx.save();ctx.strokeStyle='#28446549';ctx.lineWidth=.65;ctx.beginPath();for(let x=0;x<=W;x+=s){ctx.moveTo(x,0);ctx.lineTo(x,H);}for(let y=0;y<=H;y+=s){ctx.moveTo(0,y);ctx.lineTo(W,y);}ctx.stroke();ctx.strokeStyle='#47799e30';ctx.lineWidth=1;ctx.strokeRect(7,7,W-14,H-14);ctx.restore();const g=ctx.createRadialGradient(W*.5,H*.45,20,W*.5,H*.45,Math.max(W,H)*.8);g.addColorStop(0,'#153c4a25');g.addColorStop(1,'#02091136');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-function wallDraw(w){ctx.save();ctx.shadowBlur=12;ctx.shadowColor=w.manual?'#fac16c60':'#ff477340';ctx.fillStyle=w.manual?'#5f402cb5':'#61253fb9';ctx.strokeStyle=w.manual?'#ffd079':'#ef698a';ctx.lineWidth=2;ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeRect(w.x,w.y,w.w,w.h);ctx.shadowBlur=0;ctx.strokeStyle=w.manual?'#fdd69255':'#e7708a55';ctx.lineWidth=1;let gap=Math.max(10,S*.04);ctx.beginPath();for(let k=-w.h;k<w.w;k+=gap){let x0=Math.max(0,k),y0=Math.max(0,-k),x1=Math.min(w.w,k+w.h),y1=Math.min(w.h,w.h-k);ctx.moveTo(w.x+x0,w.y+y0);ctx.lineTo(w.x+x1,w.y+y1);}ctx.stroke();ctx.restore();}
+function wallDraw(w){if(w.fort){ctx.save();ctx.fillStyle=w.fort==='blue'?'#1f4f6ecc':'#5a2a3fcc';ctx.strokeStyle=w.fort==='blue'?'#7fd3ff':'#ff9bb5';ctx.lineWidth=2;ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeRect(w.x,w.y,w.w,w.h);ctx.restore();return;}ctx.save();ctx.shadowBlur=12;ctx.shadowColor=w.manual?'#fac16c60':'#ff477340';ctx.fillStyle=w.manual?'#5f402cb5':'#61253fb9';ctx.strokeStyle=w.manual?'#ffd079':'#ef698a';ctx.lineWidth=2;ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeRect(w.x,w.y,w.w,w.h);ctx.shadowBlur=0;ctx.strokeStyle=w.manual?'#fdd69255':'#e7708a55';ctx.lineWidth=1;let gap=Math.max(10,S*.04);ctx.beginPath();for(let k=-w.h;k<w.w;k+=gap){let x0=Math.max(0,k),y0=Math.max(0,-k),x1=Math.min(w.w,k+w.h),y1=Math.min(w.h,w.h-k);ctx.moveTo(w.x+x0,w.y+y0);ctx.lineTo(w.x+x1,w.y+y1);}ctx.stroke();ctx.restore();}
 function drawTree(bot){if(!ui.tree.checked)return;const nodes=bot.planner?bot.planner.nodes:bot.tree;if(!nodes||nodes.length<2)return;const opacity=bot.planner? .48:Math.max(.08,.30-bot.treeAge*.035);ctx.save();ctx.globalAlpha=opacity;ctx.strokeStyle=colors[bot.team];ctx.lineWidth=Math.max(.65,S*.0025);ctx.beginPath();const stride=nodes.length>900?3:nodes.length>450?2:1;for(let i=1;i<nodes.length;i+=stride){const n=nodes[i],p=nodes[n.parent];if(!p)continue;ctx.moveTo(p.x,p.y);ctx.lineTo(n.x,n.y);}ctx.stroke();ctx.restore();if(bot.planner){const target=bot.planner.goal;ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1.2;ctx.strokeStyle=colors[bot.team];ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(target.x,target.y,R*.85,0,Math.PI*2);ctx.stroke();ctx.restore();}}
 function drawPath(bot){
  if(!ui.path.checked||!bot.path.length||bot.way>=bot.path.length)return;
@@ -4611,7 +4688,7 @@ window.__rrtDuel2Debug={
     radius:mission.radius,targetSeconds:mission.targetSeconds,
     scores:{...mission.scores},presence:{...mission.presence},owner:mission.owner,
     contested:mission.contested}:null,
-   redFormation:duel2RedPreset(),
+   redFormation:duel2RedPreset(),fort:{...duel2Fort,walls:walls.filter(w=>w.fort).length,anchor:duel2Fort.defender?fortCore.anchorFor(duel2Fort.defender,{w:W,h:H},walls.filter(w=>!w.fort),{clearance:R*2.2}):null},missionPoint:mission?.point?{...mission.point}:null,
    organization:team.formations?{blue:team.formations.blue.groups,red:team.formations.red.groups,
     links:team.formations.blue.links}:null,
    packetLoss:Number(duel2UI.radioLoss.value),
@@ -4651,6 +4728,7 @@ window.__rrtDuel2Debug={
  },
  // Experiment-only: give one team different V0.6.8 features to measure their effect (A/B with side swap).
  // Unequal battles: RED formation preset (null mirrors BLUE). Takes effect on reset.
+ setFort:(defender,level)=>{if(defender!==null&&!['blue','red'].includes(defender))return false;duel2Fort={defender,level:Math.max(0,Math.min(2,level|0))};resetGame();return true;},
  setRedFormation:(preset)=>{if(preset!==null&&!Object.hasOwn(formationCore.PRESETS,preset))return false;duel2RedFormation=preset;resetGame();return true;},
  setTeamFeatures:(teamName,features)=>{if(!['blue','red'].includes(teamName))return false;
   duel2FeatureOverride[teamName]=features?{rangedDefense:!!features.rangedDefense,mobile:!!features.mobile}:null;return true;},
