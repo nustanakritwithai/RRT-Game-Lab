@@ -1697,8 +1697,12 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
  function applyNetwork(previous,candidate,{loss=0,delay=0,rand=Math.random,queueLimit=240}={}){
   const old=previous||{queue:[],lastSent:{}},next=candidate||old;
   const earlier=old.queue||[],candidateQueue=next.queue||[];
-  const retained=candidateQueue.filter(m=>earlier.includes(m));
-  const outgoing=candidateQueue.filter(m=>!earlier.includes(m));
+  // Identity-based partition is identical to Array.includes(), but avoids
+  // repeated O(queue × queue) scans when many Buddy/Group radio peers are active.
+  const existing=new Set(earlier),retained=[],outgoing=[];
+  for(const msg of candidateQueue){
+   if(existing.has(msg))retained.push(msg);else outgoing.push(msg);
+  }
   const pct=clamp(Number(loss)||0,0,1),lag=Math.max(0,Number(delay)||0);
   let dropped=0;
   for(const msg of outgoing){
@@ -2228,22 +2232,28 @@ function withRngStream(name,fn){
  try{return fn();}finally{Math.random=old;}
 }
 // Transport operates on outgoing packets only; never makes a tactical decision.
-function sendRadioPacket(build){
- const before=team.radio,attempted=build(before);
+function sendRadioPacket(build,sourceBot=null){
+ const before=team.radio,adaptive=duel2Active()&&team.mode==='adaptive';
+ // Adaptive PeerMesh needs only the rate-limit book: candidate packets go
+ // into private outboxes, never into the physical radio queue until flush.
+ const rateBook=adaptive&&sourceBot?sourceBot.duelRadioLastSent||Object.create(null):before.lastSent;
+ const packetSource=adaptive?{queue:[],lastSent:rateBook}:before;
+ const attempted=build(packetSource);
  // Existing observation-change rate limits are preserved for all modes.
  if(duel2Active()&&Number.isFinite(attempted?.suppressed))
   team.suppressedSightings=(team.suppressedSightings||0)+attempted.suppressed;
- if(duel2Active()&&team.mode==='adaptive'){
-  // Only new packets enter the SENDER's private PeerMesh outbox.
-  // Shared radio queue remains physical transport, never shared decisions.
-  const newPackets=(attempted.queue||[]).filter(p=>!(before.queue||[]).includes(p));
+ if(adaptive){
+  if(sourceBot)sourceBot.duelRadioLastSent=attempted.lastSent||rateBook;
+  // Outgoing-only candidate avoids copying/scanning the full physical queue
+  // once for each sender/peer/target while preserving first-hand provenance.
+  const newPackets=attempted.queue||[];
   for(const packet of newPackets){
    const sender=bots.find(b=>b.id===packet.sender&&b.hp>0);
    if(!sender||!sender.peerMesh)continue;
    const result=meshCore.offer(sender.peerMesh,packet,elapsed);
    if(!result.accepted)team.peerMeshSuppressed++;
   }
-  team.radio={queue:before.queue.slice(),lastSent:{...(attempted.lastSent||before.lastSent)}};
+  team.radio={queue:before.queue,lastSent:before.lastSent};
   return {sent:0,dropped:0,queued:newPackets.length};
  }
  const net=leaderless.applyNetwork(before,attempted,{
@@ -2259,6 +2269,10 @@ function sendRadioPacket(build){
 // This function only applies physical radio range/loss/delay to those packets.
 function flushDuel2PeerMesh(){
  if(!duel2Active()||team.mode!=='adaptive')return;
+ // Simulation-only network transport: batch all already-selected peer packets
+ // into ONE loss/latency pass. The sender's private PeerMesh still chooses,
+ // prioritizes, ACKs and retries independently for every receiver.
+ const pendingPackets=[];
  for(const bot of bots){
   if(bot.hp<=0||!bot.peerMesh)continue;
   const peers=formationCore.peersFor(team.formations[bot.team],bot.id);
@@ -2267,17 +2281,20 @@ function flushDuel2PeerMesh(){
    if(!peer)continue;
    const packets=meshCore.due(bot.peerMesh,elapsed,{receiver:peer.id,
     inRange:dist(bot,peer)<=S*.95,maxPackets:2});
-   if(!packets.length)continue;
-   const before=team.radio,attempted={queue:before.queue.concat(packets),lastSent:{...before.lastSent}};
-   const net=leaderless.applyNetwork(before,attempted,{
-    loss:Number(duel2UI.radioLoss.value)/100,
-    delay:Number(duel2UI.radioDelay.value),
-    rand:()=>rngStreams.next('radio'),queueLimit:Math.max(240,bots.length*48)});
-   team.radio=net.radio;team.radioSent+=net.sent;team.radioDropped+=net.dropped;
-   team.bidsSent+=packets.filter(p=>p.type==='BID').length;
-   team.peerAcks+=packets.filter(p=>p.type==='ACK').length;
+   pendingPackets.push(...packets);
   }
  }
+ if(!pendingPackets.length)return;
+ const before=team.radio,attempted={
+  queue:before.queue.concat(pendingPackets),lastSent:{...before.lastSent}};
+ const net=leaderless.applyNetwork(before,attempted,{
+  loss:Number(duel2UI.radioLoss.value)/100,
+  delay:Number(duel2UI.radioDelay.value),
+  rand:()=>rngStreams.next('radio'),queueLimit:Math.max(240,bots.length*48)
+ });
+ team.radio=net.radio;team.radioSent+=net.sent;team.radioDropped+=net.dropped;
+ team.bidsSent+=pendingPackets.filter(p=>p.type==='BID').length;
+ team.peerAcks+=pendingPackets.filter(p=>p.type==='ACK').length;
 }
 const multiActive=()=>scenario==='multi';
 const duel2Active=()=>scenario==='duel2';
@@ -2354,6 +2371,7 @@ function setupDuel2(){
   bot.duelInbox=duel2Core.makeInbox();bot.bidInbox=leaderless.emptyInbox();
   bot.evidenceLedger=evidenceCore.emptyLedger();
   bot.peerMesh=meshCore.createPeer(bot.id);bot.meshLastSupportAt=-Infinity;
+  bot.duelRadioLastSent=Object.create(null);
   bot.duelRangeHistory=Object.create(null);bot.duelSwitches=0;bot.duelLastSwitchAt=-Infinity;
   bot.duelDefense={
    cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,
@@ -3748,17 +3766,17 @@ function senseDuel2World(){
     }
     sendRadioPacket(r=>duel2Core.sendSightings(r,bot,peer,reports,elapsed,
      {range:S*.95,latency:.3,ttl:3.5,interval:.65,
-      minDisplacement:R*1.4,maxRefreshSeconds:2.25,queueLimit:Math.max(240,bots.length*48)}));
+      minDisplacement:R*1.4,maxRefreshSeconds:2.25,queueLimit:Math.max(240,bots.length*48)}),bot);
     if(selected&&visibleNow[selected]){
      const attempt=sendRadioPacket(r=>leaderless.sendBid(r,bot,peer,visibleNow,selected,elapsed,
       {range:S*.95,latency:.3,scale:S,interval:.4,stableInterval:.95,
-       qualityDelta:.06,queueLimit:Math.max(240,bots.length*48)}));
+       qualityDelta:.06,queueLimit:Math.max(240,bots.length*48)}),bot);
      team.bidsSent=(team.bidsSent||0)+attempt.sent;
     }
     if(resolution?.type&&resolution.peerId===peer.id&&(resolution.previousTargetId||selected)){
      const attempt=sendRadioPacket(r=>leaderless.sendResponse(r,bot,peer,
       resolution.previousTargetId||selected,resolution.type,elapsed,
-      {range:S*.95,latency:.3,queueLimit:Math.max(240,bots.length*48)}));
+      {range:S*.95,latency:.3,queueLimit:Math.max(240,bots.length*48)}),bot);
      if(resolution.type==='ACK')team.peerAcks=(team.peerAcks||0)+attempt.sent;
     }
    }

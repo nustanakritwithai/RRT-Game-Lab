@@ -43,7 +43,7 @@ test('duel2 radio exchange is direct sender and receiver only and obeys fault tr
  assert.match(sense,/sendRadioPacket\(r=>leaderless\.sendBid/);
  assert.match(sense,/evidenceCore\.ingest\(bot\.evidenceLedger,normalized,bot\.id,elapsed\)/);
  assert.match(sense,/duel2Core\.receive\(bot\.duelInbox,validated,bot\.id,elapsed\)/);
- const network=block('function sendRadioPacket(build){','const multiActive=');
+ const network=block('function sendRadioPacket(build,sourceBot=null){','const multiActive=');
  assert.match(network,/duel2Active\(\)\?duel2UI\.radioLoss:multiUI\.radioLoss/);
 });
 test('radio sightings never bypass local sight and are not passed to shooting',()=>{
