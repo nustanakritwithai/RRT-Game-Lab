@@ -6,8 +6,8 @@ Development policy: **One limitation / one isolated change / full regression bef
 
 | Priority | Verified limitation | Intended fix | Status | Acceptance gate |
 |---|---|---|---|---|
-| 1 | Only elimination or HP timeout decides Duel2 | Optional neutral Control Point A | IN DEVELOPMENT | Uncontested occupancy scores; contested pauses; 20s control/150s timeout; symmetric AI; elimination default unchanged |
-| 2 | Online learning UCB resets every setupRound | Per-Agent persisted learned policy across matches | QUEUED | Optional carry-over, bounded schema, correct load/reset, no shared learning |
+| 1 | Only elimination or HP timeout decides Duel2 | Optional neutral Control Point A | DONE V0.9 merged PR #24 | Uncontested occupancy scores; contested pauses; 20s control/150s timeout; symmetric AI; elimination default unchanged |
+| 2 | Online learning UCB resets every setupRound | Per-Agent persisted learned policy across matches | IN DEVELOPMENT (PR #25) | Optional carry-over, bounded schema, correct load/reset, no shared learning |
 | 3 | Player does not organize individuals into mission roles | Squad/Buddy roster management | QUEUED | Players assign roles pre-match; no live omniscient command |
 | 4 | No mission selection or long-form play loop | Lobby, mission choice and post-match results | QUEUED | A complete start→objective→result→new mission path |
 | 5 | No persistent career/progression | Local profile, Agent XP, unlocks, history | QUEUED | Validated save/load and meaningful progression without pay-to-win |
@@ -29,3 +29,13 @@ Development policy: **One limitation / one isolated change / full regression bef
 - Do not claim that this single objective makes a complete campaign or product. Test first; merge only after all gates.
 
 **Future work must update this file to mark an item VERIFIED DONE only after CI and merged commit.**
+
+## #2 Per-Agent persistent learning — v0.9.1
+- Separate from mission PR #24; opt-in when Online Learning ON and "จำสิ่งที่เรียนรู้" checked
+- Per-agent policy JSON v1, capped 10,000 samples per arm, max 24 roster slots (B1–B12/R1–R12)
+- localStorage on this origin/device only; unavailable storage fails closed, never transmits profile
+- Snapshot on finished match; restore on next round and page reload
+- Reset score does not erase trained experience; explicit Clear button removes profile and resets the current match
+- Browser with server origin tests save→reload→clear and baseline OFF; Node tests corrupt/oversized archives and replay policy equality
+- No HP/accuracy/range/weapon buffs; no shared agent truth
+- Merge only after exact HEAD CI and browser PASS
