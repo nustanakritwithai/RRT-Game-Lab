@@ -1,7 +1,7 @@
 # RRT ARENA — Hierarchical Buddy / Group / Squad Experiment
 
-**สถานะ:** Experimental Draft PR, **ไม่ใช่ Production Release**  
-**ฐาน:** main V0.6.17 + PeerMesh V1.2, SHA 7b61ba3180a4d7b95e727f116e8394fdc488b470
+**สถานะ:** V0.8.0 Release Candidate — ยืนยันสถานะ Production เฉพาะเมื่อ Merge + Pages Deploy + Live Readback ผ่าน  
+**ฐาน:** main PeerMesh Tactical V0.7 + PeerMesh Lab V1.2, SHA 501458e548abee73ae149944709347ed14fcac2b
 
 ## สมมติฐานการทดลอง
 
@@ -65,6 +65,16 @@ Agent ฝ่าย BLUE/RED ทุกตัวมี memory, sensor, RRT, eviden
 - เพิ่ม queue cap เฉพาะในโหมดที่จำนวนมาก โดยคง 240 ใน baseline 2v2
 - คำนวณ focus overlap แบบ pairwise เพื่อเปรียบเทียบขนาดทีมที่ต่างกัน
 - ห้ามใช้ topology metadata เป็นคำสั่งเลือกเป้าหมายจากศูนย์กลาง
+
+
+## หลักฐาน Full-match Pilot
+
+- Seed 83, 311 × Formation Buddy2 / Group23 × Independent / Adaptive = 8 simulations
+- ทุกแมตช์จบก่อนหรือภายใน 150 วินาที หลังแก้จุดเชื่อม RRT จากตำแหน่งที่เคลื่อนระหว่างวางแผน
+- ตรวจทุก ๆ 5 วินาที: ตัวละครไม่หลุดพื้นที่ที่อนุญาต, เส้นทางคง collision-safe
+- พบจุดบกพร่องจากการทดสอบ RED: เส้นทางระหว่าง 30 และ 55 วินาทีใน Adaptive ก่อนแก้ไข; GREEN หลังแก้ไขผ่าน 8/8
+- Seed เดียวกันข้ามโหมด (paired) แต่ยังไม่มีการสลับฝั่งหรือ Confidence Interval; ห้ามสรุปความเหนือกว่าด้าน Win Rate
+- Script: \`tools/benchmark_formation_fullmatch.cjs\`; artifacts จาก GitHub Actions
 
 ## Test / Release requirements
 

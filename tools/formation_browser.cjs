@@ -2,7 +2,7 @@
 'use strict';
 // Headless Chromium verification of scaled buddy/group/squad SIMULATION.
 // Does not run a live weapon system or claim real-world combat performance.
-const assert=require('node:assert/strict'),path=require('node:path');
+const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const base='file://'+path.resolve(__dirname,'../index.html');
 const presets=[
@@ -55,6 +55,10 @@ const presets=[
     assert.ok(valid.fightersFree&&valid.waypointsClear,'collision safety '+code);
     assert.ok(report.scroll<=0,'no mobile sideways scroll '+code);
     assert.ok(report.stageSize>200,'stable play area '+code);
+    if(code==='squad3333'&&width===393){
+     fs.mkdirSync('artifacts',{recursive:true});
+     await page.screenshot({path:'artifacts/formation-squad3333-mobile.png'});
+    }
     console.log('PASS '+code+' '+count+'v'+count+' '+width+'px');
     checked++;
     await context.close();

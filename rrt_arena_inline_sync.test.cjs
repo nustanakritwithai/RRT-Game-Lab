@@ -17,7 +17,7 @@ for(const [id,file] of Object.entries(modules)){
 test('predictive module loads before the game script uses it',()=>{
  assert.ok(html.indexOf('<script id="swarmPredictCore">')<html.indexOf('swarmCore=globalThis.RRTArenaSwarm'));
 });
-test('page advertises the V0.6.17 build',()=>assert.match(html,/<title>RRT ARENA 06\.17/));
+test('page advertises V0.8 hierarchical combat build',()=>assert.match(html,/<title>RRT ARENA 08\.00/));
 
 const vm=require('node:vm');
 test('all standalone inline scripts parse as JavaScript',()=>{

@@ -38,7 +38,7 @@ jobs:
       - name: Verify common BLUE engine and both modes in static entrypoint
         run: |
           test -s index.html
-          grep -q 'RRT ARENA 06.17' index.html
+          grep -q 'RRT ARENA 08.00' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
@@ -85,6 +85,14 @@ jobs:
           node tools/peermesh_duel2_browser.cjs
           node tools/formation_browser.cjs
           node tools/benchmark_duel2_quality.cjs
+      - name: Upload Hierarchical Squad 12v12 mobile screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hierarchical-squad-mobile-screenshot
+          path: artifacts/formation-*.png
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload PeerMesh real Chromium screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -132,7 +140,7 @@ jobs:
           retention-days: 30
 
   formation-fullmatch:
-    name: Hierarchical Buddy / Group full-match research (150s)
+    name: Buddy / Group / Squad full-match research (150s)
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -147,7 +155,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Complete seed-paired 150 second matches
         run: |
-          node tools/benchmark_formation_fullmatch.cjs --seeds=83,311 --formations=buddy2,group23 --modes=independent,adaptive --out=benchmarks/formation-fullmatch-v08.json
+          node tools/benchmark_formation_fullmatch.cjs --seeds=83,311 --formations=buddy2,group23,squad3333 --modes=independent,adaptive --out=benchmarks/formation-fullmatch-v08.json
       - name: Upload full-match simulation evidence
         if: always()
         uses: actions/upload-artifact@v4
