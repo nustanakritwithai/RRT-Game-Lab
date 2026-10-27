@@ -31,7 +31,9 @@ jobs:
           test -s network_lab_ui.js
           grep -q 'src="network_lab_core.js"' network-lab.html
           grep -q 'src="network_lab_ui.js"' network-lab.html
-          grep -q 'RRT ARENA 08.00' index.html
+          grep -q 'RRT ARENA 09.00' index.html
+          grep -q 'RRTArenaObjectives' index.html
+          grep -q 'id="duel2Objective"' index.html
           grep -q 'RRTArenaRangedDefense' index.html
           grep -q 'RRTArenaTeam' index.html
           grep -q 'RRTArenaCoop' index.html
