@@ -83,7 +83,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 .duel2Controls label{font-size:11px;color:#bdd7e9;min-width:0}
 .duel2Controls select{margin:4px 0 6px;min-width:0;padding:8px;width:100%}
 .duel2Status{height:32px;min-height:32px;line-height:30px;padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;background:#11304a;border:1px solid #315874;border-radius:9px;font-variant-numeric:tabular-nums}
-.duel2Hint{margin:7px 0 0;font-size:11px;color:#aac3d9}
+.duel2Hint{margin:7px 0 0;font-size:11px;color:#aac3d9}.duel2LearnSwitch{display:flex;gap:8px;align-items:center;font-size:12px;color:#cde6f7;padding:5px 2px}.duel2LearnSwitch input{accent-color:#72ecba;min-width:16px;min-height:16px}
 @media(max-width:420px){.duel2Controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.duel2Controls select{font-size:10px;padding:7px 4px}.duel2Hint{font-size:10px}}
 </style>
 </head>
@@ -112,6 +112,8 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
   </div>
   <div id="duel2Status" class="duel2Status" aria-live="polite">B1 · B2 vs R1 · R2 — พร้อมเริ่มการต่อสู้</div>
   <div id="duel2MeshStatus" class="duel2Status" aria-live="polite" hidden>PeerMesh: ไม่มีข้อมูล</div>
+  <label class="duel2LearnSwitch"><input id="duel2OnlineLearning" type="checkbox"> 🧠 Online Learning — ทดลองกลยุทธ์และเรียนรู้จากผลการต่อสู้ของตัวเอง (เปิด/ปิดเทียบผลได้)</label>
+  <div id="duel2LearningStatus" class="duel2Status" aria-live="polite" hidden>เรียนรู้: รอข้อมูลการต่อสู้</div>
   <p class="duel2Hint">Buddy 2/3 · สองทีมต่อกลุ่ม · สองกลุ่มต่อหมู่ · AI ส่วนตัวทุกตัว · วิทยุไม่อนุญาตให้ยิง</p>
  </div>
  <div id="multiPanel" class="multiPanel" hidden>
@@ -2193,20 +2195,134 @@ function summary(formation){
 return Object.freeze({PRESETS,createFormation,peersFor,summary});
 });
 </script>
+<script id="onlineLearningCore">
+/* RRT Arena V0.8.2 — private, bounded online tactical learning.
+ * Three existing tactical strategies, no stat changes or hidden enemy positions.
+ * Own observed events provide the only rewards. No radio/shared brain.
+ */
+(function(root,factory){'use strict';const api=factory();root.RRTArenaOnlineLearning=api;
+ if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+'use strict';
+const STYLES=Object.freeze(['balanced','aggressive','cautious']);
+const CONTEXTS=Object.freeze(['contact','under_fire']);
+const WINDOW_SECONDS=3;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const stats=()=>({samples:0,mean:0});
+const contextStats=()=>Object.fromEntries(STYLES.map(style=>[style,stats()]));
+const events=()=>({shots:0,confirmedHits:0,confirmedDamage:0,receivedDamage:0});
+function create(enabled=true,initialStyle='balanced'){
+ const start=STYLES.includes(initialStyle)?initialStyle:'balanced';
+ return {enabled:enabled===true,initialStyle:start,style:start,context:null,windowStart:null,
+  contexts:{contact:contextStats(),under_fire:contextStats()},events:events(),
+  shots:0,confirmedHits:0,confirmedDamage:0,receivedDamage:0,
+  updates:0,windows:0,switches:0,totalReward:0,lastReward:null};
+}
+function recordShot(state){
+ if(!state?.enabled||!state.context)return false;
+ state.events.shots++;state.shots++;return true;
+}
+function recordConfirmedHit(state,damage,observed){
+ if(!state?.enabled||!state.context||observed!==true||!Number.isFinite(damage)||damage<=0)return false;
+ const n=clamp(damage,0,120);
+ state.events.confirmedHits++;state.events.confirmedDamage+=n;
+ state.confirmedHits++;state.confirmedDamage+=n;
+ return true;
+}
+function recordDamage(state,damage){
+ if(!state?.enabled||!state.context||!Number.isFinite(damage)||damage<=0)return false;
+ const n=clamp(damage,0,120);
+ state.events.receivedDamage+=n;state.receivedDamage+=n;return true;
+}
+function feedback(state){
+ const e=state.events;
+ // Shots alone are NOT success. Only personally witnessed impacts and actual
+ // personal damage count; intentionally avoids reading global enemy HP/position.
+ if(!e.shots&&!e.confirmedHits&&!e.receivedDamage)return null;
+ const accuracy=e.confirmedHits/Math.max(1,e.shots);
+ return clamp(.55*accuracy+.018*e.confirmedDamage-.030*e.receivedDamage,-1,1);
+}
+function settle(state,now){
+ if(state.windowStart===null||!state.context)return;
+ const dt=now-state.windowStart;
+ const reward=feedback(state);
+ state.windows++;
+ if(reward!==null&&dt>=1){
+  const item=state.contexts[state.context][state.style];
+  item.mean+=(reward-item.mean)/(++item.samples);
+  state.updates++;state.totalReward+=reward;state.lastReward=reward;
+ }
+}
+function select(state,context){
+ const options=state.contexts[context],count=STYLES.reduce((sum,name)=>sum+options[name].samples,0);
+ if(!count)return state.initialStyle;
+ for(const name of STYLES)if(!options[name].samples)return name;
+ // Deterministic UCB: explore first, then favor strategies that actually
+ // produced better observed reward. B and R receive identical rules/priors.
+ let winner='balanced',best=-Infinity;
+ for(const name of STYLES){
+  const arm=options[name];
+  const ucb=arm.mean+.22*Math.sqrt(Math.log(count+1)/arm.samples);
+  if(ucb>best+1e-8){best=ucb;winner=name;}
+ }
+ return winner;
+}
+function tick(state,local,now){
+ if(!state?.enabled||!Number.isFinite(now)||now<0)
+  return {style:state?.style||'balanced',changed:false,trained:false};
+ const next=local?.underFire===true?'under_fire':
+  local?.visible===true?'contact':null;
+ if(state.windowStart===null){
+  if(next){
+   state.context=next;state.style=select(state,next);state.windowStart=now;
+  }
+  return {style:state.style,changed:false,trained:false};
+ }
+ if(now-state.windowStart<WINDOW_SECONDS)
+  return {style:state.style,changed:false,trained:false};
+ const prev=state.style,prior=state.updates;
+ settle(state,now);
+ state.events=events();state.windowStart=next?now:null;state.context=next;
+ if(next)state.style=select(state,next);else state.style='balanced';
+ if(state.style!==prev)state.switches++;
+ return {style:state.style,changed:state.style!==prev,trained:state.updates>prior};
+}
+function finish(state,now){
+ if(!state?.enabled||state.windowStart===null||!Number.isFinite(now))return;
+ settle(state,now);
+ state.events=events();state.windowStart=null;state.context=null;
+}
+function summary(state){
+ if(!state)return null;
+ return {enabled:state.enabled,style:state.style,context:state.context,
+  windows:state.windows,updates:state.updates,switches:state.switches,
+  shots:state.shots,confirmedHits:state.confirmedHits,
+  confirmedDamage:Number(state.confirmedDamage.toFixed(2)),
+  receivedDamage:Number(state.receivedDamage.toFixed(2)),
+  meanReward:state.updates?Number((state.totalReward/state.updates).toFixed(4)):0,
+  lastReward:state.lastReward,
+  contexts:Object.fromEntries(CONTEXTS.map(context=>[context,
+   Object.fromEntries(STYLES.map(style=>[style,{samples:state.contexts[context][style].samples,
+    mean:Number(state.contexts[context][style].mean.toFixed(4))}]))]))};
+}
+return Object.freeze({STYLES,CONTEXTS,WINDOW_SECONDS,create,recordShot,
+ recordConfirmedHit,recordDamage,tick,finish,summary});
+});
+</script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 // Optional ?seed=N for reproducible experiments; without it the game stays truly random.
 const benchmarkSeed=(()=>{const v=new URLSearchParams(location.search).get('seed');if(v===null||!/^\d{1,9}$/.test(v))return null;let a=Number(v)>>>0;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};return Number(v);})();
 const canvas=$('arena'),stage=$('stage'),ctx=canvas.getContext('2d',{alpha:false}),core=globalThis.RRTArenaCore,mem=globalThis.RRTArenaMemory,guided=globalThis.RRTArenaGuided,tactics=globalThis.RRTArenaTactics,defense=globalThis.RRTArenaDefense,multiCore=globalThis.RRTArenaMulti,meleeCore=globalThis.RRTArenaMelee,swarmCore=globalThis.RRTArenaSwarm,rangedCore=globalThis.RRTArenaRanged,rangedDef=globalThis.RRTArenaRangedDefense,teamCore=globalThis.RRTArenaTeam,coopCore=globalThis.RRTArenaCoop,commsCore=globalThis.RRTArenaPrivateRadio,leaderless=globalThis.RRTArenaLeaderless,evidenceCore=globalThis.RRTArenaEvidence,duel2Core=globalThis.RRTArenaDuel2,
- meshCore=globalThis.RRTArenaPeerMesh,formationCore=globalThis.RRTArenaFormation;
+ meshCore=globalThis.RRTArenaPeerMesh,formationCore=globalThis.RRTArenaFormation,onlineCore=globalThis.RRTArenaOnlineLearning;
 const ui={start:$('start'),pause:$('pause'),reset:$('reset'),overlay:$('overlay'),icon:$('overlayIcon'),title:$('overlayTitle'),text:$('overlayText'),hint:$('overlayHint'),notice:$('notice'),dot:$('liveDot'),live:$('liveText'),bias:$('bias'),biasVal:$('biasValue'),risk:$('risk'),riskVal:$('riskValue'),focus:$('focus'),focusVal:$('focusValue'),samplingStat:$('samplingStat'),activeTactics:$('activeTactics'),activeDefense:$('activeDefense'),defenseStat:$('defenseStat'),maneuverStat:$('maneuverStat'),blueStyle:$('blueStyle'),redStyle:$('redStyle'),showThreat:$('showThreat'),speed:$('speed'),speedVal:$('speedValue'),map:$('mapSelect'),tree:$('showTree'),path:$('showPath'),smooth:$('smooth'),auto:$('autoNext'),wall:$('wallTool'),order:$('orderTool'),clear:$('clearWalls'),touchHint:$('touchHint'),round:$('roundNo'),score:$('scores'),clock:$('clock'),blueHp:$('blueHp'),redHp:$('redHp'),blueBar:$('blueBar'),redBar:$('redBar'),blueMode:$('blueMode'),redMode:$('redMode'),blueAmmo:$('blueAmmo'),redAmmo:$('redAmmo'),blueThink:$('blueThinking'),redThink:$('redThinking'),nodes:$('nodes'),plans:$('plans'),rejects:$('rejects'),hits:$('hits'),coverMoves:$('coverMoves'),flanks:$('flanks'),replans:$('replans'),blueReason:$('blueReason'),redReason:$('redReason'),blueRisk:$('blueRisk'),redRisk:$('redRisk'),bluePlans:$('bluePlans'),redPlans:$('redPlans'),log:$('battlelog'),showMemory:$('showMemory'),carryMemory:$('carryMemory'),blueMemory:$('blueMemory'),redMemory:$('redMemory'),sightEvents:$('sightEvents'),learnedSpots:$('learnedSpots'),replayToggle:$('replayToggle'),replayPlay:$('replayPlay'),replayExport:$('replayExport'),replayScrub:$('replayScrub'),replayClock:$('replayClock'),replayStatus:$('replayStatus')};
 let W=800,H=530,S=530,R=14,STEP=30,phase='ready',round=1,scores={blue:0,red:0},elapsed=0,last=0,scoreDelay=0,tool='none',walls=[],extraWalls=[],bots=[],bullets=[],particles=[],stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}},frameCount=0,storedLessons={blue:{danger:[],encounters:[]},red:{danger:[],encounters:[]},B1:{danger:[],encounters:[]},B2:{danger:[],encounters:[]},R1:{danger:[],encounters:[]},R2:{danger:[],encounters:[]}},timeline=[],events=[],replayActive=false,replayPlaying=false,replayIndex=0,replayTimer=0,sampleAcc=0,finalResult=null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random(),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),copy=p=>({x:p.x,y:p.y});
 const colors={blue:'#4dcfff',red:'#ff638d'};
 const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict'),enemyMode:$('multiEnemyMode'),rangedDefense:$('multiRangedDefense'),mobile:$('multiMobile'),teamMode:$('blueTeamMode'),teamStatus:$('blueTeamStatus'),evidenceStatus:$('blueEvidenceStatus'),radioLoss:$('teamRadioLoss'),radioDelay:$('teamRadioDelay')};
 const duel2UI={panel:$('duel2Panel'),formation:$('duel2Formation'),teamMode:$('duel2TeamMode'),radioLoss:$('duel2RadioLoss'),
- radioDelay:$('duel2RadioDelay'),status:$('duel2Status'),meshStatus:$('duel2MeshStatus')};
+ radioDelay:$('duel2RadioDelay'),status:$('duel2Status'),meshStatus:$('duel2MeshStatus'),learning:$('duel2OnlineLearning'),learningStatus:$('duel2LearningStatus')};
 const multiModes={patrol:'ลาดตระเวน',wander:'เดินสุ่ม',flee:'หนี',stay:'หยุดนิ่ง',approach:'เข้าหา BLUE',hunt:'ไล่ล่าจากที่เคยเห็น'};
 const rangedModes={sentry:'🔫 ป้อมยิง',patrol:'🔫 ลาดตระเวนยิง',hunter:'🔫 ไล่ล่าแล้วยิง'};
 const incomingEnemyMode=new URLSearchParams(location.search).get('enemy');
@@ -2216,6 +2332,7 @@ multiUI.teamMode.value=teamParams.get('blue')==='2'?(teamParams.get('team')==='c
 multiUI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
 multiUI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
 duel2UI.formation.value=Object.hasOwn(formationCore.PRESETS,teamParams.get('formation'))?teamParams.get('formation'):'buddy2';
+duel2UI.learning.checked=teamParams.get('learn')==='1';
 duel2UI.teamMode.value=teamParams.get('dteam')==='adaptive'?'adaptive':
  teamParams.get('dteam')==='coop'?'cooperative':'independent';
 duel2UI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
@@ -2372,6 +2489,7 @@ function setupDuel2(){
   bot.evidenceLedger=evidenceCore.emptyLedger();
   bot.peerMesh=meshCore.createPeer(bot.id);bot.meshLastSupportAt=-Infinity;
   bot.duelRadioLastSent=Object.create(null);
+  bot.duelLearner=onlineCore.create(duel2UI.learning.checked,ui.blueStyle.value);
   bot.duelRangeHistory=Object.create(null);bot.duelSwitches=0;bot.duelLastSwitchAt=-Infinity;
   bot.duelDefense={
    cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,
@@ -3156,7 +3274,7 @@ function senseWorld(){
   }
  }
 }
-function botStyle(bot){return ui[(duel2Active()?'blue':bot.team)+'Style'].value;}
+function botStyle(bot){return duel2Active()&&bot.duelLearner?.enabled?bot.duelLearner.style:ui[(duel2Active()?'blue':bot.team)+'Style'].value;}
 function botRisk(bot){return clamp(Number(ui.risk.value)+(botStyle(bot)==='cautious'?22:botStyle(bot)==='aggressive'?-28:0),0,100);}
 function riskSight(a,b){return clearSight(a,b);}
 function edgeCostFor(bot,a,b,foe,risk){
@@ -3545,6 +3663,7 @@ function shoot(bot){const foe=opponent(bot),d=dist(bot,foe);if(multiActive()&&(!
 function burst(x,y,color,count=9,spread=3){for(let i=0;i<count;i++){const a=rand(-Math.PI,Math.PI),v=rand(18,86)*spread/3,life=rand(.18,.48);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life,total:life,color});}}
 function endRound(winner){
  phase='ended';finalResult=winner;
+ if(duel2Active())for(const bot of bots)if(bot.duelLearner?.enabled)onlineCore.finish(bot.duelLearner,elapsed);
  for(const bot of bots)storedLessons[duel2Active()?bot.id:bot.team]=ui.carryMemory.checked?{danger:mem.preserveLessons(bot.brain,elapsed),encounters:mem.preserveEncounters(bot.brain,elapsed)}:{danger:[],encounters:[]};
  snapshot();updateReplayUI();const draw=winner==='draw';if(!draw)scores[winner]++;
  updateControls();const winLabel=draw?'เสมอ':winner==='blue'?'BLUE 🔷':'RED 🔺';
@@ -3669,6 +3788,17 @@ function senseDuel2World(){
     candidates.push({id:foe.id,position:known.position,status:known.status,age:known.age||0,closingRate:seen?closingRate:0});
   }
   bot.duelVisible=visibleNow;
+  if(bot.duelLearner?.enabled){
+   // Personal sensors and received damage only; never inspect peers' memories.
+   const update=onlineCore.tick(bot.duelLearner,{
+    visible:Object.keys(visibleNow).length>0,underFire:elapsed-bot.lastDamageAt<1.6
+   },elapsed);
+   if(update.changed){
+    // A different learned style is applied by the ORIGINAL tactical policy/RRT.
+    // It never changes HP, accuracy, weapon or the opponent's state.
+    bot.agePlan=Math.max(bot.agePlan,5.1);bot.thinkCooldown=Math.min(bot.thinkCooldown,.04);
+   }
+  }
   // Local teammate poses are learned by the visual sensor, not read from radio or global plans.
   bot.duelSeenPeers=Object.create(null);
   for(const peer of bots){
@@ -3819,6 +3949,7 @@ function duel2Shoot(bot){
  bullets.push({x:sx,y:sy,px:sx,py:sy,vx:Math.cos(angle)*speed,
   vy:Math.sin(angle)*speed,team:bot.team,ownerId:bot.id,targetId:trace.id,ttl:1.6});
  team.shotsFired[bot.id]=(team.shotsFired[bot.id]||0)+1;
+ if(bot.duelLearner?.enabled)onlineCore.recordShot(bot.duelLearner);
  bot.ammo--;bot.cool=bot.baseFire*rand(.9,1.12);bot.fireFlash=.11;
  bot.mode='กำลังยิง';burst(sx,sy,colors[bot.team],4,2);
  if(!bot.ammo){bot.reload=1.35;bot.mode='กำลังรีโหลด';}
@@ -3839,12 +3970,24 @@ function duel2Projectiles(dt){
     burst(impact.x,impact.y,'#ffd48b',3,1);
     continue;
    }
+   const beforeHp=victim.hp;
    victim.hp=Math.max(0,victim.hp-rand(8.5,12.5));
+   const receivedDamage=beforeHp-victim.hp;
+   if(victim.duelLearner?.enabled)onlineCore.recordDamage(victim.duelLearner,receivedDamage);
+   const shooter=bots.find(b=>b.id===shot.ownerId);
+   if(shooter?.duelLearner?.enabled){
+    const seen=shooter.duelVisible?.[victim.id];
+    const observed=shooter.hp>0&&seen?.status==='visible'&&
+     elapsed-seen.lastSeen<=.18&&dist(shooter,impact)<=S*1.12&&clearSight(shooter,impact);
+    // Physics delivers a hit-confirmation ONLY when the shooter actually sees
+    // the impact. Unseen enemy HP/damage is never a tactical input.
+    onlineCore.recordConfirmedHit(shooter.duelLearner,receivedDamage,observed);
+   }
    victim.hitFlash=.22;victim.lastDamageAt=elapsed;victim.thinkCooldown=0;
    stats.hits++;
    mem.rememberDanger(victim.brain,{x:victim.x/W,y:victim.y/H},elapsed,.72);
    burst(impact.x,impact.y,colors[victim.team],12,3);
-   if(victim.hp===0){victim.path=[];victim.planner=null;log(victim.id+' ถูกกำจัด',victim.team);}
+   if(victim.hp===0){if(victim.duelLearner?.enabled)onlineCore.finish(victim.duelLearner,elapsed);victim.path=[];victim.planner=null;log(victim.id+' ถูกกำจัด',victim.team);}
    continue;
   }
   if(wallT!==Infinity||next.x<0||next.x>W||next.y<0||next.y>H){
@@ -4029,6 +4172,15 @@ function updateDuel2HUD(){
    ' · ยืนยัน '+sum('acknowledged')+' · ตัดซ้ำ '+sum('duplicates')+
    ' · รอ '+sum('queued')+' · ขอช่วย '+sum('supports');
  }
+ duel2UI.learningStatus.hidden=!duel2UI.learning.checked;
+ if(duel2UI.learning.checked){
+  const updates=bots.reduce((n,b)=>n+(b.duelLearner?.updates||0),0);
+  const switched=bots.reduce((n,b)=>n+(b.duelLearner?.switches||0),0);
+  const styles={balanced:0,aggressive:0,cautious:0};
+  for(const b of bots)if(b.hp>0&&b.duelLearner)styles[b.duelLearner.style]++;
+  duel2UI.learningStatus.textContent='🧠 เรียนรู้จริง '+updates+' รอบ · ปรับกลยุทธ์ '+switched+
+   ' ครั้ง · สมดุล '+styles.balanced+' · บุก '+styles.aggressive+' · ระวัง '+styles.cautious;
+ }
 }
 function updateHUD(){if(!bots.length)return;
  if(duel2Active())updateDuel2HUD();else for(const bot of (multiActive()?[bots[0]]:bots)){const id=bot.team;
@@ -4108,11 +4260,12 @@ multiUI.scenario.addEventListener('change',()=>{
  }
  resetGame();showNotice(duel2Active()?'เปิดสนาม 2 ต่อ 2 · BLUE/RED ใช้ AI รุ่นเดียวกัน':multiActive()?'โหมด BLUE ตัวเดิมปะทะหลายเป้าหมาย':'กลับสนามดวลเดิม');
 });
-for(const control of [duel2UI.formation,duel2UI.teamMode,duel2UI.radioLoss,duel2UI.radioDelay])control.addEventListener('change',()=>{
+for(const control of [duel2UI.formation,duel2UI.teamMode,duel2UI.radioLoss,duel2UI.radioDelay,duel2UI.learning])control.addEventListener('change',()=>{
  if(!duel2Active())return;
  if(/^https?:$/.test(location.protocol)){
   const query=new URLSearchParams(location.search);query.set('mode','duel2');
-  query.delete('dteam');query.delete('loss');query.delete('delay');query.delete('formation');
+  query.delete('dteam');query.delete('loss');query.delete('delay');query.delete('formation');query.delete('learn');
+  if(duel2UI.learning.checked)query.set('learn','1');
   if(duel2UI.formation.value!=='buddy2')query.set('formation',duel2UI.formation.value);
   if(duel2UI.teamMode.value==='cooperative')query.set('dteam','coop');
   if(duel2UI.radioLoss.value!=='0')query.set('loss',duel2UI.radioLoss.value);
@@ -4182,7 +4335,7 @@ window.__rrtDuel2Debug={
  getState:()=>{
   const members=duel2Active()?bots:[];
   return {scenario,phase,time:elapsed,version:document.title,
-   mode:team.mode,formation:duel2UI.formation.value,
+   mode:team.mode,formation:duel2UI.formation.value,learningEnabled:duel2UI.learning.checked,
    organization:team.formations?{blue:team.formations.blue.groups,red:team.formations.red.groups,
     links:team.formations.blue.links}:null,
    packetLoss:Number(duel2UI.radioLoss.value),
@@ -4191,6 +4344,7 @@ window.__rrtDuel2Debug={
     x:b.x,y:b.y,planCount:b.planCount,intent:b.intent,
     peers:team.formations?formationCore.peersFor(team.formations[b.team],b.id):[],
     groupId:b.formationMember?.groupId,teamId:b.formationMember?.teamId,
+    learning:b.duelLearner?.enabled?onlineCore.summary(b.duelLearner):null,
     target:b.duelTargetId,visible:Object.keys(b.duelVisible||{}),
     received:Object.keys(b.duelInbox?.sightings||{}),receivedBids:Object.keys(leaderless.prune(b.bidInbox,elapsed).bids),
     memoryCount:Object.keys(b.duelBrains||{}).length,
@@ -4216,6 +4370,8 @@ window.__rrtDuel2Debug={
    suppressedSightings:team.suppressedSightings||0,
    bullets:bullets.length,score:{...scores}};
  },
+ setLearning:(enabled)=>{if(!duel2Active()||typeof enabled!=='boolean')return false;
+  duel2UI.learning.checked=enabled;resetGame();return true;},
  setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative','adaptive'].includes(mode))return false;
   duel2UI.teamMode.value=mode;resetGame();return true;},
  forceHp:(id,hp)=>{const b=duel2Active()?bots.find(x=>x.id===id):null;

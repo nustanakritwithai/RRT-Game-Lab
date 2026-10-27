@@ -9,7 +9,8 @@ const output=path.resolve(__dirname,'../benchmarks/formation-performance-v080.js
 const cases=[
  {formation:'group33',mode:'independent'}, {formation:'group33',mode:'adaptive'},
  {formation:'squad2222',mode:'independent'}, {formation:'squad2222',mode:'adaptive'},
- {formation:'squad3333',mode:'independent'}, {formation:'squad3333',mode:'adaptive'}
+ {formation:'squad3333',mode:'independent'}, {formation:'squad3333',mode:'adaptive'},
+ {formation:'squad3333',mode:'adaptive',learn:true}
 ];
 const mean=a=>a.length?a.reduce((n,x)=>n+x,0)/a.length:0;
 const percent=(a,p)=>a.length?a.slice().sort((x,y)=>x-y)[Math.min(a.length-1,Math.floor((a.length-1)*p))]:0;
@@ -24,7 +25,7 @@ function stateMetrics(state){
 }
 async function prepare(page,c){
  await page.goto(base+'?mode=duel2&formation='+c.formation+'&dteam='+
-  (c.mode==='adaptive'?'adaptive':'independent')+'&seed=83');
+  (c.mode==='adaptive'?'adaptive':'independent')+'&seed=83'+(c.learn?'&learn=1':''));
  await page.evaluate(()=>{
   const el=document.getElementById('mapSelect');el.value='open';
   el.dispatchEvent(new Event('change',{bubbles:true}));
@@ -58,7 +59,7 @@ async function cpuCase(browser,c){
   await session.detach();
   const delta=Math.max(0.0001,timed.state.time-before.time);
   const perFrame=timed.wallMs/(delta*60);
-  return {formation:c.formation,mode:c.mode,kind:'CPU_STEPPING',
+  return {formation:c.formation,mode:c.mode,learn:!!c.learn,kind:'CPU_STEPPING',
    simulatedSeconds:round(delta),wallMs:round(timed.wallMs),msPerSimFrame:round(perFrame),
    benchmarkBudgetMs:16.67,source:'Chromium CI runner, synthetic 60Hz simulation',
    before:stateMetrics(before),after:stateMetrics(timed.state),
@@ -85,7 +86,7 @@ async function framesCase(browser,c,lowDetail){
  page.on('pageerror',e=>errors.push(String(e)));
  try{
   await page.goto(base+'?mode=duel2&formation='+c.formation+
-   '&dteam='+(c.mode==='adaptive'?'adaptive':'independent')+'&seed=83');
+   '&dteam='+(c.mode==='adaptive'?'adaptive':'independent')+'&seed=83'+(c.learn?'&learn=1':''));
   const start=await page.evaluate(lowDetail=>{
    const el=document.getElementById('mapSelect');el.value='open';
    el.dispatchEvent(new Event('change',{bubbles:true}));
@@ -101,7 +102,7 @@ async function framesCase(browser,c,lowDetail){
    return {frames:p.frames,state:window.__rrtDuel2Debug.getState()};
   });
   const arr=sample.frames,callbacks=arr.map(x=>x.callbackMs),intervals=arr.map(x=>x.intervalMs).filter(x=>x>0);
-  return {formation:c.formation,mode:c.mode,kind:'LIVE_CANVAS_FRAMES',lowDetail,
+  return {formation:c.formation,mode:c.mode,learn:!!c.learn,kind:'LIVE_CANVAS_FRAMES',lowDetail,
    observedWallSeconds:3.4,frames:arr.length,approxFramesPerSecond:round(arr.length/3.4),
    meanCallbackMs:round(mean(callbacks)),p95CallbackMs:round(percent(callbacks,.95)),
    p95FrameIntervalMs:round(percent(intervals,.95)),
@@ -116,15 +117,16 @@ async function main(){
  try{
   for(const c of cases){
    const v=await cpuCase(browser,c);rows.push(v);
-   console.log('CPU '+c.formation+' '+c.mode+' '+v.msPerSimFrame+'ms/frame; hot='+v.cpuHotspots.slice(0,5).map(t=>t.name+':'+t.ms).join(', '));
+   console.log('CPU '+c.formation+' '+c.mode+' learn='+!!c.learn+' '+v.msPerSimFrame+'ms/frame; hot='+v.cpuHotspots.slice(0,5).map(t=>t.name+':'+t.ms).join(', '));
    assert.deepEqual(v.pageErrors,[]);
   }
   for(const c of [
    {formation:'group33',mode:'adaptive'},{formation:'squad2222',mode:'adaptive'},
-   {formation:'squad3333',mode:'adaptive'}]){
+   {formation:'squad3333',mode:'adaptive'},
+   {formation:'squad3333',mode:'adaptive',learn:true}]){
    for(const lowDetail of [false,true]){
     const v=await framesCase(browser,c,lowDetail);rows.push(v);
-    console.log('FRAME '+c.formation+' '+c.mode+' lowDetail='+lowDetail+' fps='+v.approxFramesPerSecond+
+    console.log('FRAME '+c.formation+' '+c.mode+' learn='+!!c.learn+' lowDetail='+lowDetail+' fps='+v.approxFramesPerSecond+
      ' callback p95='+v.p95CallbackMs+'ms intervals p95='+v.p95FrameIntervalMs+'ms');
     assert.deepEqual(v.pageErrors,[]);
    }
