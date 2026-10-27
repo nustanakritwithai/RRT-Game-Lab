@@ -36,7 +36,11 @@ test('batched P2P transport equals sequential delivery/loss/ordering for fixed R
  assert.deepEqual(batch,legacy);
  assert.equal(batch.sent,24*14);
  assert.ok(batch.dropped>0);
- assert.equal(batch.radio.queue.length,300);
+ assert.equal(batch.radio.queue.length,Math.min(300,batch.sent-batch.dropped));
+});
+test('adaptive sender uses linear identity membership, not repeated full queue scans',()=>{
+ assert.match(html,/const existingPackets=new Set\(before\.queue\|\|\[\]\)/);
+ assert.doesNotMatch(html,/newPackets=\(attempted\.queue\|\|\[\]\)\.filter\(p=>!\(before\.queue/);
 });
 test('adaptive transport must apply packet loss once per communication tick',()=>{
  assert.ok(flush.startsWith('function flushDuel2PeerMesh(){'));

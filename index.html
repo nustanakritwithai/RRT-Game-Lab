@@ -2240,7 +2240,8 @@ function sendRadioPacket(build){
  if(duel2Active()&&team.mode==='adaptive'){
   // Only new packets enter the SENDER's private PeerMesh outbox.
   // Shared radio queue remains physical transport, never shared decisions.
-  const newPackets=(attempted.queue||[]).filter(p=>!(before.queue||[]).includes(p));
+  const existingPackets=new Set(before.queue||[]);
+  const newPackets=(attempted.queue||[]).filter(p=>!existingPackets.has(p));
   for(const packet of newPackets){
    const sender=bots.find(b=>b.id===packet.sender&&b.hp>0);
    if(!sender||!sender.peerMesh)continue;
