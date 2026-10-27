@@ -109,6 +109,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
    <label for="duel2TeamMode">BLUE Team<select id="duel2TeamMode"><option value="independent">🔷🔷 แยกกันตัดสินใจ</option><option value="cooperative">📡 สื่อสาร P2P เดิม</option><option value="adaptive">🧠 PeerMesh Tactical V0.7</option></select></label>
    <label for="duel2RadioLoss">ข้อความสูญหาย<select id="duel2RadioLoss"><option value="0">0%</option><option value="20">20%</option><option value="50">50%</option><option value="100">100%</option></select></label>
    <label for="duel2RadioDelay">ความหน่วงเพิ่ม<select id="duel2RadioDelay"><option value="0">0s</option><option value="0.3">0.3s</option><option value="0.6">0.6s</option><option value="1.2">1.2s</option></select></label>
+   <label for="duel2Defense">หลบแนวยิง + เดินขณะคิด<select id="duel2Defense"><option value="on">🛡️🏃 เปิดทั้งสองทีม</option><option value="off">ปิดทั้งสองทีม</option></select></label>
   </div>
   <div id="duel2Status" class="duel2Status" aria-live="polite">B1 · B2 vs R1 · R2 — พร้อมเริ่มการต่อสู้</div>
   <div id="duel2MeshStatus" class="duel2Status" aria-live="polite" hidden>PeerMesh: ไม่มีข้อมูล</div>
@@ -2206,7 +2207,7 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),rand=(a,b)=>a+(b-a)*Math.random()
 const colors={blue:'#4dcfff',red:'#ff638d'};
 const multiUI={scenario:$('scenarioMode'),panel:$('multiPanel'),visible:$('multiVisible'),known:$('multiKnown'),focus:$('multiFocus'),eliminated:$('multiEliminated'),minus:$('multiMinus'),plus:$('multiPlus'),count:$('multiCount'),priority:$('multiPriority'),allCommand:$('multiAllCommand'),applyAll:$('multiApplyAll'),list:$('multiBotsList'),melee:$('multiMelee'),difficulty:$('multiDifficulty'),wave:$('multiWaveStats'),preset:$('multiPreset'),kite:$('multiKite'),predict:$('multiPredict'),enemyMode:$('multiEnemyMode'),rangedDefense:$('multiRangedDefense'),mobile:$('multiMobile'),teamMode:$('blueTeamMode'),teamStatus:$('blueTeamStatus'),evidenceStatus:$('blueEvidenceStatus'),radioLoss:$('teamRadioLoss'),radioDelay:$('teamRadioDelay')};
 const duel2UI={panel:$('duel2Panel'),formation:$('duel2Formation'),teamMode:$('duel2TeamMode'),radioLoss:$('duel2RadioLoss'),
- radioDelay:$('duel2RadioDelay'),status:$('duel2Status'),meshStatus:$('duel2MeshStatus')};
+ radioDelay:$('duel2RadioDelay'),defense:$('duel2Defense'),status:$('duel2Status'),meshStatus:$('duel2MeshStatus')};
 const multiModes={patrol:'ลาดตระเวน',wander:'เดินสุ่ม',flee:'หนี',stay:'หยุดนิ่ง',approach:'เข้าหา BLUE',hunt:'ไล่ล่าจากที่เคยเห็น'};
 const rangedModes={sentry:'🔫 ป้อมยิง',patrol:'🔫 ลาดตระเวนยิง',hunter:'🔫 ไล่ล่าแล้วยิง'};
 const incomingEnemyMode=new URLSearchParams(location.search).get('enemy');
@@ -2220,6 +2221,7 @@ duel2UI.teamMode.value=teamParams.get('dteam')==='adaptive'?'adaptive':
  teamParams.get('dteam')==='coop'?'cooperative':'independent';
 duel2UI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
 duel2UI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
+duel2UI.defense.value=teamParams.get('defense')==='off'?'off':'on';
 let scenario=teamParams.get('mode')==='multi'?'multi':teamParams.get('mode')==='duel2'?'duel2':'duel';
 duel2UI.panel.hidden=scenario!=='duel2';
 let duel2SenseAt=-1,duel2FriendlyBlocks=0;
@@ -2831,7 +2833,14 @@ function multiKiteGoal(bot){
 // BLUE policy is capability-based, NOT enemy-mode-based. The same V0.6.9 BLUE
 // can counter melee and ranged threats if observations contain those threats.
 // The duel has no melee swarm, so no synthetic melee forecast is ever created.
+// Experiment-only per-team override for team mode (debug API); normal play is always symmetric.
+let duel2FeatureOverride={blue:null,red:null},duel2CurrentBot=null;
 function blueFeatureOn(feature){
+ if(duel2Active()&&feature!=='predictive'){
+  const o=duel2CurrentBot&&duel2FeatureOverride[duel2CurrentBot.team];
+  if(o&&typeof o[feature]==='boolean')return o[feature];
+  return duel2UI.defense.value==='on';
+ }
  const combat=multiActive()?multi.melee:true;
  const value=multiActive()
   ?({predictive:multi.predictive,rangedDefense:multi.rangedDefense,mobile:multi.mobile})[feature]
@@ -3625,6 +3634,7 @@ function duel2PositionSafe(bot,point,margin=2.03){
  return bots.every(other=>other===bot||other.hp<=0||dist(other,point)>=R*margin);
 }
 function withDuel2Defense(bot,fn){
+ const previousBot=duel2CurrentBot;duel2CurrentBot=bot;
  const names=['cover','coverDecision','pendingCover','lastCoverAt','coverage','coverageAt',
   'coverMoves','coverReroutes','standoffs','bridgeSteps','jinks'];
  const save=Object.fromEntries(names.map(key=>[key,multi[key]]));
@@ -3632,6 +3642,7 @@ function withDuel2Defense(bot,fn){
  try{return fn();}finally{
   for(const key of names)bot.duelDefense[key]=multi[key];
   for(const key of names)multi[key]=save[key];
+  duel2CurrentBot=previousBot;
  }
 }
 function senseDuel2World(){
@@ -4108,13 +4119,15 @@ multiUI.scenario.addEventListener('change',()=>{
  }
  resetGame();showNotice(duel2Active()?'เปิดสนาม 2 ต่อ 2 · BLUE/RED ใช้ AI รุ่นเดียวกัน':multiActive()?'โหมด BLUE ตัวเดิมปะทะหลายเป้าหมาย':'กลับสนามดวลเดิม');
 });
-for(const control of [duel2UI.formation,duel2UI.teamMode,duel2UI.radioLoss,duel2UI.radioDelay])control.addEventListener('change',()=>{
+for(const control of [duel2UI.formation,duel2UI.teamMode,duel2UI.radioLoss,duel2UI.radioDelay,duel2UI.defense])control.addEventListener('change',()=>{
  if(!duel2Active())return;
  if(/^https?:$/.test(location.protocol)){
   const query=new URLSearchParams(location.search);query.set('mode','duel2');
-  query.delete('dteam');query.delete('loss');query.delete('delay');query.delete('formation');
+  query.delete('dteam');query.delete('loss');query.delete('delay');query.delete('formation');query.delete('defense');
   if(duel2UI.formation.value!=='buddy2')query.set('formation',duel2UI.formation.value);
   if(duel2UI.teamMode.value==='cooperative')query.set('dteam','coop');
+  if(duel2UI.teamMode.value==='adaptive')query.set('dteam','adaptive');
+  if(duel2UI.defense.value==='off')query.set('defense','off');
   if(duel2UI.radioLoss.value!=='0')query.set('loss',duel2UI.radioLoss.value);
   if(duel2UI.radioDelay.value!=='0')query.set('delay',duel2UI.radioDelay.value);
   history.replaceState(null,'',location.pathname+'?'+query.toString());
@@ -4199,7 +4212,9 @@ window.__rrtDuel2Debug={
     capabilities:{predictive:blueFeatureOn('predictive'),
      rangedDefense:rangedDefenseActive(),keepMoving:mobileActive()},
     stats:{hp:b.maxHp,ammo:b.maxAmmo,speed:b.moveSpeed,fire:b.baseFire,range:b.range,aim:b.aim},
-    shots:team.shotsFired?.[b.id]||0,laneHolds:b.duelLaneHolds||0,focusSwitches:b.duelSwitches||0})),
+    shots:team.shotsFired?.[b.id]||0,laneHolds:b.duelLaneHolds||0,focusSwitches:b.duelSwitches||0,
+    defense:{coverMoves:b.duelDefense?.coverMoves||0,coverReroutes:b.duelDefense?.coverReroutes||0,standoffs:b.duelDefense?.standoffs||0,bridgeSteps:b.duelDefense?.bridgeSteps||0,jinks:b.duelDefense?.jinks||0}})),
+   defenseSwitch:duel2UI.defense.value,featureOverride:JSON.parse(JSON.stringify(duel2FeatureOverride)),
    peerMesh:{active:team.mode==='adaptive',
     agents:members.map(b=>({id:b.id,team:b.team,
      ...(b.peerMesh?meshCore.stats(b.peerMesh):{})})),
@@ -4216,6 +4231,9 @@ window.__rrtDuel2Debug={
    suppressedSightings:team.suppressedSightings||0,
    bullets:bullets.length,score:{...scores}};
  },
+ // Experiment-only: give one team different V0.6.8 features to measure their effect (A/B with side swap).
+ setTeamFeatures:(teamName,features)=>{if(!['blue','red'].includes(teamName))return false;
+  duel2FeatureOverride[teamName]=features?{rangedDefense:!!features.rangedDefense,mobile:!!features.mobile}:null;return true;},
  setMode:(mode)=>{if(!duel2Active()||!['independent','cooperative','adaptive'].includes(mode))return false;
   duel2UI.teamMode.value=mode;resetGame();return true;},
  forceHp:(id,hp)=>{const b=duel2Active()?bots.find(x=>x.id===id):null;
