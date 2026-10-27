@@ -10,7 +10,7 @@ test('Online learner starts with the existing balanced tactic; no power/stat cha
  assert.deepEqual(L.STYLES,['balanced','aggressive','cautious']);
  assert.ok(!('hp' in a)&&!('aim' in a)&&!('baseFire' in a));
 });
-test('learning preserves the player's chosen baseline style before enough feedback exists',()=>{
+test("learning preserves the player\'s chosen baseline style before enough feedback exists",()=>{
  const a=L.create(true,'cautious');
  assert.equal(a.style,'cautious');
  assert.equal(L.tick(a,{visible:true},0).style,'cautious');
