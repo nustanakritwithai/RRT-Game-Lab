@@ -77,3 +77,13 @@ test('mobile controls and separate HUD are wired to battle scene',()=>{
  assert.match(text,/duel2UI\.panel\.hidden=!duel2Active\(\)/);
  assert.match(text,/window\.__rrtDuel2Debug=/);
 });
+
+test('all duel fighters repair stale RRT root edges after keep-moving bridge steps',()=>{
+ const plan=block('function finishPlan(bot,idx){','function runPlanner(bot,budget){');
+ assert.match(plan,/bot\.team==='blue'\|\|duel2Active\(\)/,
+  'both BLUE and RED use current-position path rejoin in Duel2');
+ assert.match(plan,/const invalidBridge=duel2Active\(\)/);
+ assert.match(plan,/blocked\(bot,bot\.path\[bot\.way\],R\*\.9\)/);
+ assert.match(plan,/bot\.path=\[\];bot\.way=0;bot\.goal=null;bot\.planCooldown=\.05/);
+ assert.match(plan,/bot\.thinkCooldown=invalidBridge\?0:rand/);
+});

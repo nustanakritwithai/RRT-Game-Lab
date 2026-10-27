@@ -3380,8 +3380,19 @@ function finishPlan(bot,idx){const plan=bot.planner;let pts=[],k=idx;
  while(k>=0){const n=plan.nodes[k];pts.push({x:n.x,y:n.y});k=n.parent;}
  pts.reverse();pts=smoothRoute(pts,bot,plan.foeSnapshot,plan.risk);
  bot.path=pts.slice(1);bot.way=0;bot.tree=plan.nodes;
- if(bot.team==='blue'&&mobileActive()&&dist(bot,pts[0])>.5)bot.way=rangedDef.rejoinIndex(bot,bot.path,0,(a,b)=>!blocked(a,b,R+1));bot.treeAge=0;bot.planner=null;
- bot.agePlan=0;bot.failedPlans=0;bot.thinkCooldown=rand(.65,.85);
+ // An Agent can keep moving while the RRT plan is still being built.
+ // Repair the planned root-to-waypoint edge from its CURRENT position, on BOTH sides.
+ if((bot.team==='blue'||duel2Active())&&mobileActive()&&dist(bot,pts[0])>.5)
+  bot.way=rangedDef.rejoinIndex(bot,bot.path,0,(a,b)=>!blocked(a,b,R+1));
+ const invalidBridge=duel2Active()&&bot.path.length>0&&
+  blocked(bot,bot.path[bot.way],R*.9);
+ if(invalidBridge){
+  // A stale start must never be accepted as a safe path. Replan locally.
+  bot.path=[];bot.way=0;bot.goal=null;bot.planCooldown=.05;
+ }
+ bot.treeAge=0;bot.planner=null;
+ bot.agePlan=invalidBridge?9:0;bot.failedPlans=0;
+ bot.thinkCooldown=invalidBridge?0:rand(.65,.85);
  bot.weightedCost=pathCostFor(bot,pts,plan.foeSnapshot,plan.risk);
  let exposed=0,length=0;for(let i=1;i<pts.length;i++){
    const edgeLen=dist(pts[i-1],pts[i]);length+=edgeLen;
