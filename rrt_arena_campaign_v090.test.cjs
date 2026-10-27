@@ -150,8 +150,8 @@ test('radio level: tower gives 2 in its sector and 1 next door',()=>{
 test('radio level maps to the existing battle loss/delay settings',()=>{
  assert.deepEqual(C.radioSettings(0),{loss:50,delay:0.6});assert.deepEqual(C.radioSettings(2),{loss:0,delay:0});
 });
-test('victory sectors award points each turn; reaching the target wins',()=>{
- let s=fresh({vpToWin:2});for(const id of ['L','C'])s.sectors.find(x=>x.id===id).owner='player';
+test('victory sectors award points each turn; a clear lead wins',()=>{
+ let s=fresh({vpLead:2});for(const id of ['L','C'])s.sectors.find(x=>x.id===id).owner='player';
  s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;assert.equal(s.factions.player.vp,2);assert.equal(s.winner,'player');
 });
 test('capturing the enemy HQ wins immediately',()=>{
@@ -238,4 +238,12 @@ test('assault model matches the measured fort table (pooled over terrains) withi
 test('assault losers keep most of their unit (zone battles end on points)',()=>{
  for(let k=0;k<200;k++){const r=C.coarseBattle({kind:'assault',attacker:{size:6},defender:{size:4},fort:1,terrain:'lanes',seed:k});
   const lost=r.winner==='attacker'?r.casualties.defender:r.casualties.attacker,size=r.winner==='attacker'?4:6;assert.ok(lost<size,'loser not wiped');}
+});
+test('HQs start fortified',()=>{const s=fresh();assert.equal(s.sectors.find(x=>x.id==='P-HQ').fort,C.RULES.hqFort);assert.equal(s.sectors.find(x=>x.id==='E-HQ').fort,C.RULES.hqFort);});
+test('the lead can swing back: points are a tug-of-war, not a race',()=>{
+ let s=fresh({vpLead:10});s.sectors.find(x=>x.id==='L').owner='player';
+ for(let k=0;k<3;k++)s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ for(const id of ['L','C','R'])s.sectors.find(x=>x.id===id).owner='enemy';
+ for(let k=0;k<2;k++)s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ assert.ok(s.factions.enemy.vp>s.factions.player.vp);assert.equal(s.winner,null);
 });

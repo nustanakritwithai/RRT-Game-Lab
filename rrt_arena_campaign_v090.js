@@ -9,7 +9,7 @@
 (function(root,factory){'use strict';const api=factory();root.RRTArenaCampaign=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const RULES=Object.freeze({maxUnits:4,supplyCap:12,startSupply:4,towerCost:3,injuryTurns:2,encircledInjuryTurns:3,
-  intelExpiry:4,maxFort:2,vpToWin:12,maxTurns:15,agentsPerFaction:12});
+  intelExpiry:4,maxFort:2,vpLead:10,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2});
  const PRESET_BY_SIZE=Object.freeze({2:'buddy2',3:'buddy3',4:'group22',5:'group23',6:'group33',8:'squad2222',10:'squad2323',12:'squad3333'});
  const RADIO=Object.freeze([{loss:50,delay:0.6},{loss:20,delay:0.3},{loss:0,delay:0}]);
  const FACTIONS=Object.freeze(['player','enemy']);
@@ -30,9 +30,9 @@
  function hash32(...parts){let h=2166136261>>>0;for(const p of parts){const s=String(p);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}h^=0x9e3779b9;h=Math.imul(h,16777619)>>>0;}return h>>>0;}
  function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 
- function create({seed=1,template='frontlineBasin',maxTurns=RULES.maxTurns,vpToWin=RULES.vpToWin}={}){
+ function create({seed=1,template='frontlineBasin',maxTurns=RULES.maxTurns,vpLead=RULES.vpLead,vpNeedsSupply=RULES.vpNeedsSupply}={}){
   const t=TEMPLATES[template];if(!t)throw new RangeError('Unknown map template '+template);
-  const sectors=t.sectors.map(([id,name,terrain,owner,yieldPerTurn,special={}])=>({id,name,terrain,owner,yield:yieldPerTurn,fort:0,tower:null,
+  const sectors=t.sectors.map(([id,name,terrain,owner,yieldPerTurn,special={}])=>({id,name,terrain,owner,yield:yieldPerTurn,fort:special.hq?RULES.hqFort:0,tower:null,
    victory:!!special.victory,hq:special.hq||null,radioHill:!!special.radioHill,depot:!!special.depot}));
   const roster=[],units=[],factions={};
   for(const f of FACTIONS){
@@ -41,7 +41,7 @@
    for(let u=0;u<3;u++)units.push({id:prefix+'-U'+(u+1),faction:f,sector:hq,agents:[1,2,3,4].map(k=>prefix+(u*4+k))});
    factions[f]={supply:RULES.startSupply,vp:0,intel:{},siege:{},reserve:[],nextUnit:4};
   }
-  return {version:1,seed:seed>>>0,turn:0,maxTurns,vpToWin,template,sectors,edges:t.edges.map(e=>e.slice()),units,roster,factions,winner:null,log:[]};
+  return {version:1,seed:seed>>>0,turn:0,maxTurns,vpLead,vpNeedsSupply,template,sectors,edges:t.edges.map(e=>e.slice()),units,roster,factions,winner:null,log:[]};
  }
  const sectorOf=(s,id)=>s.sectors.find(x=>x.id===id);
  function neighbors(s,id){const out=[];for(const [a,b] of s.edges){if(a===id)out.push(b);else if(b===id)out.push(a);}return out;}
@@ -82,7 +82,7 @@
   const lastSeenUnits=[];
   for(const [id,snap] of Object.entries(intel)){const age=s.turn-snap.turn;if(age>0&&age<RULES.intelExpiry&&!nearby.has(id))for(const size of snap.units)lastSeenUnits.push({sector:id,size,age});}
   return {faction:f,turn:s.turn,maxTurns:s.maxTurns,winner:s.winner,supply:s.factions[f].supply,vp:s.factions[f].vp,
-   opponentVp:s.factions[other(f)].vp,vpToWin:s.vpToWin,edges:s.edges.map(e=>e.slice()),sectors,
+   opponentVp:s.factions[other(f)].vp,vpLead:s.vpLead,edges:s.edges.map(e=>e.slice()),sectors,
    ownUnits:own.map(u=>({id:u.id,faction:f,sector:u.sector,size:u.agents.length,agents:u.agents.slice()})),
    enemyUnits,lastSeenUnits,reserve:s.factions[f].reserve.slice(),
    injured:s.roster.filter(a=>a.faction===f&&a.injuredTurns>0).map(a=>({id:a.id,turns:a.injuredTurns}))};
@@ -206,7 +206,8 @@
   for(const b of battles)for(const f of FACTIONS)if(b.sector&&!b.sector.includes('|')){const snap=snapshot(s,b.sector);snap.turn=s.turn;s.factions[f].intel[b.sector]=snap;}
   for(const f of FACTIONS){const fac=s.factions[f];const connected=connectedSectors(s,f);
    fac.supply=Math.min(RULES.supplyCap,fac.supply+s.sectors.filter(x=>x.owner===f&&connected.has(x.id)).reduce((n,x)=>n+x.yield,0));
-   fac.vp+=s.sectors.filter(x=>x.victory&&x.owner===f).length;}
+   // Victory sectors only score while linked to HQ by the faction's own supply line (overextension risk).
+   fac.vp+=s.sectors.filter(x=>x.victory&&x.owner===f&&(!s.vpNeedsSupply||connected.has(x.id))).length;}
   for(const a of s.roster)if(a.injuredTurns>0&&--a.injuredTurns===0)s.factions[a.faction].reserve.push(a.id);
   for(const f of FACTIONS){const fac=s.factions[f],hq=s.sectors.find(x=>x.hq===f);
    const n=presetFloor(fac.reserve.length);
@@ -242,7 +243,9 @@
  function checkVictory(s){
   for(const f of FACTIONS){const enemyHq=s.sectors.find(x=>x.hq===other(f));if(enemyHq&&enemyHq.owner===f)return {winner:f,reason:'hq_captured'};}
   const vp=f=>s.factions[f].vp;
-  if(vp('player')>=s.vpToWin||vp('enemy')>=s.vpToWin){if(vp('player')===vp('enemy'))return {winner:'draw',reason:'vp_tie'};return {winner:vp('player')>vp('enemy')?'player':'enemy',reason:'victory_points'};}
+  // Tug-of-war: points swing with who holds the victory sectors each turn; a clear lead wins.
+  const lead=vp('player')-vp('enemy');
+  if(Math.abs(lead)>=s.vpLead)return {winner:lead>0?'player':'enemy',reason:'victory_points'};
   if(s.turn>=s.maxTurns){
    if(vp('player')!==vp('enemy'))return {winner:vp('player')>vp('enemy')?'player':'enemy',reason:'turn_limit_vp'};
    const n=f=>s.sectors.filter(x=>x.owner===f).length;
