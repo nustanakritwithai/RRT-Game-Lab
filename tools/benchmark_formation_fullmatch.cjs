@@ -50,7 +50,9 @@ async function run(){
       last=d.getState();
       const valid=engine.validate();
       safe=safe&&valid.fightersFree&&valid.waypointsClear;
-      frames.push({time:Number(last.time.toFixed(2)),blueHp:last.fighters.filter(b=>b.team==='blue')
+      frames.push({time:Number(last.time.toFixed(2)),
+       fightersFree:valid.fightersFree,waypointsClear:valid.waypointsClear,
+       blueHp:last.fighters.filter(b=>b.team==='blue')
        .reduce((n,b)=>n+b.hp,0),redHp:last.fighters.filter(b=>b.team==='red')
        .reduce((n,b)=>n+b.hp,0),plans:last.fighters.reduce((n,b)=>n+b.planCount,0),
        radioSent:last.radio.sent});
