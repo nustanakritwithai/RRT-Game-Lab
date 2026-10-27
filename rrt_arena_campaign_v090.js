@@ -250,19 +250,27 @@
   }
   return {winner:null};
  }
- /** Placeholder outcome model for map-level tuning only (M1/M2). NOT calibrated yet: M0-S3 replaces
-   * the coefficients with measured team-battle results; real play uses the battle engine. */
- const COARSE=Object.freeze({sizeWeight:2.0,fortWeight:.45,coverFortBonus:1.25,bias:-.1});
+ /** Coarse outcome model for map-level tuning (M1/M2). Size/terrain terms are calibrated from 810
+   * side-swapped real team battles (benchmarks/v090_map/m0_calibration.json, M0-S3): one extra agent
+   * already wins ~90-100%, cover (ruins/lanes) leaves the smaller side a small chance, open almost none;
+   * the loser is usually eliminated and the winner's losses shrink with its numerical edge.
+   * The fort term is still an UNCALIBRATED guess until forts exist in the battle engine.
+   * Real play resolves battles with the engine; this model is only for fast simulation. */
+ const COARSE=Object.freeze({
+  terrain:Object.freeze({ruins:{k:9.5,c:.43,e:2},lanes:{k:9.5,c:.40,e:2},open:{k:13,c:.32,e:3}}),
+  fortWeight:.45,coverFortBonus:1.25,calibration:'m0_calibration.json (sizes x terrain, 15 seeds x 2 sides); fort uncalibrated'});
  function coarseBattle(spec){
   const r=rng(spec.seed>>>0);const a=Math.max(1,spec.attacker.size),d=Math.max(1,spec.defender.size);
+  const T=COARSE.terrain[spec.terrain]||COARSE.terrain.open;
   const fort=(spec.fort|0)*COARSE.fortWeight*(spec.terrain==='ruins'?COARSE.coverFortBonus:1);
-  const p=1/(1+Math.exp(-(COARSE.sizeWeight*Math.log(a/d)-fort+COARSE.bias)));
+  const p=1/(1+Math.exp(-(T.k*Math.log(a/d)-fort)));
   const attackerWins=r()<p;
   const loser=attackerWins?d:a,winner=attackerWins?a:d;
-  const loserCas=Math.min(loser,Math.ceil(loser*(.5+.5*r())));
-  const winnerCas=Math.min(winner-1,Math.floor(winner*.45*Math.min(1,loser/winner)*r()));
-  return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:Math.max(0,winnerCas),defender:loserCas}:{attacker:loserCas,defender:Math.max(0,winnerCas)},p};
+  // Loser is eliminated (as in the measured battles); winner loses ~c*(loser/winner)^e of its size.
+  const expected=winner*T.c*Math.pow(Math.min(1,loser/winner),T.e);
+  const winnerCas=Math.max(0,Math.min(winner-1,Math.round(expected*(.6+.8*r()))));
+  return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loser}:{attacker:loser,defender:winnerCas},p};
  }
  return Object.freeze({RULES,TEMPLATES,PRESET_BY_SIZE,presetForSize,presetFloor,create,neighbors,connectedSectors,radioLevel,radioSettings,
-  viewFor,validateOrder,validateOrders,resolveTurn,checkVictory,coarseBattle});
+  viewFor,validateOrder,validateOrders,resolveTurn,checkVictory,coarseBattle,COARSE});
 });

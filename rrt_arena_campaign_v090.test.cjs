@@ -221,3 +221,10 @@ test('two splits in one turn cannot exceed the unit cap',()=>{
  const r=C.resolveTurn(s,{player:orders,enemy:[]},noBattles);
  assert.equal(r.state.units.filter(u=>u.faction==='player').length,C.RULES.maxUnits);
 });
+test('coarse model matches the measured real-battle table (M0-S3) within tolerance',()=>{
+ const cal=require('./benchmarks/v090_map/m0_calibration.json').table;
+ for(const row of cal){
+  let w=0;const N=400;for(let k=0;k<N;k++)if(C.coarseBattle({attacker:{size:row.a},defender:{size:row.b},fort:0,terrain:row.map,seed:k*31+7}).winner==='attacker')w++;
+  assert.ok(Math.abs(w/N-row.pA)<=.12,`${row.a}v${row.b} ${row.map}: model ${(w/N).toFixed(2)} vs measured ${row.pA}`);
+ }
+});
