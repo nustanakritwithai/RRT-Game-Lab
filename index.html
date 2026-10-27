@@ -185,7 +185,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </div></div>
 <div class="panel full"><div class="sidepad"><h2 class="cardTitle">📡 บันทึกการต่อสู้</h2><div class="battlelog" id="battlelog" aria-label="ลำดับเหตุการณ์การต่อสู้"><div>กดเริ่มดวลเพื่อดูการทำงานของบอต</div></div><div class="learn"><strong>ต่างจาก LLM อย่างไร?</strong><p>ตัวอย่างนี้ใช้ <b>กฎยุทธวิธี + Risk-aware RRT</b> ไม่มีโมเดลภาษาและไม่ใช้ API Key. บอตจะประเมิน 30–40 จุดยิงจากมุมมองของตัวเองเมื่อเห็นศัตรู เลือกจุดที่มีแนวยิงเหมาะสมและไม่ซ้ำจุดเดิม แล้วยังคงใช้ Memory-Guided RRT วางเส้นทางจริง บอตรับรู้ตำแหน่งศัตรูที่มองเห็นและบันทึกตำแหน่งที่เคยพบ (ไม่รู้ตำแหน่งจริงเมื่อถูกบัง) RRT ใช้ความจำและแนวเส้นทางเพิ่มน้ำหนักพื้นที่ค้นหา แต่ยังสุ่มทั่วสนามบางส่วน จุดเสี่ยงเกิดจากที่เคยถูกยิง ไม่ใช่การฝึก ML. Replay เป็นภาพสถานะที่บันทึกเป็นช่วง ไม่ใช่วิดีโอหรือการเล่นแบบ deterministic. LLM Tool Calling คือขั้นต่อไป</p></div></div></div>
 </aside></section>
-<div class="footer"><b>ทดลอง:</b> เปรียบเทียบ Memory-Guided 0% กับ 85% → ดูการกระจายกิ่ง RRT → ดูสถานะการมองเห็น → วางกำแพงบังศัตรู → ดูการค้นหาจากความจำ → ดูความเสี่ยงจากจุดที่เคยถูกยิง → เล่น Replay หลังจบแมตช์ • ทุกอย่างทำงานในเบราว์เซอร์</div>
+<div class="footer"><b>ทดลอง:</b> เปรียบเทียบ Memory-Guided 0% กับ 85% → ดูการกระจายกิ่ง RRT → ดูสถานะการมองเห็น → วางกำแพงบังศัตรู → ดูการค้นหาจากความจำ → ดูความเสี่ยงจากจุดที่เคยถูกยิง → เล่น Replay หลังจบแมตช์ • ทุกอย่างทำงานในเบราว์เซอร์ • <a href="campaign.html" style="color:#a8e8ff">🗺️ แผนที่ยุทธศาสตร์ FRACTURED FRONT (ทดลอง)</a></div>
 </main>
 <script id="arenaCore">
 /* RRT ARENA: pure tactical decisions and risk-aware route scoring.

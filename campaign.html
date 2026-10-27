@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07101f">
+<meta name="description" content="RRT: FRACTURED FRONT — แผนที่ยุทธศาสตร์ NOVA-9 แบบผลัดกันสั่ง (WEGO) มีหมอกสงคราม ศัตรูเป็น AI ที่เห็นแค่สิ่งที่หน่วยของมันเห็น">
+<title>RRT: FRACTURED FRONT · Strategic Map 09.03</title>
+<style>
+:root{color-scheme:dark;--bg:#07101f;--panel:#101e33;--line:#29405f;--ink:#ecf4ff;--soft:#9cb1cc;--cyan:#4dcfff;--pink:#ff638d;--gold:#ffc978;--green:#72ecba;
+ --blue:#2f7fe0;--blueDeep:#143a66;--red:#e0475f;--redDeep:#5a1d2c;--neutral:#26354a}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{background:radial-gradient(ellipse at 15% -5%,#163961 0%,transparent 44%),radial-gradient(ellipse at 90% 0%,#291936 0%,transparent 35%),var(--bg);color:var(--ink);
+ font-family:system-ui,-apple-system,"Noto Sans Thai",Tahoma,sans-serif;line-height:1.42;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+main{max-width:560px;margin:auto;padding:max(10px,env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.eyebrow{font-size:10px;font-weight:850;letter-spacing:1.6px;color:var(--cyan)}
+h1{margin:2px 0 0;font-size:21px;letter-spacing:-.5px;line-height:1.15}h1 span{color:var(--pink)}
+.back{font-size:11px;color:#bcd6ef;text-decoration:none;border:1px solid #33506f;border-radius:9px;padding:6px 9px;white-space:nowrap}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.stat{background:#0f1d31;border:1px solid var(--line);border-radius:11px;padding:6px 8px;min-width:0;height:50px;overflow:hidden}
+.stat small{display:block;font-size:10px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat.blue b{color:#8cc6ff}.stat.red b{color:#ff9aaa}
+.vpbar{height:6px;border-radius:6px;background:#0a1423;border:1px solid #253247;margin:-2px 0 8px;position:relative;overflow:hidden}
+.vpbar i{position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#3d8cf0,#5fd8ff)}
+.vpbar i.neg{background:linear-gradient(90deg,#ff8b73,#e6466b)}
+.goal{font-size:10.5px;color:var(--soft);margin:-4px 0 7px;height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vpbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#8aa}
+.mapwrap{position:relative;background:#061322;border:1px solid #253750;border-radius:16px;overflow:hidden}
+svg#map{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.edge{stroke:#36506e;stroke-width:1.1;stroke-linecap:round}
+.edge.supply{stroke:#3f86d6;stroke-width:1.5}
+.card{cursor:pointer}
+.card rect.body{stroke:#3a5272;stroke-width:.5}
+.card.player rect.body{fill:var(--blueDeep);stroke:#4c8fdc}
+.card.enemy rect.body{fill:var(--redDeep);stroke:#c05068}
+.card.neutral rect.body{fill:var(--neutral)}
+.card.fog rect.body{fill-opacity:.62}
+.card.dest rect.body{stroke:var(--gold);stroke-width:1;stroke-dasharray:2 1.2}
+.card.origin rect.body{stroke:var(--gold);stroke-width:1.1}
+.card.flash rect.body{stroke:#fff;stroke-width:1.4;animation:flash .7s ease-in-out infinite alternate}
+@keyframes flash{to{stroke:var(--gold)}}
+.card text{fill:#e9f3ff;pointer-events:none}
+.card .nm{font-size:3.15px;font-weight:800}
+.card .meta{font-size:2.6px;fill:#b8cbe0}
+.card .unlinked{fill:#ffb27a}
+.tok{cursor:pointer}
+.tok circle.own{fill:#2f7fe0;stroke:#bfe2ff;stroke-width:.45}
+.tok.sel circle.own{stroke:var(--gold);stroke-width:1}
+.tok.done circle.own{fill:#24548f}
+.tok text{font-size:3px;font-weight:900;fill:#fff;pointer-events:none}
+.foe rect{fill:#e0475f;stroke:#ffd1d8;stroke-width:.4}
+.foe.ghost rect{fill:none;stroke:#ff9aaa;stroke-dasharray:1 .7}
+.foe text{font-size:2.8px;font-weight:900;fill:#fff;pointer-events:none}
+.foe.ghost text{fill:#ffb3bf}
+.arrow{stroke:var(--gold);stroke-width:1.15;fill:none;stroke-linecap:round;marker-end:url(#ah);pointer-events:none}
+.mark{font-size:3.6px;pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10.5px;color:var(--soft);padding:6px 10px;border-top:1px solid #1d2e45}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:-1px;margin-right:3px}
+.sheet{margin-top:8px;background:linear-gradient(165deg,#14243a,#0a172a);border:1px solid var(--line);border-radius:16px;padding:10px 12px;height:228px;overflow:auto}
+.sheet h2{font-size:14px;margin:0 0 2px}.sheet .sub{font-size:11.5px;color:var(--soft);margin:0 0 8px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btn{border:1px solid #3b5270;background:#1a2e49;color:#edf5ff;border-radius:11px;padding:8px 10px;font-size:12.5px;font-weight:750;min-height:42px;text-align:left;line-height:1.25}
+.btn small{display:block;font-size:10px;font-weight:500;color:#ffcf9a}
+.btn:disabled{opacity:.5;cursor:not-allowed}.btn.on{border-color:var(--gold);background:#3b3220}
+.btn.primary{background:linear-gradient(120deg,#0d8fb1,#187de4);border-color:#3dbef1;text-align:center;font-weight:850}
+.btn.ghost{background:#111e32;text-align:center}
+.orders{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.orders li{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;background:#10233a;border:1px solid #233d5c;border-radius:9px;padding:6px 8px}
+.orders li button{min-height:32px;padding:4px 9px;font-size:11px;border-radius:8px;border:1px solid #4b5f7a;background:#16263c;color:#dbe8f8}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px}.kv dt{color:var(--soft)}.kv dd{margin:0}
+.bar{display:grid;grid-template-columns:1fr 1fr 1fr 1.6fr;gap:6px;margin-top:8px}
+.notice{font-size:11.5px;color:#c5e8fb;background:#102943;border:1px solid #284862;border-radius:10px;padding:6px 10px;margin-top:8px;min-height:32px}
+.notice.warn{color:#ffe0ac;border-color:#6b5530;background:#2a2213}
+.foot{font-size:10.5px;color:#7f97b4;margin-top:10px}
+.report{position:fixed;left:0;right:0;bottom:0;z-index:5;display:none;justify-content:center;padding:0 8px calc(8px + env(safe-area-inset-bottom))}
+.report.open{display:flex}
+.report .box{width:min(560px,100%);max-height:62vh;overflow:auto;background:#0b1830f5;border:1px solid #426280;border-radius:18px 18px 14px 14px;padding:12px 13px;box-shadow:0 -10px 40px #000a}
+.report h3{margin:0 0 6px;font-size:15px}
+.lines{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:4px}
+.lines li{font-size:12.5px;padding:5px 8px;border-radius:8px;background:#122a44;border-left:3px solid #4d7ca6;opacity:0;transform:translateY(4px);transition:opacity .25s,transform .25s}
+.lines li.shown{opacity:1;transform:none}
+.lines li.battle{border-left-color:var(--gold)}.lines li.public{border-left-color:var(--green)}
+.fight{font-size:12px;background:#1b2338;border:1px solid #3c4766;border-radius:10px;padding:7px 9px;margin-bottom:6px}
+.fight b.won{color:var(--green)}.fight b.lost{color:#ff9aaa}.fight b.draw{color:var(--gold)}
+.badge{display:inline-block;font-size:9.5px;border:1px dashed #8a7a55;color:#ffd99a;border-radius:999px;padding:1px 7px;margin-left:4px;white-space:nowrap}
+.row{display:flex;gap:6px}.row .btn{flex:1;text-align:center}
+dialog{border:1px solid #426280;border-radius:16px;background:#0b1830;color:var(--ink);width:min(440px,calc(100% - 24px));padding:14px}
+dialog::backdrop{background:#020812b0}
+dialog h3{margin:0 0 10px;font-size:16px}
+label.f{display:block;font-size:12px;color:var(--soft);margin-bottom:8px}
+label.f select,label.f input,textarea{display:block;width:100%;margin-top:3px;padding:9px 10px;border-radius:9px;background:#10233a;color:#e9f3ff;border:1px solid #36516f;font-size:13px}
+textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:vertical}
+@media (max-width:380px){h1{font-size:18px}.stat b{font-size:15px}.btn{font-size:12px}}
+</style>
+</head>
+<body>
+<main>
+ <header>
+  <div><div class="eyebrow">RRT ARENA 09.03 · STRATEGIC MAP</div><h1>FRACTURED <span>FRONT</span></h1></div>
+  <a class="back" href="./">← สนามรบ RRT</a>
+ </header>
+ <div class="stats">
+  <div class="stat"><small id="sTurnLabel">เทิร์น</small><b id="sTurn">0/15</b></div>
+  <div class="stat blue"><small>BLUE แต้ม</small><b id="sVp">0</b></div>
+  <div class="stat red"><small>RED แต้ม</small><b id="sFoeVp">0</b></div>
+  <div class="stat"><small>เสบียง</small><b id="sSupply">0</b></div>
+ </div>
+ <div class="vpbar" title="แต้มนำ: ชนะเมื่อนำถึงเป้า"><i id="vpFill"></i></div>
+ <div class="goal" id="goal"></div>
+ <div class="mapwrap">
+  <svg id="map" viewBox="0 0 100 100" role="img" aria-label="แผนที่ยุทธศาสตร์"></svg>
+  <div class="legend"><span><i style="background:#2f7fe0"></i>หน่วย BLUE (ตัวเลข = จำนวนคน)</span><span><i style="background:#e0475f;border-radius:2px"></i>ศัตรูที่เห็น</span>
+   <span><i style="border:1px dashed #ff9aaa;border-radius:2px"></i>เคยเห็น</span><span>★ เขตชัยชนะ</span><span>🛡 ป้อม</span><span>⛓ ขาดเส้นเสบียง</span></div>
+ </div>
+ <section class="sheet" id="sheet" aria-live="polite"></section>
+ <div class="bar">
+  <button class="btn ghost" id="bSave">💾 บันทึก</button>
+  <button class="btn ghost" id="bLoad">📂 โหลด</button>
+  <button class="btn ghost" id="bNew">🆕 ใหม่</button>
+  <button class="btn primary" id="bEnd">จบเทิร์น ▶</button>
+ </div>
+ <div class="notice" id="notice">แตะเขตที่มีหน่วย BLUE เพื่อเลือก แล้วแตะเขตที่ติดกันเพื่อสั่งเดินทัพ</div>
+ <p class="foot">การรบบนแผนที่หน้านี้ใช้ <b>ผลรบแบบย่อ</b> (โมเดลที่ปรับจากการรบจริงหลายร้อยนัด) — ไม่ได้บันทึกเป็นประวัติการเรียนรู้ของ Agent ตัวไหน.
+  RED เป็น AI ที่ตัดสินใจจากมุมมองหมอกสงครามของตัวเองเท่านั้น กติกาเดียวกับผู้เล่น.</p>
+</main>
+<div class="report" id="report"><div class="box">
+ <h3 id="rTitle">ผลเทิร์น</h3><ul class="lines" id="rLines"></ul><div id="rFights"></div>
+ <div class="row"><button class="btn ghost" id="rSkip">ข้าม ⏩</button><button class="btn primary" id="rClose">สั่งการเทิร์นต่อไป</button></div>
+</div></div>
+<dialog id="dNew"><form method="dialog">
+ <h3>เกมใหม่</h3>
+ <label class="f">แผนที่<select id="nMap"><option value="nova9">NOVA-9 (แคมเปญหลัก)</option><option value="frontlineBasin">Frontline Basin (สมมาตร)</option></select></label>
+ <label class="f">นิสัย AI ฝ่าย RED<select id="nAi"><option value="random">สุ่ม (ไม่บอก)</option><option value="assault">บุกหนัก</option><option value="fortress">ตั้งรับ</option><option value="network">เครือข่าย / ข่าวกรอง</option></select></label>
+ <label class="f">Seed<input id="nSeed" inputmode="numeric" pattern="[0-9]*"></label>
+ <div class="row"><button class="btn ghost" value="cancel">ยกเลิก</button><button class="btn primary" value="ok" id="nGo">เริ่ม</button></div>
+</form></dialog>
+<dialog id="dSave"><form method="dialog">
+ <h3 id="svTitle">บันทึก / โหลด</h3>
+ <p class="sub" id="svNote" style="font-size:12px;color:var(--soft);margin:0 0 8px"></p>
+ <textarea id="svText" spellcheck="false" aria-label="ข้อความ save"></textarea>
+ <div class="row" style="margin-top:8px"><button class="btn ghost" value="cancel">ปิด</button><button class="btn ghost" value="copy" id="svCopy">คัดลอก</button><button class="btn primary" value="ok" id="svGo">โหลด</button></div>
+</form></dialog>
+<script id="campaignCore">
+/* RRT ARENA V0.9 — Strategic map rules core (M1).
+ * Pure functions: no DOM, timers or Math.random. State in, new state out.
+ * - Formation tokens (Buddy/Group/Squad sizes) move on a sector graph, one order each per turn.
+ * - WEGO: both factions submit orders, then a fixed-order resolution runs.
+ * - Fog of war: every consumer (player UI and enemy AI) reads the world through viewFor().
+ * - Battles are delegated to an injected resolver (coarse model now, the real engine later),
+ *   so the decentralized battle AI is never replaced by a map-level shortcut in real play.
+ */
+(function(root,factory){'use strict';const api=factory();root.RRTArenaCampaign=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+ const RULES=Object.freeze({maxUnits:4,supplyCap:12,startSupply:4,towerCost:3,injuryTurns:2,encircledInjuryTurns:3,
+  intelExpiry:4,maxFort:2,vpLead:8,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2,maxAgents:16,factoryEvery:2,battleRounds:3,hqSiegeTurns:4,contestedVpBlocked:true,fortDecay:true});
+ const PRESET_BY_SIZE=Object.freeze({2:'buddy2',3:'buddy3',4:'group22',5:'group23',6:'group33',8:'squad2222',10:'squad2323',12:'squad3333'});
+ const RADIO=Object.freeze([{loss:50,delay:0.6},{loss:20,delay:0.3},{loss:0,delay:0}]);
+ const FACTIONS=Object.freeze(['player','enemy']);
+ const other=f=>f==='player'?'enemy':'player';
+ // Symmetric 11-sector map: three lanes (ruins / open+radio hill / lanes+depot) with diagonal flanks.
+ const TEMPLATES=Object.freeze({frontlineBasin:Object.freeze({
+  sectors:[
+   ['P-HQ','ฐานผู้เล่น','ruins','player',2,{hq:'player'}],['P-L','ซากเมืองใต้','ruins','player',1],['P-C','ทุ่งโล่งใต้','open','player',1],['P-R','ถนนใต้','lanes','player',1],
+   ['L','ซากเมืองกลาง ★','ruins',null,1,{victory:true}],['C','เนินวิทยุ ★','open',null,1,{victory:true,radioHill:true}],['R','คลังเสบียง ★','lanes',null,3,{victory:true,depot:true}],
+   ['E-L','ซากเมืองเหนือ','ruins','enemy',1],['E-C','ทุ่งโล่งเหนือ','open','enemy',1],['E-R','ถนนเหนือ','lanes','enemy',1],['E-HQ','ฐานศัตรู','ruins','enemy',2,{hq:'enemy'}]],
+  edges:[['P-HQ','P-L'],['P-HQ','P-C'],['P-HQ','P-R'],['P-L','L'],['P-L','C'],['P-C','C'],['P-R','C'],['P-R','R'],
+   ['L','C'],['C','R'],
+   ['E-HQ','E-L'],['E-HQ','E-C'],['E-HQ','E-R'],['E-L','L'],['E-L','C'],['E-C','C'],['E-R','C'],['E-R','R']]}),
+  // FRACTURED FRONT campaign map (deliberately asymmetric; balance is checked by auto-play, not by mirroring).
+  // player = BLUE Restoration Army (C1), enemy = RED Containment Force (C3).
+  nova9:Object.freeze({
+   sectors:[
+    ['N1','📡 North Relay','open','player',1,{relay:true,sensor:true}],['N2','🏙️ Old Town ★','ruins',null,1,{victory:true}],['N3','🛡️ Red Outpost','lanes','enemy',1,{sensor:true,fort:1}],
+    ['C1','🏢 BLUE HQ','ruins','player',2,{hq:'player'}],['C2','⚔️ Control A ★','open',null,1,{victory:true}],['C3','🏢 RED HQ','ruins','enemy',2,{hq:'enemy'}],
+    ['S1','📦 Blue Depot','lanes','player',3,{depot:true}],['S2','⚡ Power Grid ★','lanes',null,2,{victory:true,power:true}],['S3','🏭 Factory','ruins','enemy',1,{factory:true}]],
+   edges:[['N1','N2'],['N2','N3'],['C1','C2'],['C2','C3'],['S1','S2'],['S2','S3'],
+    ['N1','C1'],['C1','S1'],['N2','C2'],['C2','S2'],['N3','C3'],['C3','S3']]})});
+
+ const clone=x=>JSON.parse(JSON.stringify(x));
+ function presetForSize(n){return PRESET_BY_SIZE[n]||null;}
+ function presetFloor(n){for(let k=Math.min(12,n|0);k>=2;k--)if(PRESET_BY_SIZE[k])return k;return 0;}
+ function hash32(...parts){let h=2166136261>>>0;for(const p of parts){const s=String(p);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}h^=0x9e3779b9;h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+ function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+ function create({seed=1,template='frontlineBasin',maxTurns=RULES.maxTurns,vpLead=RULES.vpLead,vpNeedsSupply=RULES.vpNeedsSupply}={}){
+  const t=TEMPLATES[template];if(!t)throw new RangeError('Unknown map template '+template);
+  const sectors=t.sectors.map(([id,name,terrain,owner,yieldPerTurn,special={}])=>({id,name,terrain,owner,yield:yieldPerTurn,
+   fort:special.hq?RULES.hqFort:(special.fort|0),baseFort:special.hq?RULES.hqFort:(special.fort|0),tower:null,victory:!!special.victory,hq:special.hq||null,radioHill:!!special.radioHill,depot:!!special.depot,
+   relay:!!special.relay,power:!!special.power,factory:!!special.factory,sensor:!!special.sensor}));
+  const roster=[],units=[],factions={};
+  for(const f of FACTIONS){
+   const prefix=f==='player'?'P':'E',hq=sectors.find(s=>s.hq===f).id;
+   for(let i=1;i<=RULES.agentsPerFaction;i++)roster.push({id:prefix+i,faction:f,injuredTurns:0});
+   for(let u=0;u<3;u++)units.push({id:prefix+'-U'+(u+1),faction:f,sector:hq,agents:[1,2,3,4].map(k=>prefix+(u*4+k))});
+   factions[f]={supply:RULES.startSupply,vp:0,intel:{},siege:{},reserve:[],nextUnit:4,nextAgent:RULES.agentsPerFaction+1};
+  }
+  return {version:1,seed:seed>>>0,turn:0,maxTurns,vpLead,vpNeedsSupply,template,sectors,edges:t.edges.map(e=>e.slice()),units,roster,factions,winner:null,log:[]};
+ }
+ const sectorOf=(s,id)=>s.sectors.find(x=>x.id===id);
+ function neighbors(s,id){const out=[];for(const [a,b] of s.edges){if(a===id)out.push(b);else if(b===id)out.push(a);}return out;}
+ function connectedSectors(s,f){
+  const hq=s.sectors.find(x=>x.hq===f);const seen=new Set();
+  if(!hq||hq.owner!==f)return seen;
+  const queue=[hq.id];seen.add(hq.id);
+  while(queue.length){const id=queue.shift();for(const n of neighbors(s,id))if(!seen.has(n)&&sectorOf(s,n).owner===f){seen.add(n);queue.push(n);}}
+  return seen;
+ }
+ /** A Relay/Factory works only while linked to an owned Power Grid through the faction's own sectors. */
+ function powered(s,f,id){
+  const grid=s.sectors.find(x=>x.power&&x.owner===f);if(!grid)return false;
+  const seen=new Set([grid.id]),q=[grid.id];
+  while(q.length){const c=q.shift();if(c===id)return true;for(const n of neighbors(s,c))if(!seen.has(n)&&sectorOf(s,n).owner===f){seen.add(n);q.push(n);}}
+  return false;
+ }
+ function radioLevel(s,f,id){
+  let level=0;const sec=sectorOf(s,id);if(!sec)return 0;
+  // Powered relay: strong radio in its sector and next door; unpowered relay: weak local radio only.
+  for(const r of s.sectors.filter(x=>x.relay&&x.owner===f)){
+   if(powered(s,f,r.id)&&(r.id===id||neighbors(s,r.id).includes(id)))level=2;
+   else if(r.id===id)level=Math.max(level,1);
+  }
+  if(sec.tower===f)level=2;
+  else if(neighbors(s,id).some(n=>sectorOf(s,n).tower===f))level=Math.max(level,1);
+  const hill=s.sectors.find(x=>x.radioHill&&x.owner===f);
+  if(hill&&(hill.id===id||neighbors(s,hill.id).includes(id)))level=Math.min(2,level+1);
+  return level;
+ }
+ function radioSettings(level){return {...RADIO[Math.max(0,Math.min(2,level|0))]};}
+
+ /** The ONLY way to read the world for a faction. Ownership of sectors is public; fortification,
+   * towers and enemy units are known only from own presence, adjacent sightings (units only),
+   * reconnaissance or battle snapshots — snapshots age and expire. */
+ function viewFor(s,f){
+  const own=s.units.filter(u=>u.faction===f);
+  const present=new Set(own.map(u=>u.sector));
+  const nearby=new Set(present);for(const id of present)for(const n of neighbors(s,id))nearby.add(n);
+  // Owned sensor stations (relay / outpost) watch neighbouring sectors for unit movement.
+  for(const x of s.sectors)if(x.sensor&&x.owner===f){nearby.add(x.id);for(const n of neighbors(s,x.id))nearby.add(n);}
+  const intel=s.factions[f].intel;
+  const sectors=s.sectors.map(x=>{
+   const base={id:x.id,name:x.name,terrain:x.terrain,owner:x.owner,victory:x.victory,hq:x.hq,radioHill:x.radioHill,depot:x.depot,yield:x.yield,
+    relay:x.relay,power:x.power,factory:x.factory,sensor:x.sensor,powered:x.owner===f?powered(s,f,x.id):null,
+    radio:radioLevel(s,f,x.id)};
+   if(x.owner===f||present.has(x.id))return {...base,fort:x.fort,tower:x.tower,intelAge:0,confidence:1};
+   const snap=intel[x.id],age=snap?s.turn-snap.turn:null;
+   if(snap&&age<RULES.intelExpiry)return {...base,fort:snap.fort,tower:snap.tower,intelAge:age,confidence:1-age/RULES.intelExpiry};
+   return {...base,fort:null,tower:null,intelAge:null,confidence:0};
+  });
+  const enemyUnits=s.units.filter(u=>u.faction!==f&&nearby.has(u.sector)).map(u=>({sector:u.sector,size:u.agents.length}));
+  const lastSeenUnits=[];
+  for(const [id,snap] of Object.entries(intel)){const age=s.turn-snap.turn;if(age>0&&age<RULES.intelExpiry&&!nearby.has(id))for(const size of snap.units)lastSeenUnits.push({sector:id,size,age});}
+  return {faction:f,turn:s.turn,maxTurns:s.maxTurns,winner:s.winner,supply:s.factions[f].supply,vp:s.factions[f].vp,
+   opponentVp:s.factions[other(f)].vp,vpLead:s.vpLead,edges:s.edges.map(e=>e.slice()),sectors,
+   ownUnits:own.map(u=>({id:u.id,faction:f,sector:u.sector,size:u.agents.length,agents:u.agents.slice()})),
+   enemyUnits,lastSeenUnits,reserve:s.factions[f].reserve.slice(),
+   injured:s.roster.filter(a=>a.faction===f&&a.injuredTurns>0).map(a=>({id:a.id,turns:a.injuredTurns}))};
+ }
+
+ function validateOrder(s,f,o){
+  const u=s.units.find(x=>x.id===o?.unit);
+  if(!u)return {ok:false,reason:'ไม่มีหน่วยนี้'};
+  if(u.faction!==f)return {ok:false,reason:'ไม่ใช่หน่วยของฝ่ายเรา'};
+  switch(o.type){
+   case 'move':return neighbors(s,u.sector).includes(o.to)?{ok:true}:{ok:false,reason:'ไปได้เฉพาะเขตที่ติดกัน'};
+   case 'hold':case 'recon':return {ok:true};
+   case 'tower':{const sec=sectorOf(s,u.sector);
+    if(sec.owner!==f)return {ok:false,reason:'ต้องอยู่ในเขตของฝ่ายเรา'};
+    if(sec.tower)return {ok:false,reason:'มีเสาวิทยุแล้ว'};
+    if(s.factions[f].supply<RULES.towerCost)return {ok:false,reason:'เสบียงไม่พอ'};return {ok:true};}
+   case 'merge':{const w=s.units.find(x=>x.id===o.with);
+    if(!w||w.faction!==f||w.id===u.id||w.sector!==u.sector)return {ok:false,reason:'ต้องรวมกับหน่วยของเราในเขตเดียวกัน'};
+    return presetForSize(u.agents.length+w.agents.length)?{ok:true}:{ok:false,reason:'ขนาดรวมไม่ตรงรูปขบวนที่มี'};}
+   case 'split':{const sizes=o.sizes||[];
+    if(sizes.length!==2||sizes[0]+sizes[1]!==u.agents.length||!presetForSize(sizes[0])||!presetForSize(sizes[1]))return {ok:false,reason:'แบ่งได้เฉพาะขนาดรูปขบวนที่มี'};
+    if(s.units.filter(x=>x.faction===f).length>=RULES.maxUnits)return {ok:false,reason:'หน่วยเต็มแล้ว'};return {ok:true};}
+   default:return {ok:false,reason:'คำสั่งไม่รู้จัก'};
+  }
+ }
+ function validateOrders(s,f,orders){
+  const used=new Set();let units=s.units.filter(x=>x.faction===f).length;
+  for(const o of orders||[]){
+   const r=validateOrder(s,f,o);if(!r.ok)return {ok:false,reason:r.reason,order:o};
+   if(o.type==='split'&&++units>RULES.maxUnits)return {ok:false,reason:'หน่วยเต็มแล้ว',order:o};
+   for(const id of [o.unit,o.type==='merge'?o.with:null].filter(Boolean)){if(used.has(id))return {ok:false,reason:'หนึ่งหน่วยสั่งได้หนึ่งคำสั่งต่อตา',order:o};used.add(id);}
+  }
+  return {ok:true};
+ }
+
+ function snapshot(s,id){const x=sectorOf(s,id);return {turn:null,owner:x.owner,fort:x.fort,tower:x.tower,
+  units:s.units.filter(u=>u.sector===id).map(u=>u.agents.length)};}
+ function injure(s,agents,turns){for(const id of agents){const a=s.roster.find(r=>r.id===id);if(a)a.injuredTurns=Math.max(a.injuredTurns,turns);}}
+ function removeCasualties(s,unitIds,count){
+  const hurt=[];
+  for(const uid of unitIds){const u=s.units.find(x=>x.id===uid);if(!u)continue;
+   while(count>0&&u.agents.length){hurt.push(u.agents.pop());count--;}}
+  return hurt;
+ }
+ function retreatTarget(s,f,from,origin){
+  if(origin&&origin!==from){const o=sectorOf(s,origin);if(!s.units.some(u=>u.sector===origin&&u.faction!==f)&&(o.owner===f||o.owner===null))return origin;}
+  const hq=s.sectors.find(x=>x.hq===f)?.id;
+  const dist=id=>{const seen=new Map([[hq,0]]);const q=[hq];while(q.length){const c=q.shift();for(const n of neighbors(s,c))if(!seen.has(n)){seen.set(n,seen.get(c)+1);q.push(n);}}return seen.get(id)??99;};
+  const options=neighbors(s,from).filter(id=>sectorOf(s,id).owner===f&&!s.units.some(u=>u.sector===id&&u.faction!==f)).sort((a,b)=>dist(a)-dist(b)||a.localeCompare(b));
+  return options[0]||null;
+ }
+
+ /** One WEGO turn. resolver(spec) -> {winner:'attacker'|'defender'|'draw',casualties:{attacker,defender}} */
+ function resolveTurn(input,orders={},resolver=coarseBattle){
+  const s=clone(input);const events=[],battles=[];
+  if(s.winner)return {state:s,events,battles};
+  const accepted={player:[],enemy:[]};
+  for(const f of FACTIONS){const used=new Set();
+   for(const o of orders[f]||[]){const r=validateOrder(s,f,o);const ids=[o.unit,o.type==='merge'?o.with:null].filter(Boolean);
+    if(!r.ok||ids.some(id=>used.has(id))){events.push({type:'invalid_order',faction:f,order:o,reason:r.reason||'ซ้ำ'});continue;}
+    ids.forEach(id=>used.add(id));accepted[f].push(o);}}
+  const orderOf=id=>{for(const f of FACTIONS)for(const o of accepted[f])if(o.unit===id)return o;return null;};
+  // 1. Reconnaissance: true state at the start of the turn.
+  const pendingIntel=[];
+  for(const f of FACTIONS)for(const o of accepted[f])if(o.type==='recon'){const u=s.units.find(x=>x.id===o.unit);
+   for(const id of neighbors(s,u.sector))pendingIntel.push([f,id,snapshot(s,id)]);events.push({type:'recon',faction:f,unit:u.id,sector:u.sector});}
+  // 2. Re-organisation.
+  for(const f of FACTIONS)for(const o of accepted[f]){
+   if(o.type==='merge'){const a=s.units.find(x=>x.id===o.unit),b=s.units.find(x=>x.id===o.with);a.agents.push(...b.agents);s.units=s.units.filter(x=>x!==b);events.push({type:'merge',faction:f,unit:a.id});}
+   if(o.type==='split'){const a=s.units.find(x=>x.id===o.unit);
+    // Re-check the unit cap at application time: several splits in one turn must not exceed it.
+    if(s.units.filter(x=>x.faction===f).length>=RULES.maxUnits){events.push({type:'invalid_order',faction:f,order:o,reason:'หน่วยเต็มแล้ว'});continue;}
+    const id=(f==='player'?'P':'E')+'-U'+(s.factions[f].nextUnit++);
+    s.units.push({id,faction:f,sector:a.sector,agents:a.agents.splice(o.sizes[0])});events.push({type:'split',faction:f,unit:a.id,into:id});}
+  }
+  // 3. Movement: opposing units swapping along one edge meet in the open and both stay put.
+  const origin=new Map(s.units.map(u=>[u.id,u.sector]));
+  const moving=s.units.filter(u=>orderOf(u.id)?.type==='move');
+  const bounced=new Set();const edgeGroups=new Map();
+  for(const u of moving){const to=orderOf(u.id).to;
+   const rev=moving.filter(v=>v.faction!==u.faction&&v.sector===to&&orderOf(v.id).to===u.sector);
+   if(rev.length){const key=[u.sector,to].sort().join('|');if(!edgeGroups.has(key))edgeGroups.set(key,new Set());edgeGroups.get(key).add(u.id);rev.forEach(v=>edgeGroups.get(key).add(v.id));}}
+  for(const [key,ids] of edgeGroups){
+   const side=f=>[...ids].map(id=>s.units.find(u=>u.id===id)).filter(u=>u.faction===f);
+   const spec=battleSpec(s,'meeting',key,'open',0,side('player'),side('enemy'));
+   const result=runBattle(s,spec,resolver,events,battles);
+   for(const id of ids)bounced.add(id);
+   void result;
+  }
+  for(const u of moving)if(!bounced.has(u.id)&&s.units.includes(u))u.sector=orderOf(u.id).to;
+  // 4. Sector battles: units present at the start defend; owner's fort counts only for an owning defender.
+  for(const sec of s.sectors){
+   const here=f=>s.units.filter(u=>u.sector===sec.id&&u.faction===f&&u.agents.length);
+   if(!here('player').length||!here('enemy').length)continue;
+   const stayed=f=>here(f).some(u=>origin.get(u.id)===sec.id);
+   let defF=stayed('player')&&!stayed('enemy')?'player':stayed('enemy')&&!stayed('player')?'enemy':(sec.owner||'enemy');
+   const attF=other(defF),kind=stayed(defF)?'assault':'contested';
+   // Army scale: one battle fields at most a Platoon (12) per side; extra agents fight further rounds.
+   let result,round=0;
+   while(true){
+    const total=f=>here(f).reduce((n,u)=>n+u.agents.length,0),before={[attF]:total(attF),[defF]:total(defF)};
+    const spec=battleSpec(s,kind,sec.id,sec.terrain,sec.owner===defF?sec.fort:0,here(attF),here(defF));spec.round=round;
+    if(round)spec.seed=hash32(spec.seed,round);
+    result=runBattle(s,spec,resolver,events,battles);
+    const lf=result.winner==='attacker'?defF:attF,loserFought=spec[result.winner==='attacker'?'defender':'attacker'].size;
+    // Continue only while the beaten side still has fresh reserves that did not fight this round.
+    if(result.winner==='draw'||++round>=RULES.battleRounds||total(lf)<2||before[lf]<=loserFought)break;
+    events.push({type:'battle_round',sector:sec.id,round});
+   }
+   const loserF=result.winner==='attacker'?defF:attF;
+   if(result.winner==='draw'){retreatUnits(s,here(attF),attF,sec.id,origin,events);}
+   else retreatUnits(s,here(loserF),loserF,sec.id,origin,events);
+  }
+  // Disband empty / single-agent units into the faction reserve.
+  for(const u of s.units.slice())if(u.agents.length<2){s.factions[u.faction].reserve.push(...u.agents);s.units=s.units.filter(x=>x!==u);}
+  // 5. Capture (siege), dig-in and towers.
+  for(const f of FACTIONS){
+   const siege={};
+   for(const u of s.units.filter(x=>x.faction===f)){const sec=sectorOf(s,u.sector);
+    if(sec.owner===f||s.units.some(v=>v.sector===sec.id&&v.faction!==f))continue;
+    siege[sec.id]=(s.factions[f].siege[sec.id]||0)+(siege[sec.id]?0:1);
+    // An HQ needs a long uncontested siege; other sectors need fort+1 turns.
+    if(siege[sec.id]>(sec.hq?Math.max(sec.fort,RULES.hqSiegeTurns-1):sec.fort)){events.push({type:'capture',faction:f,sector:sec.id,from:sec.owner});sec.owner=f;sec.fort=0;if(sec.tower)sec.tower=f;delete siege[sec.id];}}
+   s.factions[f].siege=siege;
+  }
+  for(const f of FACTIONS)for(const o of accepted[f]){const u=s.units.find(x=>x.id===o.unit);if(!u)continue;const sec=sectorOf(s,u.sector);
+   if(o.type==='hold'&&sec.owner===f&&!bounced.has(u.id)){sec.fort=Math.min(RULES.maxFort,sec.fort+1);}
+   if(o.type==='tower'&&sec.owner===f&&!sec.tower&&s.factions[f].supply>=RULES.towerCost){sec.tower=f;s.factions[f].supply-=RULES.towerCost;events.push({type:'tower',faction:f,sector:sec.id});}}
+  // 6. Upkeep.
+  s.turn++;
+  for(const [f,id,snap] of pendingIntel){snap.turn=s.turn;s.factions[f].intel[id]=snap;}
+  for(const b of battles)for(const f of FACTIONS)if(b.sector&&!b.sector.includes('|')){const snap=snapshot(s,b.sector);snap.turn=s.turn;s.factions[f].intel[b.sector]=snap;}
+  for(const f of FACTIONS){const fac=s.factions[f];const connected=connectedSectors(s,f);
+   fac.supply=Math.min(RULES.supplyCap,fac.supply+s.sectors.filter(x=>x.owner===f&&connected.has(x.id)).reduce((n,x)=>n+x.yield,0));
+   // Victory sectors only score while linked to HQ by the faction's own supply line (overextension risk).
+   // A victory sector with an enemy unit inside it (under attack / siege) scores for nobody.
+   fac.vp+=s.sectors.filter(x=>x.victory&&x.owner===f&&(!s.vpNeedsSupply||connected.has(x.id))&&
+    !(RULES.contestedVpBlocked&&s.units.some(u=>u.sector===x.id&&u.faction!==f))).length;}
+  // Unattended fortifications decay one level per turn down to the sector's built-in base.
+  if(RULES.fortDecay)for(const x of s.sectors){const base=x.baseFort|0;
+   if(x.fort>base&&x.owner&&!s.units.some(u=>u.sector===x.id&&u.faction===x.owner))x.fort--;}
+  for(const a of s.roster)if(a.injuredTurns>0&&--a.injuredTurns===0)s.factions[a.faction].reserve.push(a.id);
+  // A powered Factory produces one fresh agent (no experience) every few turns, up to the roster cap.
+  if(s.turn%RULES.factoryEvery===0)for(const f of FACTIONS){const fac=s.factions[f];
+   if(s.sectors.some(x=>x.factory&&x.owner===f&&powered(s,f,x.id))&&s.roster.filter(a=>a.faction===f).length<RULES.maxAgents){
+    const id=(f==='player'?'P':'E')+(fac.nextAgent++);s.roster.push({id,faction:f,injuredTurns:0,fresh:true});fac.reserve.push(id);events.push({type:'produced',faction:f,agent:id});}}
+  for(const f of FACTIONS){const fac=s.factions[f],hq=s.sectors.find(x=>x.hq===f);
+   const n=presetFloor(fac.reserve.length);
+   if(n&&hq.owner===f&&s.units.filter(u=>u.faction===f).length<RULES.maxUnits){
+    const id=(f==='player'?'P':'E')+'-U'+(fac.nextUnit++);s.units.push({id,faction:f,sector:hq.id,agents:fac.reserve.splice(0,n)});events.push({type:'muster',faction:f,unit:id});}}
+  const v=checkVictory(s);if(v.winner){s.winner=v.winner;events.push({type:'victory',...v});}
+  s.log.push({turn:s.turn,events:events.map(e=>e.type)});
+  return {state:s,events,battles};
+ }
+ function battleSpec(s,kind,sector,terrain,fort,attUnits,defUnits){
+  const side=(units,f)=>{const agents=units.flatMap(u=>u.agents);const size=presetFloor(agents.length);
+   return {faction:f,size,preset:presetForSize(size),units:units.map(u=>u.id),agents:agents.slice(0,size),
+    radio:sector.includes('|')?0:radioLevel(s,f,sector)};};
+  const att=side(attUnits,attUnits[0]?.faction||'player'),def=side(defUnits,defUnits[0]?.faction||'enemy');
+  return {kind,sector,terrain,fort,attacker:att,defender:def,seed:hash32(s.seed,s.turn,sector,kind)};
+ }
+ function runBattle(s,spec,resolver,events,battles){
+  if(!spec.attacker.size||!spec.defender.size){const r={winner:spec.attacker.size?'attacker':'defender',casualties:{attacker:0,defender:0}};battles.push({...spec,result:r});return r;}
+  const r=resolver(spec);
+  const att=Math.max(0,Math.min(spec.attacker.size,r.casualties?.attacker|0)),def=Math.max(0,Math.min(spec.defender.size,r.casualties?.defender|0));
+  injure(s,removeCasualties(s,spec.attacker.units,att),RULES.injuryTurns);
+  injure(s,removeCasualties(s,spec.defender.units,def),RULES.injuryTurns);
+  const result={winner:['attacker','defender','draw'].includes(r.winner)?r.winner:'draw',casualties:{attacker:att,defender:def}};
+  battles.push({...spec,result});events.push({type:'battle',kind:spec.kind,sector:spec.sector,winner:result.winner});
+  return result;
+ }
+ function retreatUnits(s,units,f,from,origin,events){
+  for(const u of units){if(!s.units.includes(u))continue;
+   const to=retreatTarget(s,f,from,origin.get(u.id));
+   if(to){u.sector=to;events.push({type:'retreat',faction:f,unit:u.id,to});}
+   else{injure(s,u.agents,RULES.encircledInjuryTurns);s.units=s.units.filter(x=>x!==u);events.push({type:'encircled',faction:f,unit:u.id,sector:from});}}
+ }
+ function checkVictory(s){
+  for(const f of FACTIONS){const enemyHq=s.sectors.find(x=>x.hq===other(f));if(enemyHq&&enemyHq.owner===f)return {winner:f,reason:'hq_captured'};}
+  const vp=f=>s.factions[f].vp;
+  // Tug-of-war: points swing with who holds the victory sectors each turn; a clear lead wins.
+  const lead=vp('player')-vp('enemy');
+  if(Math.abs(lead)>=s.vpLead)return {winner:lead>0?'player':'enemy',reason:'victory_points'};
+  if(s.turn>=s.maxTurns){
+   if(vp('player')!==vp('enemy'))return {winner:vp('player')>vp('enemy')?'player':'enemy',reason:'turn_limit_vp'};
+   const n=f=>s.sectors.filter(x=>x.owner===f).length;
+   return {winner:n('player')>n('enemy')?'player':n('enemy')>n('player')?'enemy':'draw',reason:'turn_limit_sectors'};
+  }
+  return {winner:null};
+ }
+ /** Coarse outcome models for fast map-level simulation and for battles the player does not watch.
+   * Both are fitted to real team battles; results from them are labelled as abstract and never written
+   * into any Agent's learning history. */
+ const COARSE=Object.freeze({
+  terrain:Object.freeze({ruins:{k:9.5,c:.43,e:2},lanes:{k:9.5,c:.40,e:2},open:{k:13,c:.32,e:3}}),
+  // Assault = defender holds its sector (control zone at its anchor). Fitted to 648 side-swapped battles
+  // (benchmarks/v090_map/m0_fort_calibration.json): 4v4 defender ~80%, 5v4 ~74%, 6v4 attacker 69% -> 36-39%
+  // with a fort; forts barely change close fights (4v4, 5v4), levels 1 and 2 are statistically
+  // indistinguishable so far; battles end on zone points,
+  // so both sides lose only ~1-3 agents.
+  assault:Object.freeze({base:1.45,k:8,fort:Object.freeze([0,1.0,1.1]),loserShare:.4,winnerShare:.15}),
+  calibration:'m0_calibration.json (meeting/contested) + m0_fort_calibration.json (assault with forts)'});
+ function coarseBattle(spec){
+  const r=rng(spec.seed>>>0);const a=Math.max(1,spec.attacker.size),d=Math.max(1,spec.defender.size);
+  if(spec.kind==='assault'){
+   const A=COARSE.assault,edge=a>=d?A.k*(a/d-1)**2:-A.k*(d/a-1)**2;
+   // Walls only pay off once the attacker can actually push in: the fort term grows with the attacker's edge.
+   const fortTerm=A.fort[Math.max(0,Math.min(2,spec.fort|0))]*Math.min(1,Math.max(0,edge)/2);
+   const p=1/(1+Math.exp(-(edge-A.base-fortTerm)));
+   const attackerWins=r()<p,loser=attackerWins?d:a,winner=attackerWins?a:d;
+   const loserCas=Math.min(loser,Math.max(1,Math.round(loser*A.loserShare*(.6+.8*r()))));
+   const winnerCas=Math.min(winner-1,Math.round(winner*A.winnerShare*(.5+r())));
+   return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loserCas}:{attacker:loserCas,defender:winnerCas},p};
+  }
+  // Meeting / contested battles are fights to elimination (m0_calibration.json): one extra agent wins
+  // ~90-100%, open terrain is the most decisive, the loser is eliminated.
+  const T=COARSE.terrain[spec.terrain]||COARSE.terrain.open;
+  const p=1/(1+Math.exp(-(T.k*Math.log(a/d))));
+  const attackerWins=r()<p;
+  const loser=attackerWins?d:a,winner=attackerWins?a:d;
+  const expected=winner*T.c*Math.pow(Math.min(1,loser/winner),T.e);
+  const winnerCas=Math.max(0,Math.min(winner-1,Math.round(expected*(.6+.8*r()))));
+  return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loser}:{attacker:loser,defender:winnerCas},p};
+ }
+ return Object.freeze({RULES,TEMPLATES,PRESET_BY_SIZE,presetForSize,presetFloor,create,neighbors,connectedSectors,powered,radioLevel,radioSettings,
+  viewFor,validateOrder,validateOrders,resolveTurn,checkVictory,coarseBattle,COARSE});
+});
+</script>
+<script id="campaignAiCore">
+/* RRT ARENA V0.9 — strategic-map AI (M2) and campaign auto-play.
+ * decideOrders() receives ONLY a faction view from RRTArenaCampaign.viewFor(): fog of war is enforced by
+ * the API, so the AI cannot react to enemy units it has not seen. Same rules and order limits as a player.
+ * Personalities are weight sets (assault / fortress / network); determinism comes from an explicit seed.
+ */
+(function(root,factory){'use strict';
+ const api=factory(typeof module==='object'&&module.exports?require('./rrt_arena_campaign_v090.js'):root.RRTArenaCampaign);
+ root.RRTArenaCampaignAI=api;if(typeof module==='object'&&module.exports)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(C){
+ 'use strict';
+ const WEIGHTS=Object.freeze({
+  assault:Object.freeze({attack:1.4,defend:.8,recon:.3,tower:.2,dig:.3,risk:.8}),
+  fortress:Object.freeze({attack:.7,defend:1.4,recon:.4,tower:.4,dig:1.2,risk:1.4}),
+  network:Object.freeze({attack:.9,defend:1.0,recon:1.2,tower:1.3,dig:.6,risk:1.0})});
+ const PERSONALITIES=Object.freeze(Object.keys(WEIGHTS));
+ function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+ const sizeOk=n=>!!C.presetForSize(n);
+ // Public rule knowledge (same calibrated shapes as the campaign coarse model), no hidden state.
+ function winProb(a,d,assault,fort){
+  if(!(d>0))return 1;
+  if(assault){const edge=a>=d?8*(a/d-1)**2:-8*(d/a-1)**2,ft=[0,1,1.1][fort|0]*Math.min(1,Math.max(0,edge)/2);return 1/(1+Math.exp(-(edge-1.45-ft)));}
+  return 1/(1+Math.exp(-9.5*Math.log(a/d)));
+ }
+ function decideOrders(view,personality='assault',seed=0){
+  if(!view||!Array.isArray(view.ownUnits)||!Array.isArray(view.sectors))throw new TypeError('decideOrders needs a faction view from viewFor()');
+  const base=WEIGHTS[personality]||WEIGHTS.assault;
+  // Any personality presses harder when clearly behind on victory points (same rule for both sides).
+  const behind=(view.opponentVp-view.vp)>=Math.max(3,Math.floor((view.vpLead||10)/3));
+  const W=behind?{...base,attack:base.attack*1.35,risk:base.risk*.7,dig:base.dig*.6}:base;
+  const f=view.faction,foe=f==='player'?'enemy':'player',r=rng((seed*2654435761)^(view.turn*97)^(f==='player'?1:2));
+  const sec=id=>view.sectors.find(s=>s.id===id);
+  const nb=id=>view.edges.filter(e=>e.includes(id)).map(e=>e[0]===id?e[1]:e[0]);
+  const myHq=view.sectors.find(s=>s.hq===f),foeHq=view.sectors.find(s=>s.hq===foe);
+  const dist=from=>{const d=new Map([[from,0]]),q=[from];while(q.length){const c=q.shift();for(const n of nb(c))if(!d.has(n)){d.set(n,d.get(c)+1);q.push(n);}}return d;};
+  const toFoe=dist(foeHq.id);
+  const enemyAt=id=>view.enemyUnits.filter(u=>u.sector===id).reduce((n,u)=>n+u.size,0)+
+   view.lastSeenUnits.filter(u=>u.sector===id).reduce((n,u)=>n+u.size*(1-u.age/4),0);
+  const threatNear=id=>Math.max(enemyAt(id),...nb(id).map(enemyAt));
+  const value=s=>(s.victory?3:0)+s.yield*.8+(s.radioHill?1:0)+(s.hq===foe?6:0)+(s.hq===f?5:0)+
+   (s.power?2.5:0)+(s.factory?2:0)+(s.relay?1.5:0)+(s.sensor?.5:0);
+  const orders=[],used=new Set();let supply=view.supply;
+  const units=view.ownUnits.slice().sort((a,b)=>a.id.localeCompare(b.id));
+  // 1. Home defence. HQ under siege (enemy inside it): every unit within two steps converges on it.
+  //    Visible threat next to an empty HQ: the closest unit steps back.
+  const toHq=dist(myHq.id),stepHome=u=>nb(u.sector).sort((a,b)=>(toHq.get(a)??99)-(toHq.get(b)??99))[0];
+  const besieged=view.enemyUnits.filter(e=>e.sector===myHq.id).reduce((n,e)=>n+e.size,0);
+  if(besieged>0){
+   for(const u of units.filter(x=>x.sector!==myHq.id&&(toHq.get(x.sector)??99)<=2).sort((a,b)=>(toHq.get(a.sector)??99)-(toHq.get(b.sector)??99))){
+    orders.push({unit:u.id,type:'move',to:stepHome(u)});used.add(u.id);}
+  }else if(myHq.owner===f&&!units.some(u=>u.sector===myHq.id)&&nb(myHq.id).some(id=>view.enemyUnits.some(e=>e.sector===id))){
+   const back=units.slice().sort((a,b)=>(toHq.get(a.sector)??99)-(toHq.get(b.sector)??99)||b.size-a.size)[0];
+   if(back){orders.push({unit:back.id,type:'move',to:stepHome(back)});used.add(back.id);}
+  }
+  // 2. Concentrate: merge co-located units when a known enemy nearby outnumbers each of them.
+  for(const u of units){if(used.has(u.id))continue;
+   const mate=units.find(v=>v!==u&&!used.has(v.id)&&v.sector===u.sector&&sizeOk(u.size+v.size));
+   if(mate&&W.attack+W.defend>1.8&&threatNear(u.sector)>Math.max(u.size,mate.size)){orders.push({unit:u.id,type:'merge',with:mate.id});used.add(u.id);used.add(mate.id);}
+  }
+  // 3. Score every remaining unit's options.
+  for(const u of units){if(used.has(u.id))continue;
+   const here=sec(u.sector),opts=[];
+   for(const n of nb(u.sector)){const s=sec(n),known=enemyAt(n),unknown=s.owner!==f&&s.confidence===0?1:0;
+    const assault=s.owner===foe,p=winProb(u.size,known+(assault&&unknown?2:0),assault,s.fort??1);
+    const gain=(s.owner===f?.25:1)*value(s),forward=((toFoe.get(u.sector)??9)-(toFoe.get(n)??9))*.6;
+    // When behind on points, stepping into an enemy-held victory sector blocks its scoring (contest rule),
+    // which is worth doing even when the fight there is likely lost.
+    const block=behind&&s.victory&&s.owner===foe?3.5:0;
+    opts.push({o:{unit:u.id,type:'move',to:n},score:W.attack*(gain*p+forward)+block-W.risk*(1-p)*u.size*.5});}
+   const threat=threatNear(u.sector);
+   const holdOwn=here.owner===f?W.defend*value(here)*Math.min(2,threat/Math.max(1,u.size))+(threat>0&&(here.fort??0)<2?W.dig*1.2:0):W.attack*value(here)*.9;
+   opts.push({o:{unit:u.id,type:'hold'},score:holdOwn});
+   const fog=nb(u.sector).reduce((n,id)=>n+(1-sec(id).confidence)*value(sec(id)),0);
+   opts.push({o:{unit:u.id,type:'recon'},score:W.recon*fog*.45});
+   if(here.owner===f&&!here.tower&&supply>=C.RULES.towerCost)opts.push({o:{unit:u.id,type:'tower'},score:W.tower*(1.5+(here.radio<2?1:0)+(here.victory?1:0))});
+   for(const x of opts)x.score+=r()*.05;
+   opts.sort((a,b)=>b.score-a.score);const pick=opts[0].o;
+   if(pick.type==='tower')supply-=C.RULES.towerCost;
+   orders.push(pick);used.add(u.id);
+  }
+  return orders;
+ }
+ /** Fast auto-play with the injected battle resolver (default: calibrated coarse model). */
+ function autoplay({games=100,seed=1,personalities=PERSONALITIES,resolver=C.coarseBattle,template='frontlineBasin',rules={}}={}){
+  const out={games,unfinished:0,turns:[],battles:0,turnCount:0,reasons:{},sideWins:{player:0,enemy:0,draw:0},comebacks:0,trailingAt6:0,
+   byPersonality:Object.fromEntries(personalities.map(p=>[p,{wins:0,losses:0,draws:0}])),pairs:{}};
+  for(let g=0;g<games;g++){
+   const pp=personalities[g%personalities.length],pe=personalities[Math.floor(g/personalities.length)%personalities.length];
+   let s=C.create({seed:seed+g,template,...rules});let trailer=null;
+   for(let t=0;t<40&&!s.winner;t++){
+    const res=C.resolveTurn(s,{player:decideOrders(C.viewFor(s,'player'),pp,seed+g*31+t),enemy:decideOrders(C.viewFor(s,'enemy'),pe,seed+g*37+t)},resolver);
+    out.battles+=res.battles.length;s=res.state;
+    if(s.turn===6&&s.factions.player.vp!==s.factions.enemy.vp)trailer=s.factions.player.vp<s.factions.enemy.vp?'player':'enemy';
+   }
+   if(!s.winner){out.unfinished++;continue;}
+   const reason=s.log.length?(C.checkVictory(s).reason||'?'):'?';out.reasons[reason]=(out.reasons[reason]||0)+1;
+   out.turns.push(s.turn);out.turnCount+=s.turn;out.sideWins[s.winner]++;
+   if(trailer){out.trailingAt6++;if(s.winner===trailer)out.comebacks++;}
+   const key=pp+' vs '+pe;out.pairs[key]=out.pairs[key]||{player:0,enemy:0,draw:0};out.pairs[key][s.winner]++;
+   if(s.winner==='draw'){out.byPersonality[pp].draws++;out.byPersonality[pe].draws++;}
+   else{const wp=s.winner==='player'?pp:pe,lp=s.winner==='player'?pe:pp;out.byPersonality[wp].wins++;out.byPersonality[lp].losses++;}
+  }
+  const sorted=out.turns.slice().sort((a,b)=>a-b);
+  return {games,unfinished:out.unfinished,meanTurns:sorted.length?out.turnCount/sorted.length:0,medianTurns:sorted.length?sorted[Math.floor(sorted.length/2)]:0,
+   battlesPerTurn:out.turnCount?out.battles/out.turnCount:0,comebackRate:out.trailingAt6?out.comebacks/out.trailingAt6:null,trailingAt6:out.trailingAt6,
+   reasons:out.reasons,sideWins:out.sideWins,byPersonality:out.byPersonality,pairs:out.pairs};
+ }
+ return Object.freeze({PERSONALITIES,WEIGHTS,decideOrders,autoplay,winProb});
+});
+</script>
+<script id="campaignUiCore">
+/* RRT ARENA V0.9 — strategic map screen logic (M3). Pure functions: no DOM, storage or timers.
+ * - Everything shown to the player comes from RRTArenaCampaign.viewFor(state,'player') (fog of war);
+ *   the turn report keeps only what BLUE could know (own actions, public captures, battles it fought).
+ * - The RED AI decides from its own view, exactly as in auto-play.
+ * - Saves hold seed, settings and BLUE's orders only; loading replays them through the rules, so a save
+ *   cannot carry edited state or reveal enemy positions. A rules change is detected by a checksum.
+ * - Map battles here use the coarse model: they are labelled abstract and write no learning history.
+ */
+(function(root,factory){'use strict';
+ const cjs=typeof module==='object'&&module.exports;
+ const api=factory(cjs?require('./rrt_arena_campaign_v090.js'):root.RRTArenaCampaign,cjs?require('./rrt_arena_campaign_ai_v090.js'):root.RRTArenaCampaignAI);
+ root.RRTArenaCampaignUI=api;if(cjs)module.exports=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(C,AI){
+ 'use strict';
+ const MAX_SAVE_CHARS=200000,MAX_TURNS_IN_SAVE=60,ME='player',FOE='enemy';
+ const LAYOUTS=Object.freeze({
+  // NOVA-9: 3x3 grid, BLUE HQ west (C1), RED HQ east (C3).
+  nova9:{h:100,at:{N1:[17,17],N2:[50,17],N3:[83,17],C1:[17,50],C2:[50,50],C3:[83,50],S1:[17,83],S2:[50,83],S3:[83,83]}},
+  // Frontline Basin: BLUE south, RED north (taller map: five rows).
+  frontlineBasin:{h:126,at:{'E-HQ':[50,13],'E-L':[17,38],'E-C':[50,38],'E-R':[83,38],L:[17,63],C:[50,63],R:[83,63],
+   'P-L':[17,88],'P-C':[50,88],'P-R':[83,88],'P-HQ':[50,113]}}});
+ /** Sector card size in map units: wide enough for a name and four unit tokens, and tappable on a phone. */
+ const CARD=Object.freeze({w:29,h:23});
+ function mapSize(template){const L=LAYOUTS[template];if(!L)throw new RangeError('Unknown map template '+template);return {w:100,h:L.h};}
+ function layoutFor(template){const L=LAYOUTS[template];if(!L)throw new RangeError('Unknown map template '+template);
+  return Object.fromEntries(Object.entries(L.at).map(([id,[x,y]])=>[id,{x,y}]));}
+ function hash(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h.toString(16).padStart(8,'0');}
+ const RULES_SIG=hash(JSON.stringify([C.RULES,C.COARSE,AI.WEIGHTS,C.TEMPLATES]));
+
+ // ---- game -------------------------------------------------------------------------------------
+ function newGame({seed=1,template='nova9',personality='assault'}={}){
+  if(!C.TEMPLATES[template])throw new RangeError('Unknown map template '+template);
+  if(!AI.PERSONALITIES.includes(personality))throw new RangeError('Unknown AI personality '+personality);
+  seed=seed>>>0;
+  return {format:'rrt-campaign-game',seed,template,personality,state:C.create({seed,template}),turns:[]};
+ }
+ const playerView=g=>C.viewFor(g.state,ME);
+ const aiSeed=(g,turn)=>(Math.imul(g.seed,7919)+Math.imul(turn+1,104729))>>>0;
+ function submitTurn(g,orders=[]){
+  const check=C.validateOrders(g.state,ME,orders);
+  if(!check.ok)return {ok:false,reason:check.reason,game:g};
+  if(g.state.winner)return {ok:false,reason:'เกมจบแล้ว',game:g};
+  const before=playerView(g);
+  const enemy=AI.decideOrders(C.viewFor(g.state,FOE),g.personality,aiSeed(g,g.state.turn));
+  const res=C.resolveTurn(g.state,{player:orders,enemy});
+  const game={...g,state:res.state,turns:g.turns.concat([orders.map(o=>({...o}))])};
+  return {ok:true,game,events:res.events,battles:res.battles,report:turnReport(g.template,before,res.events,res.battles,C.viewFor(res.state,ME),orders)};
+ }
+
+ // ---- orders draft ------------------------------------------------------------------------------
+ const emptyDraft=()=>({selected:null,orders:[]});
+ /** Own supply line from public ownership only (mirrors the rules' connectedSectors): HQ outward over own sectors. */
+ function supplyLinked(view){
+  const own=id=>view.sectors.find(s=>s.id===id)?.owner===view.faction,hq=view.sectors.find(s=>s.hq===view.faction),seen=new Set();
+  if(!hq||hq.owner!==view.faction)return seen;
+  const q=[hq.id];seen.add(hq.id);
+  while(q.length){const c=q.shift();for(const [a,b] of view.edges){const n=a===c?b:b===c?a:null;if(n&&!seen.has(n)&&own(n)){seen.add(n);q.push(n);}}}
+  return seen;
+ }
+ const ownUnit=(view,id)=>view.ownUnits.find(u=>u.id===id)||null;
+ const adjacent=(view,a,b)=>view.edges.some(([x,y])=>(x===a&&y===b)||(x===b&&y===a));
+ const touches=(o,id)=>o.unit===id||(o.type==='merge'&&o.with===id);
+ const without=(orders,ids)=>orders.filter(o=>!ids.some(id=>touches(o,id)));
+ const claimed=o=>[o.unit,o.type==='merge'?o.with:null].filter(Boolean);
+ /** View-only mirror of the rules' order validation (the engine re-checks everything on submit). */
+ function checkOrder(view,others,o){
+  const u=ownUnit(view,o?.unit);if(!u)return {ok:false,reason:'ไม่มีหน่วยนี้'};
+  const sec=view.sectors.find(s=>s.id===u.sector);
+  switch(o.type){
+   case 'move':return adjacent(view,u.sector,o.to)?{ok:true}:{ok:false,reason:'ไปได้เฉพาะเขตที่ติดกัน'};
+   case 'hold':case 'recon':return {ok:true};
+   case 'tower':if(sec.owner!==view.faction)return {ok:false,reason:'ต้องอยู่ในเขตของฝ่ายเรา'};
+    if(sec.tower)return {ok:false,reason:'มีเสาวิทยุแล้ว'};
+    return view.supply>=C.RULES.towerCost?{ok:true}:{ok:false,reason:'เสบียงไม่พอ'};
+   case 'merge':{const w=ownUnit(view,o.with);
+    if(!w||w.id===u.id||w.sector!==u.sector)return {ok:false,reason:'ต้องรวมกับหน่วยของเราในเขตเดียวกัน'};
+    return C.presetForSize(u.size+w.size)?{ok:true}:{ok:false,reason:'ขนาดรวมไม่ตรงรูปขบวนที่มี'};}
+   case 'split':{const z=o.sizes||[];
+    if(z.length!==2||z[0]+z[1]!==u.size||!C.presetForSize(z[0])||!C.presetForSize(z[1]))return {ok:false,reason:'แบ่งได้เฉพาะขนาดรูปขบวนที่มี'};
+    const units=view.ownUnits.length+others.filter(x=>x.type==='split').length;
+    return units<C.RULES.maxUnits?{ok:true}:{ok:false,reason:'หน่วยเต็มแล้ว'};}
+   default:return {ok:false,reason:'คำสั่งไม่รู้จัก'};
+  }
+ }
+ function setOrder(draft,view,order){
+  const ids=claimed(order),others=without(draft.orders,ids),r=checkOrder(view,others,order);
+  if(!r.ok)return {ok:false,reason:r.reason,draft};
+  return {ok:true,draft:{selected:null,orders:others.concat([{...order}])}};
+ }
+ const clearOrder=(draft,unitId)=>({...draft,orders:without(draft.orders,[unitId])});
+ const selectUnit=(draft,view,id)=>({...draft,selected:ownUnit(view,id)?id:null});
+ function tapSector(draft,view,id){
+  const u=draft.selected&&ownUnit(view,draft.selected);
+  if(u)return setOrder(draft,view,id===u.sector?{unit:u.id,type:'hold'}:{unit:u.id,type:'move',to:id});
+  const here=view.ownUnits.filter(x=>x.sector===id).sort((a,b)=>a.id.localeCompare(b.id));
+  const pick=here.find(x=>!draft.orders.some(o=>touches(o,x.id)))||here[0];
+  if(pick)return {ok:true,draft:{...draft,selected:pick.id}};
+  return {ok:true,draft:{...draft,selected:null},info:view.sectors.find(s=>s.id===id)||null};
+ }
+ const SIZE_NAME={2:'Buddy',3:'Buddy',4:'Group',5:'Group',6:'Group',8:'Squad',10:'Squad',12:'Squad'};
+ const sizeLabel=n=>(SIZE_NAME[n]||'')+' '+n;
+ /** Options for the selected unit's action sheet; enabled exactly when the rules would accept it. */
+ function unitActions(view,orders,unitId){
+  const u=ownUnit(view,unitId);if(!u)return [];
+  const out=[],add=(order,label)=>{const r=checkOrder(view,without(orders,claimed(order)),order);
+   out.push({type:order.type,label,order,enabled:r.ok,reason:r.ok?'':r.reason,...(order.with?{with:order.with}:{}),...(order.sizes?{sizes:order.sizes}:{})});};
+  const sec=view.sectors.find(s=>s.id===u.sector);
+  add({unit:u.id,type:'hold'},sec.owner===view.faction?'ตั้งรับ / เสริมป้อม':'ยืนปิดล้อม');
+  add({unit:u.id,type:'recon'},'ลาดตระเวนรอบเขต');
+  add({unit:u.id,type:'tower'},'สร้างเสาวิทยุ ('+C.RULES.towerCost+' เสบียง)');
+  for(const w of view.ownUnits.filter(x=>x.id!==u.id&&x.sector===u.sector).sort((a,b)=>a.id.localeCompare(b.id)))
+   add({unit:u.id,type:'merge',with:w.id},'รวมกับ '+w.id+' → '+sizeLabel(u.size+w.size));
+  for(let a=2;a<=u.size-a;a++)if(C.presetForSize(a)&&C.presetForSize(u.size-a))add({unit:u.id,type:'split',sizes:[a,u.size-a]},'แยกเป็น '+a+' + '+(u.size-a));
+  return out;
+ }
+ function arrows(view,orders,layout){
+  return orders.map(o=>{const u=ownUnit(view,o.unit);if(!u)return null;
+   return o.type==='move'?{unit:o.unit,type:'move',from:layout[u.sector],to:layout[o.to]}:{unit:o.unit,type:o.type,at:layout[u.sector]};}).filter(Boolean);
+ }
+
+ // ---- turn report (fog-of-war filtered) ---------------------------------------------------------
+ function turnReport(template,before,events,battles,after=null,orders=[]){
+  const names=Object.fromEntries(C.TEMPLATES[template].sectors.map(([id,name])=>[id,name]));
+  const nm=id=>id&&id.includes('|')?id.split('|').map(x=>names[x]||x).join(' ↔ '):(names[id]||id);
+  const side=f=>f===ME?'BLUE':'RED';
+  const lines=[],put=(e,source,text,sector)=>lines.push({source,text,sector:sector||null,event:e});
+  for(const e of events){const mine=e.faction===ME;
+   switch(e.type){
+    case 'battle':put(e,'battle',(e.kind==='meeting'?'ปะทะกลางทาง ':e.kind==='assault'?'บุกเขต ':'ชิงเขต ')+nm(e.sector),e.sector);break;
+    case 'battle_round':put(e,'battle','การรบที่ '+nm(e.sector)+' ต่อยกที่ '+(e.round+1)+' (กำลังเสริมเข้าสนาม)',e.sector);break;
+    case 'capture':put(e,'public',side(e.faction)+' ยึด '+nm(e.sector)+' ได้',e.sector);break;
+    case 'victory':put(e,'public',(e.winner==='draw'?'เสมอ':side(e.winner)+' ชนะ')+' — '+({hq_captured:'ยึดฐานบัญชาการ',victory_points:'แต้มนำถึงเป้า',turn_limit_vp:'ครบเทิร์น แต้มมากกว่า',turn_limit_sectors:'ครบเทิร์น ครองเขตมากกว่า'}[e.reason]||e.reason));break;
+    case 'retreat':mine?put(e,'player','หน่วย '+e.unit+' ถอยไป '+nm(e.to),e.to):put(e,'battle','หน่วยศัตรูถอยออกจากการรบ');break;
+    case 'encircled':put(e,mine?'player':'battle',(mine?'หน่วย '+e.unit:'หน่วยศัตรู')+' ถูกล้อมที่ '+nm(e.sector)+' — ทุกนายบาดเจ็บ',e.sector);break;
+    default:if(!mine)break; // enemy recon, re-organisation, towers, production: hidden by fog of war
+     if(e.type==='recon')put(e,'player','หน่วย '+e.unit+' ลาดตระเวนรอบ '+nm(e.sector),e.sector);
+     else if(e.type==='merge')put(e,'player','รวมหน่วยเป็น '+e.unit);
+     else if(e.type==='split')put(e,'player','แยก '+e.unit+' → หน่วยใหม่ '+e.into);
+     else if(e.type==='tower')put(e,'player','สร้างเสาวิทยุที่ '+nm(e.sector),e.sector);
+     else if(e.type==='muster')put(e,'player','ระดมหน่วยใหม่ '+e.unit+' ที่ฐาน');
+     else if(e.type==='produced')put(e,'player','โรงงานผลิต Agent ใหม่ '+e.agent+' (ยังไม่มีประสบการณ์)');
+     else if(e.type==='invalid_order')put(e,'player','คำสั่งไม่ผ่าน: '+e.reason);
+   }}
+  // Own units that are gone after the turn (beaten to fewer than two agents) — merges and encirclements aside.
+  if(after){const merged=new Set(orders.filter(o=>o.type==='merge').map(o=>o.with)),
+    encircled=new Set(events.filter(e=>e.type==='encircled'&&e.faction===ME).map(e=>e.unit));
+   for(const u of before.ownUnits)if(!after.ownUnits.some(x=>x.id===u.id)&&!merged.has(u.id)&&!encircled.has(u.id))
+    put({type:'unit_lost',unit:u.id},'player','หน่วย '+u.id+' แตกพ่าย — ผู้รอดกลับเข้ากองหนุน ผู้บาดเจ็บพักรักษาตัว');}
+  const out=[];
+  for(const b of battles){const me=b.attacker.faction===ME?'attacker':'defender',them=me==='attacker'?'defender':'attacker';
+   if(!b.attacker.size||!b.defender.size)continue;
+   const w=b.result.winner;
+   out.push({sector:b.sector,name:nm(b.sector),kind:b.kind,round:b.round||0,terrain:b.terrain,fort:b.fort,
+    mine:b[me].size,theirs:b[them].size,lost:b.result.casualties[me],killed:b.result.casualties[them],
+    outcome:w==='draw'?'draw':w===me?'won':'lost',abstract:true,learning:false});}
+  return {turn:before.turn+1,lines,battles:out};
+ }
+
+ // ---- save / load -------------------------------------------------------------------------------
+ function serialize(g){
+  return JSON.stringify({format:'rrt-campaign-save',version:1,rules:RULES_SIG,seed:g.seed,template:g.template,
+   personality:g.personality,turns:g.turns,check:hash(JSON.stringify(g.state))});
+ }
+ function deserialize(text){
+  if(typeof text!=='string'||text.length>MAX_SAVE_CHARS)throw new RangeError('save too large / ไฟล์ save ใหญ่เกินไป');
+  let s;try{s=JSON.parse(text);}catch{throw new SyntaxError('อ่าน save ไม่ได้ (corrupt save)');}
+  if(!s||s.format!=='rrt-campaign-save'||s.version!==1)throw new TypeError('ไม่ใช่ไฟล์ save ของ RRT campaign');
+  if(!C.TEMPLATES[s.template])throw new RangeError('Unknown map template '+s.template);
+  if(!AI.PERSONALITIES.includes(s.personality))throw new RangeError('Unknown AI personality '+s.personality);
+  if(!Array.isArray(s.turns)||s.turns.length>MAX_TURNS_IN_SAVE||!s.turns.every(t=>Array.isArray(t)&&t.every(o=>o&&typeof o==='object')))throw new TypeError('save orders malformed');
+  if(s.rules!==RULES_SIG)throw new Error('save นี้มาจากกติกาเวอร์ชันอื่น (rules ไม่ตรง)');
+  let g=newGame({seed:s.seed,template:s.template,personality:s.personality});
+  for(const orders of s.turns){const r=submitTurn(g,orders);if(!r.ok)throw new Error('เล่นซ้ำ save ไม่ตรงกติกา: '+r.reason);g=r.game;}
+  if(hash(JSON.stringify(g.state))!==s.check)throw new Error('ผลเล่นซ้ำไม่ตรงกับ save (rules ไม่ตรง)');
+  return g;
+ }
+ return Object.freeze({CARD,MAX_SAVE_CHARS,RULES_SIG,layoutFor,mapSize,supplyLinked,newGame,playerView,aiSeed,submitTurn,emptyDraft,checkOrder,setOrder,clearOrder,
+  selectUnit,tapSector,unitActions,arrows,turnReport,serialize,deserialize,sizeLabel});
+});
+</script>
+<script id="campaignPage">
+(function(){'use strict';
+ const C=globalThis.RRTArenaCampaign,AI=globalThis.RRTArenaCampaignAI,UI=globalThis.RRTArenaCampaignUI;
+ const $=id=>document.getElementById(id),SVGNS='http://www.w3.org/2000/svg';
+ const SLOT='rrt-campaign-save-v090',AUTO='rrt-campaign-autosave-v090';
+ const TERRAIN={ruins:'ซากเมือง (กำบังเยอะ)',open:'ทุ่งโล่ง (ตัดสินเร็ว)',lanes:'ถนน/ตรอก'};
+ const ORDER_NAME={move:'เดินทัพ',hold:'ตั้งรับ',recon:'ลาดตระเวน',tower:'สร้างเสาวิทยุ',merge:'รวมหน่วย',split:'แยกหน่วย'};
+ const MARK={hold:'🛡',recon:'👁',tower:'📶',merge:'⊕',split:'✂'};
+ const store={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);return true;}catch{return false;}},
+  del(k){try{localStorage.removeItem(k);}catch{}}};
+ let game,draft=UI.emptyDraft(),info=null,flash=null,playback=null,lastReport=null;
+ const view=()=>UI.playerView(game);
+ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ function note(text,warn){const n=$('notice');n.textContent=text;n.className='notice'+(warn?' warn':'');}
+ function el(tag,attrs={},parent){const e=document.createElementNS(SVGNS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(parent)parent.appendChild(e);return e;}
+ function txt(parent,x,y,s,cls,anchor='middle'){const t=el('text',{x,y,class:cls,'text-anchor':anchor},parent);t.textContent=s;return t;}
+
+ function renderMap(v){
+  const svg=$('map'),L=UI.layoutFor(game.template),M=UI.mapSize(game.template),W=UI.CARD.w,H=UI.CARD.h;
+  svg.setAttribute('viewBox','0 0 '+M.w+' '+M.h);svg.replaceChildren();
+  const defs=el('defs',{},svg),mk=el('marker',{id:'ah',viewBox:'0 0 6 6',refX:'4.5',refY:'3',markerWidth:'3.2',markerHeight:'3.2',orient:'auto-start-reverse'},defs);
+  el('path',{d:'M0,0 L6,3 L0,6 z',fill:'#ffc978'},mk);
+  const linked=UI.supplyLinked(v),sec=id=>v.sectors.find(s=>s.id===id);
+  for(const [a,b] of v.edges){const A=L[a],B=L[b];el('line',{x1:A.x,y1:A.y,x2:B.x,y2:B.y,class:'edge'+(linked.has(a)&&linked.has(b)?' supply':'')},svg);}
+  const sel=draft.selected&&v.ownUnits.find(u=>u.id===draft.selected);
+  const dest=new Set(sel?v.edges.filter(e=>e.includes(sel.sector)).map(e=>e[0]===sel.sector?e[1]:e[0]):[]);
+  for(const s of v.sectors){const p=L[s.id],owner=s.owner===v.faction?'player':s.owner?'enemy':'neutral';
+   const g=el('g',{class:'card '+owner+(s.confidence===0?' fog':'')+(dest.has(s.id)?' dest':'')+(sel&&sel.sector===s.id?' origin':'')+(flash===s.id?' flash':''),
+    'data-sector':s.id,transform:'translate('+(p.x-W/2)+' '+(p.y-H/2)+')',role:'button','aria-label':s.name},svg);
+   el('rect',{x:0,y:0,width:W,height:H,rx:2.6,fill:'#061322'},g); // opaque backing: supply lines never show through a card
+   el('rect',{class:'body',x:0,y:0,width:W,height:H,rx:2.6},g);
+   txt(g,W/2,4.6,s.name.length>16?s.name.slice(0,15)+'…':s.name,'nm');
+   const fort=s.fort==null?'🛡?':'🛡'+s.fort,bits=[fort];
+   if(s.tower)bits.push('📶');if(s.yield)bits.push('+'+s.yield);if(s.intelAge>0)bits.push('ข่าว '+s.intelAge+' ตา');
+   txt(g,W/2,8.6,bits.join(' '),'meta');
+   if(owner==='player'&&!linked.has(s.id))txt(g,W-2,4.6,'⛓','meta unlinked','end');
+   const own=v.ownUnits.filter(u=>u.sector===s.id).sort((a,b)=>a.id.localeCompare(b.id));
+   const foes=v.enemyUnits.filter(u=>u.sector===s.id).map(u=>({...u,ghost:false})).concat(v.lastSeenUnits.filter(u=>u.sector===s.id).map(u=>({...u,ghost:true})));
+   const n=own.length+foes.length,step=n?Math.min(7.2,(W-4)/n):0;let x=W/2-step*(n-1)/2;
+   for(const u of own){const done=draft.orders.some(o=>o.unit===u.id||o.with===u.id);
+    const t=el('g',{class:'tok'+(draft.selected===u.id?' sel':'')+(done?' done':''),'data-unit':u.id,role:'button','aria-label':'หน่วย '+u.id+' '+u.size+' คน'},g);
+    el('circle',{cx:x,cy:16,r:4.6,fill:'transparent'},t);el('circle',{class:'own',cx:x,cy:16,r:3.3},t);txt(t,x,17.05,u.size);
+    if(done)txt(t,x+2.6,13.4,'✓','meta');x+=step;}
+   for(const u of foes){const t=el('g',{class:'foe'+(u.ghost?' ghost':'')},g);
+    el('rect',{x:x-2.9,y:13.1,width:5.8,height:5.8,rx:.8,transform:'rotate(45 '+x+' 16)'},t);txt(t,x,17,u.ghost?'?'+Math.round(u.size):u.size);x+=step;}
+  }
+  // Order arrows and markers (several orders on one edge are fanned out).
+  const fan=new Map();
+  for(const a of UI.arrows(v,draft.orders,L)){
+   if(a.type==='move'){const key=[a.from.x,a.from.y,a.to.x,a.to.y].join();const k=fan.get(key)||0;fan.set(key,k+1);
+    const dx=a.to.x-a.from.x,dy=a.to.y-a.from.y,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len,off=k*1.8;
+    const sx=a.from.x+ux*(Math.abs(ux)>Math.abs(uy)?W/2-1:H/2-1)-uy*off,sy=a.from.y+uy*(Math.abs(ux)>Math.abs(uy)?W/2-1:H/2-1)+ux*off;
+    const ex=a.to.x-ux*(Math.abs(ux)>Math.abs(uy)?W/2+.6:H/2+.6)-uy*off,ey=a.to.y-uy*(Math.abs(ux)>Math.abs(uy)?W/2+.6:H/2+.6)+ux*off;
+    el('line',{x1:sx,y1:sy,x2:ex,y2:ey,class:'arrow'},svg);}
+   else txt(svg,a.at.x+W/2-3.4,a.at.y-H/2+5.2,MARK[a.type]||'•','mark');
+  }
+ }
+ function renderStats(v){
+  $('sTurn').textContent=v.turn+'/'+v.maxTurns;$('sVp').textContent=v.vp;$('sFoeVp').textContent=v.opponentVp;$('sSupply').textContent=v.supply;
+  $('sTurnLabel').textContent=v.winner?'จบเกม':'เทิร์น';
+  $('goal').textContent='ชนะเมื่อแต้มนำ '+v.vpLead+' · หรือยึดฐานศัตรู · ครบ '+v.maxTurns+' เทิร์นนับแต้ม';
+  const lead=Math.max(-1,Math.min(1,(v.vp-v.opponentVp)/v.vpLead)),f=$('vpFill');
+  f.style.width=Math.abs(lead)*50+'%';f.style.left=lead>=0?'50%':(50+lead*50)+'%';f.className=lead<0?'neg':'';
+ }
+ function renderSheet(v){
+  const sh=$('sheet'),u=draft.selected&&v.ownUnits.find(x=>x.id===draft.selected);
+  if(v.winner){sh.innerHTML='<h2>'+(v.winner==='draw'?'เสมอ':v.winner===v.faction?'🏆 BLUE ชนะ':'RED ชนะ')+'</h2><p class="sub">'+esc(lastReport?.lines.find(l=>l.event?.type==='victory')?.text||'')+'<br>แต้ม BLUE '+v.vp+' : RED '+v.opponentVp+' · '+v.turn+' เทิร์น · seed '+game.seed+' · RED นิสัย '+esc(game.personality)+
+   '</p><p class="sub">เริ่มเกมใหม่ได้จากปุ่ม 🆕 · บันทึกเกมนี้ไว้ดูซ้ำได้ด้วย 💾</p>';return;}
+  if(u){const s=v.sectors.find(x=>x.id===u.sector),cur=draft.orders.find(o=>o.unit===u.id||o.with===u.id);
+   sh.innerHTML='<h2>หน่วย '+esc(u.id)+' · '+esc(UI.sizeLabel(u.size))+'</h2><p class="sub">อยู่ที่ '+esc(s.name)+(cur?' · คำสั่ง: <b>'+ORDER_NAME[cur.type]+(cur.to?' → '+esc(v.sectors.find(x=>x.id===cur.to).name):'')+'</b>':'')+
+    '<br>แตะเขตที่มีขอบสีทองเพื่อเดินทัพ หรือเลือกคำสั่งด้านล่าง</p><div class="acts" id="acts"></div>';
+   const acts=$('acts');
+   for(const a of UI.unitActions(v,draft.orders,u.id)){const b=document.createElement('button');b.className='btn'+(cur&&JSON.stringify(cur)===JSON.stringify(a.order)?' on':'');
+    b.disabled=!a.enabled;b.innerHTML=esc(a.label)+(a.enabled?'':'<small>'+esc(a.reason)+'</small>');b.dataset.order=JSON.stringify(a.order);acts.appendChild(b);}
+   const c=document.createElement('button');c.className='btn ghost';c.textContent=cur?'ยกเลิกคำสั่ง':'ปิด';c.dataset.cancel=u.id;acts.appendChild(c);return;}
+  if(info){const s=info,feats=[s.victory&&'★ เขตชัยชนะ (ได้แต้มทุกเทิร์นถ้าเชื่อมเสบียงและไม่มีศัตรูอยู่)',s.hq&&'ฐานบัญชาการ',s.depot&&'คลังเสบียง',s.relay&&'สถานีรีเลย์วิทยุ',s.power&&'โรงไฟฟ้า (จ่ายไฟให้รีเลย์/โรงงาน)',
+    s.factory&&'โรงงาน (ผลิต Agent ใหม่เมื่อมีไฟ)',s.sensor&&'เซนเซอร์ (เห็นการเคลื่อนไหวเขตข้างเคียง)',s.radioHill&&'เนินวิทยุ'].filter(Boolean);
+   sh.innerHTML='<h2>'+esc(s.name)+'</h2><p class="sub">'+(s.owner===v.faction?'เขต BLUE':s.owner?'เขต RED':'เขตกลาง')+(s.confidence===0&&s.owner!==v.faction?' · ไม่มีข่าวกรอง':'')+'</p><dl class="kv">'+
+    '<dt>ภูมิประเทศ</dt><dd>'+esc(TERRAIN[s.terrain]||s.terrain)+'</dd><dt>ป้อม</dt><dd>'+(s.fort==null?'ไม่ทราบ':s.fort+(s.intelAge>0?' (ข่าวเมื่อ '+s.intelAge+' ตาก่อน)':''))+'</dd>'+
+    '<dt>เสบียง/ตา</dt><dd>+'+s.yield+'</dd><dt>วิทยุ BLUE</dt><dd>'+['อ่อน','พอใช้','ชัด'][s.radio]+'</dd>'+(feats.length?'<dt>พิเศษ</dt><dd>'+feats.map(esc).join('<br>')+'</dd>':'')+'</dl>';return;}
+  const idle=v.ownUnits.filter(x=>!draft.orders.some(o=>o.unit===x.id||o.with===x.id));
+  sh.innerHTML='<h2>คำสั่งเทิร์น '+(v.turn+1)+'</h2><p class="sub">'+(idle.length?'ยังไม่สั่ง '+idle.length+' หน่วย ('+idle.map(x=>x.id).join(', ')+') — หน่วยที่ไม่สั่งจะอยู่กับที่ ไม่เสริมป้อม':'สั่งครบทุกหน่วยแล้ว กด “จบเทิร์น”')+'</p>'+
+   (draft.orders.length?'<ul class="orders">'+draft.orders.map(o=>'<li><span><b>'+esc(o.unit)+'</b> '+ORDER_NAME[o.type]+(o.to?' → '+esc(v.sectors.find(x=>x.id===o.to).name):'')+(o.with?' กับ '+esc(o.with):'')+(o.sizes?' '+o.sizes.join('+'):'')+
+    '</span><button data-cancel="'+esc(o.unit)+'">ยกเลิก</button></li>').join('')+'</ul>':'<p class="sub">แตะเขตที่มีหน่วยสีฟ้าเพื่อเลือกหน่วย · แตะเขตอื่นเพื่อดูข้อมูล</p>');
+ }
+ function render(){const v=view();renderStats(v);renderMap(v);renderSheet(v);$('bEnd').disabled=!!v.winner||!!playback;}
+
+ // ---- input ----
+ $('map').addEventListener('click',ev=>{if(playback||game.state.winner)return;const v=view();
+  const tok=ev.target.closest('[data-unit]'),card=ev.target.closest('[data-sector]');
+  if(tok&&!draft.selected){draft=UI.selectUnit(draft,v,tok.dataset.unit);info=null;render();return;}
+  if(tok&&draft.selected===tok.dataset.unit){draft={...draft,selected:null};render();return;}
+  if(tok&&draft.selected){const t=v.ownUnits.find(u=>u.id===tok.dataset.unit),s=v.ownUnits.find(u=>u.id===draft.selected);
+   if(t&&s&&t.sector===s.sector){draft=UI.selectUnit(draft,v,t.id);render();return;}}
+  if(!card)return;
+  const r=UI.tapSector(draft,v,card.dataset.sector);
+  if(!r.ok){note(r.reason,true);return;}
+  const ordered=r.draft.orders.length!==draft.orders.length||JSON.stringify(r.draft.orders)!==JSON.stringify(draft.orders);
+  draft=r.draft;info=r.info||null;
+  if(ordered){const o=draft.orders[draft.orders.length-1];note('สั่ง '+o.unit+' '+ORDER_NAME[o.type]+(o.to?' → '+v.sectors.find(x=>x.id===o.to).name:''));}
+  else if(draft.selected)note('เลือก '+draft.selected+' แล้ว — แตะเขตขอบทองเพื่อเดินทัพ หรือแตะเขตเดิมเพื่อตั้งรับ');
+  render();});
+ $('sheet').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b||playback)return;const v=view();
+  if(b.dataset.order){const r=UI.setOrder(draft,v,JSON.parse(b.dataset.order));if(!r.ok){note(r.reason,true);return;}draft=r.draft;note('บันทึกคำสั่งแล้ว');}
+  else if(b.dataset.cancel){const had=draft.orders.some(o=>o.unit===b.dataset.cancel||o.with===b.dataset.cancel);draft=UI.clearOrder(draft,b.dataset.cancel);draft.selected=null;if(had)note('ยกเลิกคำสั่งของ '+b.dataset.cancel);}
+  render();});
+
+ // ---- turn & playback ----
+ function endTurn(){if(playback||game.state.winner)return false;
+  const r=UI.submitTurn(game,draft.orders);if(!r.ok){note(r.reason,true);return false;}
+  game=r.game;draft=UI.emptyDraft();info=null;lastReport=r.report;store.set(AUTO,UI.serialize(game));
+  startPlayback(r.report);return true;}
+ function startPlayback(rep){
+  $('rTitle').textContent='ผลเทิร์น '+rep.turn+(rep.lines.length?'':' — ไม่มีเหตุการณ์ที่ BLUE รับรู้');
+  $('rLines').innerHTML=rep.lines.map(l=>'<li class="'+l.source+'">'+esc(l.text)+'</li>').join('');
+  $('rFights').innerHTML=rep.battles.map(b=>'<div class="fight">'+esc(b.name)+(b.round?' (ยก '+(b.round+1)+')':'')+' · <b class="'+b.outcome+'">'+({won:'BLUE ชนะ',lost:'BLUE แพ้',draw:'เสมอ'}[b.outcome])+'</b>'+
+   '<span class="badge">ผลรบแบบย่อ · ไม่บันทึกการเรียนรู้</span><br>BLUE '+b.mine+' คน (เสีย '+b.lost+') vs RED '+b.theirs+' คน (เสีย '+b.killed+')'+(b.fort?' · ป้อม '+b.fort:'')+'</div>').join('');
+  $('report').classList.add('open');const items=[...$('rLines').children];let i=0;
+  playback={timer:null};
+  const step=()=>{if(i>=items.length){finishPlayback(false);return;}items[i].classList.add('shown');flash=rep.lines[i].sector;i++;render();playback.timer=setTimeout(step,650);};
+  step();render();
+ }
+ function finishPlayback(close){if(playback){clearTimeout(playback.timer);playback=null;}
+  for(const li of $('rLines').children)li.classList.add('shown');flash=null;if(close)$('report').classList.remove('open');render();
+  if(game.state.winner)note('จบเกม — '+$('rLines').lastElementChild?.textContent,false);}
+ $('rSkip').onclick=()=>finishPlayback(false);
+ $('rClose').onclick=()=>{finishPlayback(true);note(game.state.winner?'จบเกมแล้ว — กด 🆕 เพื่อเริ่มใหม่':'สั่งการเทิร์น '+(game.state.turn+1));};
+ $('bEnd').onclick=endTurn;
+
+ // ---- new game / save / load ----
+ function start(opts){const personality=opts.personality==='random'?AI.PERSONALITIES[(opts.seed>>>0)%AI.PERSONALITIES.length]:opts.personality;
+  game=UI.newGame({seed:opts.seed,template:opts.template,personality});draft=UI.emptyDraft();info=null;store.set(AUTO,UI.serialize(game));render();
+  note('เริ่ม '+(opts.template==='nova9'?'NOVA-9':'Frontline Basin')+' · seed '+game.seed+' — แตะเขตที่มีหน่วย BLUE เพื่อเลือก');}
+ $('bNew').onclick=()=>{$('nMap').value=game.template;$('nSeed').value=String(Math.floor(Math.random()*1e6));$('dNew').showModal();};
+ $('dNew').addEventListener('close',()=>{if($('dNew').returnValue!=='ok')return;
+  start({template:$('nMap').value,personality:$('nAi').value,seed:parseInt($('nSeed').value,10)||1});});
+ function openSave(mode){const d=$('dSave');d.dataset.mode=mode;
+  if(mode==='save'){const text=UI.serialize(game),ok=store.set(SLOT,text);$('svTitle').textContent='บันทึกเกม';
+   $('svNote').textContent=(ok?'บันทึกลงเครื่องนี้แล้ว · ':'บันทึกในเบราว์เซอร์ไม่ได้ — ')+'คัดลอกข้อความนี้ไปเก็บได้ (เก็บแค่ seed + คำสั่งของ BLUE)';$('svText').value=text;$('svText').readOnly=true;$('svGo').hidden=true;$('svCopy').hidden=false;}
+  else{$('svTitle').textContent='โหลดเกม';$('svNote').textContent='วางข้อความ save หรือกดโหลดเพื่อใช้ที่บันทึกล่าสุดในเครื่องนี้';$('svText').value=store.get(SLOT)||'';$('svText').readOnly=false;$('svGo').hidden=false;$('svCopy').hidden=true;}
+  d.showModal();}
+ $('bSave').onclick=()=>{if(!playback)openSave('save');};
+ $('bLoad').onclick=()=>{if(!playback)openSave('load');};
+ $('svCopy').onclick=ev=>{ev.preventDefault();const t=$('svText');t.select();try{navigator.clipboard?.writeText(t.value);}catch{}try{document.execCommand('copy');}catch{}$('svNote').textContent='คัดลอกแล้ว';};
+ function loadText(text){game=UI.deserialize(text);draft=UI.emptyDraft();info=null;store.set(AUTO,UI.serialize(game));render();}
+ $('dSave').addEventListener('close',()=>{if($('dSave').returnValue!=='ok'||$('dSave').dataset.mode!=='load')return;
+  try{loadText($('svText').value.trim());note('โหลดเกมแล้ว · เทิร์น '+game.state.turn);}catch(e){note('โหลดไม่ได้: '+e.message,true);}});
+
+ // ---- boot ----
+ const q=new URLSearchParams(location.search),fresh=q.has('seed')||q.has('map')||q.has('ai');
+ const auto=fresh?null:store.get(AUTO);
+ if(auto){try{loadText(auto);note('เล่นต่อจากที่บันทึกอัตโนมัติ · เทิร์น '+game.state.turn+' (กด 🆕 เพื่อเริ่มใหม่)');}catch{store.del(AUTO);}}
+ if(!game)start({template:C.TEMPLATES[q.get('map')]?q.get('map'):'nova9',personality:['assault','fortress','network','random'].includes(q.get('ai'))?q.get('ai'):'random',
+  seed:parseInt(q.get('seed'),10)||(Date.now()%1e6)});
+ // Test hook: drives the page like a player (taps and buttons) and reads only the BLUE view.
+ globalThis.__rrtCampaignDebug=Object.freeze({view,draft:()=>JSON.parse(JSON.stringify(draft)),report:()=>lastReport,
+  tapSector:id=>$('map').querySelector('[data-sector="'+id+'"] rect').dispatchEvent(new MouseEvent('click',{bubbles:true})),
+  endTurn,skip:()=>finishPlayback(true),
+  order:o=>{const r=UI.setOrder(draft,view(),o);if(r.ok){draft=r.draft;render();}return r.ok;},save:()=>UI.serialize(game),load:loadText,start,playing:()=>!!playback});
+})();
+</script>
+</body>
+</html>
