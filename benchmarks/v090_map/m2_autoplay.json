@@ -1,66 +1,67 @@
 {
  "type": "SIMULATION_ONLY",
  "note": "strategic AI with calibrated coarse battles; not real-engine battles",
+ "template": "frontlineBasin",
  "games": 3000,
  "seed": 1,
  "unfinished": 0,
- "meanTurns": 11.38,
- "medianTurns": 12,
- "battlesPerTurn": 0.2234622144112478,
- "comebackRate": 0.1882728360590347,
- "trailingAt6": 2507,
+ "meanTurns": 12.130333333333333,
+ "medianTurns": 13,
+ "battlesPerTurn": 0.24349427056140255,
+ "comebackRate": 0.16999201915403034,
+ "trailingAt6": 2506,
  "reasons": {
-  "hq_captured": 712,
-  "turn_limit_vp": 661,
-  "victory_points": 1375,
-  "turn_limit_sectors": 252
+  "turn_limit_vp": 848,
+  "victory_points": 1710,
+  "turn_limit_sectors": 268,
+  "hq_captured": 174
  },
  "sideWins": {
-  "player": 1426,
-  "enemy": 1351,
-  "draw": 223
+  "player": 1416,
+  "enemy": 1360,
+  "draw": 224
  },
  "byPersonality": {
   "assault": {
-   "wins": 1128,
-   "losses": 783,
-   "draws": 91
+   "wins": 1107,
+   "losses": 803,
+   "draws": 92
   },
   "fortress": {
-   "wins": 843,
-   "losses": 923,
-   "draws": 233
+   "wins": 869,
+   "losses": 896,
+   "draws": 234
   },
   "network": {
-   "wins": 806,
-   "losses": 1071,
+   "wins": 800,
+   "losses": 1077,
    "draws": 122
   }
  },
  "pairs": {
   "assault vs assault": {
-   "player": 179,
-   "enemy": 155,
+   "player": 174,
+   "enemy": 160,
    "draw": 0
   },
   "fortress vs assault": {
-   "player": 112,
-   "enemy": 205,
+   "player": 120,
+   "enemy": 197,
    "draw": 17
   },
   "network vs assault": {
-   "player": 113,
-   "enemy": 193,
+   "player": 109,
+   "enemy": 197,
    "draw": 28
   },
   "assault vs fortress": {
-   "player": 187,
-   "enemy": 122,
-   "draw": 24
+   "player": 172,
+   "enemy": 136,
+   "draw": 25
   },
   "fortress vs fortress": {
-   "player": 153,
-   "enemy": 119,
+   "player": 154,
+   "enemy": 118,
    "draw": 61
   },
   "network vs fortress": {
@@ -69,25 +70,25 @@
    "draw": 38
   },
   "assault vs network": {
-   "player": 209,
-   "enemy": 102,
+   "player": 207,
+   "enemy": 104,
    "draw": 22
   },
   "fortress vs network": {
-   "player": 179,
-   "enemy": 122,
+   "player": 183,
+   "enemy": 118,
    "draw": 32
   },
   "network vs network": {
-   "player": 157,
-   "enemy": 175,
+   "player": 160,
+   "enemy": 172,
    "draw": 1
   }
  },
  "winRates": {
-  "assault": 0.563,
-  "fortress": 0.422,
-  "network": 0.403
+  "assault": 0.553,
+  "fortress": 0.435,
+  "network": 0.4
  },
  "checks": {
   "median length 10-14 turns": true,

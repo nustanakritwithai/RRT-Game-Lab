@@ -36,15 +36,20 @@
   const enemyAt=id=>view.enemyUnits.filter(u=>u.sector===id).reduce((n,u)=>n+u.size,0)+
    view.lastSeenUnits.filter(u=>u.sector===id).reduce((n,u)=>n+u.size*(1-u.age/4),0);
   const threatNear=id=>Math.max(enemyAt(id),...nb(id).map(enemyAt));
-  const value=s=>(s.victory?3:0)+s.yield*.8+(s.radioHill?1:0)+(s.hq===foe?6:0)+(s.hq===f?5:0);
+  const value=s=>(s.victory?3:0)+s.yield*.8+(s.radioHill?1:0)+(s.hq===foe?6:0)+(s.hq===f?5:0)+
+   (s.power?2.5:0)+(s.factory?2:0)+(s.relay?1.5:0)+(s.sensor?.5:0);
   const orders=[],used=new Set();let supply=view.supply;
   const units=view.ownUnits.slice().sort((a,b)=>a.id.localeCompare(b.id));
-  // 1. Home defence: a visible threat next to an empty HQ pulls the closest unit back.
-  if(myHq.owner===f&&!units.some(u=>u.sector===myHq.id)&&nb(myHq.id).some(id=>view.enemyUnits.some(e=>e.sector===id))){
-   const toHq=dist(myHq.id);
+  // 1. Home defence. HQ under siege (enemy inside it): every unit within two steps converges on it.
+  //    Visible threat next to an empty HQ: the closest unit steps back.
+  const toHq=dist(myHq.id),stepHome=u=>nb(u.sector).sort((a,b)=>(toHq.get(a)??99)-(toHq.get(b)??99))[0];
+  const besieged=view.enemyUnits.filter(e=>e.sector===myHq.id).reduce((n,e)=>n+e.size,0);
+  if(besieged>0){
+   for(const u of units.filter(x=>x.sector!==myHq.id&&(toHq.get(x.sector)??99)<=2).sort((a,b)=>(toHq.get(a.sector)??99)-(toHq.get(b.sector)??99))){
+    orders.push({unit:u.id,type:'move',to:stepHome(u)});used.add(u.id);}
+  }else if(myHq.owner===f&&!units.some(u=>u.sector===myHq.id)&&nb(myHq.id).some(id=>view.enemyUnits.some(e=>e.sector===id))){
    const back=units.slice().sort((a,b)=>(toHq.get(a.sector)??99)-(toHq.get(b.sector)??99)||b.size-a.size)[0];
-   if(back){const step=nb(back.sector).sort((a,b)=>(toHq.get(a)??99)-(toHq.get(b)??99))[0];
-    orders.push({unit:back.id,type:'move',to:step});used.add(back.id);}
+   if(back){orders.push({unit:back.id,type:'move',to:stepHome(back)});used.add(back.id);}
   }
   // 2. Concentrate: merge co-located units when a known enemy nearby outnumbers each of them.
   for(const u of units){if(used.has(u.id))continue;

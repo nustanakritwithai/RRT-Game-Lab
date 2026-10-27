@@ -247,3 +247,58 @@ test('the lead can swing back: points are a tug-of-war, not a race',()=>{
  for(let k=0;k<2;k++)s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
  assert.ok(s.factions.enemy.vp>s.factions.player.vp);assert.equal(s.winner,null);
 });
+
+// --- NOVA-9 (FRACTURED FRONT campaign map) ---
+const nova=(o={})=>C.create({seed:11,template:'nova9',...o});
+test('NOVA-9 is a 3x3 grid with BLUE/RED home sectors and a neutral centre column of victory sectors',()=>{
+ const s=nova();assert.equal(s.sectors.length,9);assert.equal(s.edges.length,12);
+ assert.deepEqual(s.sectors.filter(x=>x.victory).map(x=>x.id).sort(),['C2','N2','S2']);
+ assert.equal(s.sectors.find(x=>x.id==='C1').hq,'player');assert.equal(s.sectors.find(x=>x.id==='C3').hq,'enemy');
+ for(const id of ['N2','C2','S2'])assert.equal(s.sectors.find(x=>x.id===id).owner,null);
+ assert.equal(s.sectors.find(x=>x.id==='N3').fort,1,'Red Outpost starts fortified');
+});
+test('Relay and Factory need a Power Grid linked through own sectors',()=>{
+ const s=nova();assert.equal(C.powered(s,'player','N1'),false);
+ s.sectors.find(x=>x.id==='S2').owner='player';assert.equal(C.powered(s,'player','N1'),true,'S2-S1-C1-N1 all player');
+ s.sectors.find(x=>x.id==='C1').owner='enemy';assert.equal(C.powered(s,'player','N1'),false,'link through C1 cut');
+});
+test('a powered relay gives strong radio in its sector and next door; unpowered only weak local radio',()=>{
+ const s=nova();assert.equal(C.radioLevel(s,'player','N1'),1);assert.equal(C.radioLevel(s,'player','N2'),0);
+ s.sectors.find(x=>x.id==='S2').owner='player';assert.equal(C.radioLevel(s,'player','N1'),2);assert.equal(C.radioLevel(s,'player','N2'),2);
+ assert.equal(C.radioLevel(s,'enemy','N2'),0);
+});
+test('sensor stations reveal enemy units next door without a unit present',()=>{
+ const s=nova();const pu=s.units.find(u=>u.faction==='player');pu.sector='N2';
+ const v=C.viewFor(s,'enemy');assert.ok(v.enemyUnits.some(e=>e.sector==='N2'),'Red Outpost sees Old Town');
+});
+test('a powered factory produces fresh agents up to the roster cap; unpowered it does nothing',()=>{
+ let s=nova();for(let k=0;k<4;k++)s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ assert.equal(s.roster.filter(a=>a.faction==='enemy').length,12,'no grid, no production');
+ s=nova();s.sectors.find(x=>x.id==='S2').owner='enemy';
+ for(let k=0;k<12;k++)s=C.resolveTurn(s,{player:[],enemy:[]},noBattles).state;
+ const n=s.roster.filter(a=>a.faction==='enemy').length;assert.ok(n>12&&n<=C.RULES.maxAgents,'produced '+n);
+ assert.ok(s.roster.filter(a=>a.fresh).every(a=>a.faction==='enemy'));
+});
+test('more than a Platoon in one sector fights in rounds (at most 12 per side per round)',()=>{
+ const s=nova();const blue=s.units.filter(u=>u.faction==='player');
+ for(const u of blue)u.sector='C2';blue[0].agents.push('P13','P14');s.roster.push({id:'P13',faction:'player',injuredTurns:0},{id:'P14',faction:'player',injuredTurns:0});
+ const red=s.units.find(u=>u.faction==='enemy');red.sector='C3';
+ const specs=[];C.resolveTurn(s,{player:[],enemy:[{unit:red.id,type:'move',to:'C2'}]},spec=>{specs.push(spec);assert.ok(spec.attacker.size<=12&&spec.defender.size<=12);return {winner:'attacker',casualties:{attacker:0,defender:4}};});
+ assert.ok(specs.length>=2,'second round with reinforcements: '+specs.length);
+});
+test('200 random NOVA-9 campaigns keep every agent accounted for',()=>{
+ for(let g=0;g<200;g++){let s=C.create({seed:500+g,template:'nova9'});let a=g*104729+3;const r=()=>{a=(a*1103515245+12345)>>>0;return a/4294967296;};
+  for(let t=0;t<40&&!s.winner;t++){
+   s=C.resolveTurn(s,{player:randomOrders(s,'player',r),enemy:randomOrders(s,'enemy',r)}).state;
+   for(const f of ['player','enemy']){const all=[...s.units.filter(u=>u.faction===f).flatMap(u=>u.agents),...s.factions[f].reserve,...s.roster.filter(x=>x.faction===f&&x.injuredTurns>0).map(x=>x.id)];
+    const n=s.roster.filter(x=>x.faction===f).length;assert.equal(all.length,n,'g'+g+' t'+t);assert.equal(new Set(all).size,n);assert.ok(n<=C.RULES.maxAgents);}
+  }
+  assert.ok(s.winner);
+ }
+});
+test('an HQ falls only after a long uncontested siege',()=>{
+ let s=nova();const pu=s.units.find(u=>u.faction==='player');pu.sector='C3';
+ for(const u of s.units.filter(x=>x.faction==='enemy'))u.sector='S3';
+ for(let k=0;k<C.RULES.hqSiegeTurns-1;k++){s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;assert.equal(s.sectors.find(x=>x.id==='C3').owner,'enemy','turn '+k);}
+ s=C.resolveTurn(s,{player:[{unit:pu.id,type:'hold'}],enemy:[]},noBattles).state;assert.equal(s.sectors.find(x=>x.id==='C3').owner,'player');
+});

@@ -9,7 +9,7 @@
 (function(root,factory){'use strict';const api=factory();root.RRTArenaCampaign=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const RULES=Object.freeze({maxUnits:4,supplyCap:12,startSupply:4,towerCost:3,injuryTurns:2,encircledInjuryTurns:3,
-  intelExpiry:4,maxFort:2,vpLead:10,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2});
+  intelExpiry:4,maxFort:2,vpLead:10,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2,maxAgents:16,factoryEvery:2,battleRounds:3,hqSiegeTurns:4});
  const PRESET_BY_SIZE=Object.freeze({2:'buddy2',3:'buddy3',4:'group22',5:'group23',6:'group33',8:'squad2222',10:'squad2323',12:'squad3333'});
  const RADIO=Object.freeze([{loss:50,delay:0.6},{loss:20,delay:0.3},{loss:0,delay:0}]);
  const FACTIONS=Object.freeze(['player','enemy']);
@@ -22,7 +22,16 @@
    ['E-L','ซากเมืองเหนือ','ruins','enemy',1],['E-C','ทุ่งโล่งเหนือ','open','enemy',1],['E-R','ถนนเหนือ','lanes','enemy',1],['E-HQ','ฐานศัตรู','ruins','enemy',2,{hq:'enemy'}]],
   edges:[['P-HQ','P-L'],['P-HQ','P-C'],['P-HQ','P-R'],['P-L','L'],['P-L','C'],['P-C','C'],['P-R','C'],['P-R','R'],
    ['L','C'],['C','R'],
-   ['E-HQ','E-L'],['E-HQ','E-C'],['E-HQ','E-R'],['E-L','L'],['E-L','C'],['E-C','C'],['E-R','C'],['E-R','R']]})});
+   ['E-HQ','E-L'],['E-HQ','E-C'],['E-HQ','E-R'],['E-L','L'],['E-L','C'],['E-C','C'],['E-R','C'],['E-R','R']]}),
+  // FRACTURED FRONT campaign map (deliberately asymmetric; balance is checked by auto-play, not by mirroring).
+  // player = BLUE Restoration Army (C1), enemy = RED Containment Force (C3).
+  nova9:Object.freeze({
+   sectors:[
+    ['N1','📡 North Relay','open','player',1,{relay:true,sensor:true}],['N2','🏙️ Old Town ★','ruins',null,1,{victory:true}],['N3','🛡️ Red Outpost','lanes','enemy',1,{sensor:true,fort:1}],
+    ['C1','🏢 BLUE HQ','ruins','player',2,{hq:'player'}],['C2','⚔️ Control A ★','open',null,1,{victory:true}],['C3','🏢 RED HQ','ruins','enemy',2,{hq:'enemy'}],
+    ['S1','📦 Blue Depot','lanes','player',3,{depot:true}],['S2','⚡ Power Grid ★','lanes',null,2,{victory:true,power:true}],['S3','🏭 Factory','ruins','enemy',1,{factory:true}]],
+   edges:[['N1','N2'],['N2','N3'],['C1','C2'],['C2','C3'],['S1','S2'],['S2','S3'],
+    ['N1','C1'],['C1','S1'],['N2','C2'],['C2','S2'],['N3','C3'],['C3','S3']]})});
 
  const clone=x=>JSON.parse(JSON.stringify(x));
  function presetForSize(n){return PRESET_BY_SIZE[n]||null;}
@@ -32,14 +41,15 @@
 
  function create({seed=1,template='frontlineBasin',maxTurns=RULES.maxTurns,vpLead=RULES.vpLead,vpNeedsSupply=RULES.vpNeedsSupply}={}){
   const t=TEMPLATES[template];if(!t)throw new RangeError('Unknown map template '+template);
-  const sectors=t.sectors.map(([id,name,terrain,owner,yieldPerTurn,special={}])=>({id,name,terrain,owner,yield:yieldPerTurn,fort:special.hq?RULES.hqFort:0,tower:null,
-   victory:!!special.victory,hq:special.hq||null,radioHill:!!special.radioHill,depot:!!special.depot}));
+  const sectors=t.sectors.map(([id,name,terrain,owner,yieldPerTurn,special={}])=>({id,name,terrain,owner,yield:yieldPerTurn,
+   fort:special.hq?RULES.hqFort:(special.fort|0),tower:null,victory:!!special.victory,hq:special.hq||null,radioHill:!!special.radioHill,depot:!!special.depot,
+   relay:!!special.relay,power:!!special.power,factory:!!special.factory,sensor:!!special.sensor}));
   const roster=[],units=[],factions={};
   for(const f of FACTIONS){
    const prefix=f==='player'?'P':'E',hq=sectors.find(s=>s.hq===f).id;
    for(let i=1;i<=RULES.agentsPerFaction;i++)roster.push({id:prefix+i,faction:f,injuredTurns:0});
    for(let u=0;u<3;u++)units.push({id:prefix+'-U'+(u+1),faction:f,sector:hq,agents:[1,2,3,4].map(k=>prefix+(u*4+k))});
-   factions[f]={supply:RULES.startSupply,vp:0,intel:{},siege:{},reserve:[],nextUnit:4};
+   factions[f]={supply:RULES.startSupply,vp:0,intel:{},siege:{},reserve:[],nextUnit:4,nextAgent:RULES.agentsPerFaction+1};
   }
   return {version:1,seed:seed>>>0,turn:0,maxTurns,vpLead,vpNeedsSupply,template,sectors,edges:t.edges.map(e=>e.slice()),units,roster,factions,winner:null,log:[]};
  }
@@ -52,10 +62,22 @@
   while(queue.length){const id=queue.shift();for(const n of neighbors(s,id))if(!seen.has(n)&&sectorOf(s,n).owner===f){seen.add(n);queue.push(n);}}
   return seen;
  }
+ /** A Relay/Factory works only while linked to an owned Power Grid through the faction's own sectors. */
+ function powered(s,f,id){
+  const grid=s.sectors.find(x=>x.power&&x.owner===f);if(!grid)return false;
+  const seen=new Set([grid.id]),q=[grid.id];
+  while(q.length){const c=q.shift();if(c===id)return true;for(const n of neighbors(s,c))if(!seen.has(n)&&sectorOf(s,n).owner===f){seen.add(n);q.push(n);}}
+  return false;
+ }
  function radioLevel(s,f,id){
   let level=0;const sec=sectorOf(s,id);if(!sec)return 0;
+  // Powered relay: strong radio in its sector and next door; unpowered relay: weak local radio only.
+  for(const r of s.sectors.filter(x=>x.relay&&x.owner===f)){
+   if(powered(s,f,r.id)&&(r.id===id||neighbors(s,r.id).includes(id)))level=2;
+   else if(r.id===id)level=Math.max(level,1);
+  }
   if(sec.tower===f)level=2;
-  else if(neighbors(s,id).some(n=>sectorOf(s,n).tower===f))level=1;
+  else if(neighbors(s,id).some(n=>sectorOf(s,n).tower===f))level=Math.max(level,1);
   const hill=s.sectors.find(x=>x.radioHill&&x.owner===f);
   if(hill&&(hill.id===id||neighbors(s,hill.id).includes(id)))level=Math.min(2,level+1);
   return level;
@@ -69,9 +91,12 @@
   const own=s.units.filter(u=>u.faction===f);
   const present=new Set(own.map(u=>u.sector));
   const nearby=new Set(present);for(const id of present)for(const n of neighbors(s,id))nearby.add(n);
+  // Owned sensor stations (relay / outpost) watch neighbouring sectors for unit movement.
+  for(const x of s.sectors)if(x.sensor&&x.owner===f){nearby.add(x.id);for(const n of neighbors(s,x.id))nearby.add(n);}
   const intel=s.factions[f].intel;
   const sectors=s.sectors.map(x=>{
    const base={id:x.id,name:x.name,terrain:x.terrain,owner:x.owner,victory:x.victory,hq:x.hq,radioHill:x.radioHill,depot:x.depot,yield:x.yield,
+    relay:x.relay,power:x.power,factory:x.factory,sensor:x.sensor,powered:x.owner===f?powered(s,f,x.id):null,
     radio:radioLevel(s,f,x.id)};
    if(x.owner===f||present.has(x.id))return {...base,fort:x.fort,tower:x.tower,intelAge:0,confidence:1};
    const snap=intel[x.id],age=snap?s.turn-snap.turn:null;
@@ -180,8 +205,18 @@
    const stayed=f=>here(f).some(u=>origin.get(u.id)===sec.id);
    let defF=stayed('player')&&!stayed('enemy')?'player':stayed('enemy')&&!stayed('player')?'enemy':(sec.owner||'enemy');
    const attF=other(defF),kind=stayed(defF)?'assault':'contested';
-   const spec=battleSpec(s,kind,sec.id,sec.terrain,sec.owner===defF?sec.fort:0,here(attF),here(defF));
-   const result=runBattle(s,spec,resolver,events,battles);
+   // Army scale: one battle fields at most a Platoon (12) per side; extra agents fight further rounds.
+   let result,round=0;
+   while(true){
+    const total=f=>here(f).reduce((n,u)=>n+u.agents.length,0),before={[attF]:total(attF),[defF]:total(defF)};
+    const spec=battleSpec(s,kind,sec.id,sec.terrain,sec.owner===defF?sec.fort:0,here(attF),here(defF));spec.round=round;
+    if(round)spec.seed=hash32(spec.seed,round);
+    result=runBattle(s,spec,resolver,events,battles);
+    const lf=result.winner==='attacker'?defF:attF,loserFought=spec[result.winner==='attacker'?'defender':'attacker'].size;
+    // Continue only while the beaten side still has fresh reserves that did not fight this round.
+    if(result.winner==='draw'||++round>=RULES.battleRounds||total(lf)<2||before[lf]<=loserFought)break;
+    events.push({type:'battle_round',sector:sec.id,round});
+   }
    const loserF=result.winner==='attacker'?defF:attF;
    if(result.winner==='draw'){retreatUnits(s,here(attF),attF,sec.id,origin,events);}
    else retreatUnits(s,here(loserF),loserF,sec.id,origin,events);
@@ -194,7 +229,8 @@
    for(const u of s.units.filter(x=>x.faction===f)){const sec=sectorOf(s,u.sector);
     if(sec.owner===f||s.units.some(v=>v.sector===sec.id&&v.faction!==f))continue;
     siege[sec.id]=(s.factions[f].siege[sec.id]||0)+(siege[sec.id]?0:1);
-    if(siege[sec.id]>sec.fort){events.push({type:'capture',faction:f,sector:sec.id,from:sec.owner});sec.owner=f;sec.fort=0;if(sec.tower)sec.tower=f;delete siege[sec.id];}}
+    // An HQ needs a long uncontested siege; other sectors need fort+1 turns.
+    if(siege[sec.id]>(sec.hq?Math.max(sec.fort,RULES.hqSiegeTurns-1):sec.fort)){events.push({type:'capture',faction:f,sector:sec.id,from:sec.owner});sec.owner=f;sec.fort=0;if(sec.tower)sec.tower=f;delete siege[sec.id];}}
    s.factions[f].siege=siege;
   }
   for(const f of FACTIONS)for(const o of accepted[f]){const u=s.units.find(x=>x.id===o.unit);if(!u)continue;const sec=sectorOf(s,u.sector);
@@ -209,6 +245,10 @@
    // Victory sectors only score while linked to HQ by the faction's own supply line (overextension risk).
    fac.vp+=s.sectors.filter(x=>x.victory&&x.owner===f&&(!s.vpNeedsSupply||connected.has(x.id))).length;}
   for(const a of s.roster)if(a.injuredTurns>0&&--a.injuredTurns===0)s.factions[a.faction].reserve.push(a.id);
+  // A powered Factory produces one fresh agent (no experience) every few turns, up to the roster cap.
+  if(s.turn%RULES.factoryEvery===0)for(const f of FACTIONS){const fac=s.factions[f];
+   if(s.sectors.some(x=>x.factory&&x.owner===f&&powered(s,f,x.id))&&s.roster.filter(a=>a.faction===f).length<RULES.maxAgents){
+    const id=(f==='player'?'P':'E')+(fac.nextAgent++);s.roster.push({id,faction:f,injuredTurns:0,fresh:true});fac.reserve.push(id);events.push({type:'produced',faction:f,agent:id});}}
   for(const f of FACTIONS){const fac=s.factions[f],hq=s.sectors.find(x=>x.hq===f);
    const n=presetFloor(fac.reserve.length);
    if(n&&hq.owner===f&&s.units.filter(u=>u.faction===f).length<RULES.maxUnits){
@@ -287,6 +327,6 @@
   const winnerCas=Math.max(0,Math.min(winner-1,Math.round(expected*(.6+.8*r()))));
   return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loser}:{attacker:loser,defender:winnerCas},p};
  }
- return Object.freeze({RULES,TEMPLATES,PRESET_BY_SIZE,presetForSize,presetFloor,create,neighbors,connectedSectors,radioLevel,radioSettings,
+ return Object.freeze({RULES,TEMPLATES,PRESET_BY_SIZE,presetForSize,presetFloor,create,neighbors,connectedSectors,powered,radioLevel,radioSettings,
   viewFor,validateOrder,validateOrders,resolveTurn,checkVictory,coarseBattle,COARSE});
 });

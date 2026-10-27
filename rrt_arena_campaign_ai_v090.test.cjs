@@ -43,3 +43,10 @@ test('autoplay: 60 campaigns of mixed personalities all finish with sane statist
  assert.equal(r.games,60);assert.equal(r.unfinished,0);
  assert.ok(r.meanTurns>=3&&r.meanTurns<=C.RULES.maxTurns);assert.ok(r.battlesPerTurn>=0);
 });
+test('a besieged HQ is relieved by nearby units',()=>{
+ const s=C.create({seed:3,template:'nova9'});
+ const red=s.units.filter(u=>u.faction==='enemy');red[0].sector='S3';red[1].sector='N3';red[2].sector='C2';
+ s.units.find(u=>u.faction==='player').sector='C3';
+ const o=AI.decideOrders(C.viewFor(s,'enemy'),'assault',0);
+ assert.ok(o.filter(x=>x.type==='move'&&x.to==='C3').length>=2,JSON.stringify(o));
+});
