@@ -2211,8 +2211,9 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const stats=()=>({samples:0,mean:0});
 const contextStats=()=>Object.fromEntries(STYLES.map(style=>[style,stats()]));
 const events=()=>({shots:0,confirmedHits:0,confirmedDamage:0,receivedDamage:0});
-function create(enabled=true){
- return {enabled:enabled===true,style:'balanced',context:null,windowStart:null,
+function create(enabled=true,initialStyle='balanced'){
+ const start=STYLES.includes(initialStyle)?initialStyle:'balanced';
+ return {enabled:enabled===true,initialStyle:start,style:start,context:null,windowStart:null,
   contexts:{contact:contextStats(),under_fire:contextStats()},events:events(),
   shots:0,confirmedHits:0,confirmedDamage:0,receivedDamage:0,
   updates:0,windows:0,switches:0,totalReward:0,lastReward:null};
@@ -2254,6 +2255,7 @@ function settle(state,now){
 }
 function select(state,context){
  const options=state.contexts[context],count=STYLES.reduce((sum,name)=>sum+options[name].samples,0);
+ if(!count)return state.initialStyle;
  for(const name of STYLES)if(!options[name].samples)return name;
  // Deterministic UCB: explore first, then favor strategies that actually
  // produced better observed reward. B and R receive identical rules/priors.
@@ -2267,7 +2269,7 @@ function select(state,context){
 }
 function tick(state,local,now){
  if(!state?.enabled||!Number.isFinite(now)||now<0)
-  return {style:'balanced',changed:false,trained:false};
+  return {style:state?.style||'balanced',changed:false,trained:false};
  const next=local?.underFire===true?'under_fire':
   local?.visible===true?'contact':null;
  if(state.windowStart===null){
@@ -2487,7 +2489,7 @@ function setupDuel2(){
   bot.evidenceLedger=evidenceCore.emptyLedger();
   bot.peerMesh=meshCore.createPeer(bot.id);bot.meshLastSupportAt=-Infinity;
   bot.duelRadioLastSent=Object.create(null);
-  bot.duelLearner=onlineCore.create(duel2UI.learning.checked);
+  bot.duelLearner=onlineCore.create(duel2UI.learning.checked,ui.blueStyle.value);
   bot.duelRangeHistory=Object.create(null);bot.duelSwitches=0;bot.duelLastSwitchAt=-Infinity;
   bot.duelDefense={
    cover:null,coverDecision:null,pendingCover:false,lastCoverAt:-20,

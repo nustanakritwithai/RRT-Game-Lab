@@ -28,7 +28,9 @@ async function run(){
     return window.__rrtDuel2Debug.getState();
    });
    assert.equal(start.learningEnabled,c.learn===1,'learning toggle must match URL');
-   assert.ok(start.fighters.every(f=>f.learning===null||f.learning.style==='balanced'));
+   const chosen=await page.evaluate(()=>document.getElementById('blueStyle').value);
+   assert.ok(start.fighters.every(f=>f.learning===null||f.learning.style===chosen),
+    'initial learned tactic must match the existing player-selected tactic');
    const begun=Date.now();
    const result=await page.evaluate(seconds=>{
     const api=window.__rrtDuel2Debug;
