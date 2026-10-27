@@ -87,3 +87,13 @@ test('all duel fighters repair stale RRT root edges after keep-moving bridge ste
  assert.match(plan,/bot\.path=\[\];bot\.way=0;bot\.goal=null;bot\.planCooldown=\.05/);
  assert.match(plan,/bot\.thinkCooldown=invalidBridge\?0:rand/);
 });
+
+test('Duel2 continuously repairs invalid saved RRT waypoint edges for every fighter',()=>{
+ const repair=block('function duel2RepairRoute(bot){','function loopDuel2Step(dt){');
+ const step=block('function loopDuel2Step(dt){','function loopStep(dt){');
+ assert.match(repair,/for\(let k=bot\.way;k<bot\.path\.length;k\+\+\)/);
+ assert.match(repair,/blocked\(from,to,R\*\.9\)/);
+ assert.match(repair,/bot\.path=\[\];bot\.way=0;bot\.goal=null;bot\.planner=null/);
+ assert.match(repair,/team\.stalePathRepairs=/);
+ assert.match(step,/duel2RepairRoute\(bot\)/);
+});

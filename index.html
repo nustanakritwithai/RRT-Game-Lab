@@ -2367,7 +2367,7 @@ function setupDuel2(){
   bidsSent:0,bidsReceived:0,negotiatedYields:0,peerAcks:0,heldFire:0,laneMoves:0,
   blockedFriendlyShots:0,suppressedSightings:0,targetSwitches:0,focusOverlapSamples:0,focusOverlap:0,
   peerMeshSuppressed:0,peerMeshDelivered:0,peerMeshSupports:0,peerMeshInvalid:0,
-  shotsFired:Object.fromEntries(bots.map(b=>[b.id,0]))};
+  stalePathRepairs:0,shotsFired:Object.fromEntries(bots.map(b=>[b.id,0]))};
 }
 function showOverlay(icon,title,desc,hint){ui.icon.textContent=icon;ui.title.textContent=title;ui.text.textContent=desc;ui.hint.textContent=hint||'🔵 BLUE · 🔴 RED · 🛡️ COVER';ui.overlay.classList.remove('hidden');}
 function hideOverlay(){ui.overlay.classList.add('hidden');}
@@ -3836,6 +3836,24 @@ function duel2Projectiles(dt){
   if(shot.ttl<=0)bullets.splice(i,1);else{shot.x=next.x;shot.y=next.y;}
  }
 }
+// Revalidate the remaining route after *this fighter* moves. A dodge, lane
+// search or planner bridge can make the saved root-to-waypoint edge obsolete.
+// World geometry is used for collision, never to pick an unseen target.
+function duel2RepairRoute(bot){
+ if(bot.hp<=0||!bot.path?.length)return false;
+ let from=bot;
+ for(let k=bot.way;k<bot.path.length;k++){
+  const to=bot.path[k];
+  if(blocked(from,to,R*.9)){
+   bot.path=[];bot.way=0;bot.goal=null;bot.planner=null;
+   bot.thinkCooldown=0;bot.planCooldown=.05;bot.agePlan=9;
+   team.stalePathRepairs=(team.stalePathRepairs||0)+1;
+   return true;
+  }
+  from=to;
+ }
+ return false;
+}
 function loopDuel2Step(dt){
  if(phase!=='running')return;
  elapsed+=dt;
@@ -3856,6 +3874,7 @@ function loopDuel2Step(dt){
    if(bot.planner)runPlanner(bot,28);
    if(!dodgeMove(bot,dt))moveBot(bot,dt);
    if(mobileActive()&&bot.hp>0&&bot.x===old.x&&bot.y===old.y)keepMoving(bot,dt);
+   duel2RepairRoute(bot);
    duel2Shoot(bot);
   }));
  }
@@ -4173,7 +4192,7 @@ window.__rrtDuel2Debug={
     acks:team.peerAcks||0,negotiations:team.negotiatedYields||0,
     evidenceAccepted:team.evidenceAccepted||0,conflicts:team.evidenceConflict||0},
    blockedFriendly:duel2FriendlyBlocks,heldFire:team.heldFire||0,
-   laneMoves:team.laneMoves||0,
+   laneMoves:team.laneMoves||0,stalePathRepairs:team.stalePathRepairs||0,
    targetSwitches:team.targetSwitches||0,
    focusOverlap:team.focusOverlap||0,focusOverlapSamples:team.focusOverlapSamples||0,
    suppressedSightings:team.suppressedSightings||0,

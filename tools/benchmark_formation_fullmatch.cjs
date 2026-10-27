@@ -69,7 +69,7 @@ async function run(){
       shotsBlue:bs,shotsRed:rs,
       blueDamagePerShot:bs?(startHp-rh)/bs:null,
       redDamagePerShot:rs?(startHp-bh)/rs:null,
-      plans:blue.concat(red).reduce((n,b)=>n+b.planCount,0),
+      plans:blue.concat(red).reduce((n,b)=>n+b.planCount,0),stalePathRepairs:last.stalePathRepairs||0,
       targetSwitches:last.targetSwitches,focusOverlap:last.focusOverlap,
       focusSamples:last.focusOverlapSamples,heldFire:last.heldFire,
       blockedFriendly:last.blockedFriendly,laneMoves:last.laneMoves,
@@ -113,6 +113,7 @@ async function run(){
    meanBlueDamagePerShot:sum(rr,'blueDamagePerShot')/rr.length,
    meanRedDamagePerShot:sum(rr,'redDamagePerShot')/rr.length,
    meanTargetSwitches:sum(rr,'targetSwitches')/rr.length,
+   meanPathRepairs:sum(rr,'stalePathRepairs')/rr.length,
    focusOverlapPercent:sum(rr,'focusSamples')?100*sum(rr,'focusOverlap')/sum(rr,'focusSamples'):null,
    meanRadioSent:sum(rr,'sent')/rr.length,meanMeshRetries:sum(rr,'meshRetries')/rr.length});
  }
