@@ -1,0 +1,344 @@
+{
+ "type": "SIMULATION_RUNTIME",
+ "note": "CPU throttling is a rough proxy, not a real-device measurement",
+ "summary": [
+  {
+   "throttle": 1,
+   "formation": "group22",
+   "meanSeconds": 3.66,
+   "maxSeconds": 4.09,
+   "meanSimSeconds": 58.1
+  },
+  {
+   "throttle": 1,
+   "formation": "group33",
+   "meanSeconds": 6.74,
+   "maxSeconds": 8.12,
+   "meanSimSeconds": 70.3
+  },
+  {
+   "throttle": 1,
+   "formation": "squad2222",
+   "meanSeconds": 7.85,
+   "maxSeconds": 8.64,
+   "meanSimSeconds": 59.7
+  },
+  {
+   "throttle": 1,
+   "formation": "squad3333",
+   "meanSeconds": 16.24,
+   "maxSeconds": 19.09,
+   "meanSimSeconds": 91.2
+  },
+  {
+   "throttle": 4,
+   "formation": "group22",
+   "meanSeconds": 18,
+   "maxSeconds": 20.72,
+   "meanSimSeconds": 58.1
+  },
+  {
+   "throttle": 4,
+   "formation": "group33",
+   "meanSeconds": 32.95,
+   "maxSeconds": 39.09,
+   "meanSimSeconds": 70.3
+  },
+  {
+   "throttle": 4,
+   "formation": "squad2222",
+   "meanSeconds": 40.03,
+   "maxSeconds": 46.54,
+   "meanSimSeconds": 59.7
+  },
+  {
+   "throttle": 4,
+   "formation": "squad3333",
+   "meanSeconds": 78.33,
+   "maxSeconds": 86.65,
+   "meanSimSeconds": 91.2
+  }
+ ],
+ "rows": [
+  {
+   "rate": 1,
+   "formation": "group22",
+   "seed": 1001,
+   "ms": 3280.9000000003725,
+   "simSeconds": 42.56666666666553
+  },
+  {
+   "rate": 1,
+   "formation": "group22",
+   "seed": 1002,
+   "ms": 3483.9000000003725,
+   "simSeconds": 54.69999999999818
+  },
+  {
+   "rate": 1,
+   "formation": "group22",
+   "seed": 1003,
+   "ms": 4089.5,
+   "simSeconds": 70.63333333333061
+  },
+  {
+   "rate": 1,
+   "formation": "group22",
+   "seed": 1004,
+   "ms": 3928,
+   "simSeconds": 52.53333333333163
+  },
+  {
+   "rate": 1,
+   "formation": "group22",
+   "seed": 1005,
+   "ms": 3524,
+   "simSeconds": 70.08333333333064
+  },
+  {
+   "rate": 1,
+   "formation": "group33",
+   "seed": 1001,
+   "ms": 6536.4000000003725,
+   "simSeconds": 66.76666666666416
+  },
+  {
+   "rate": 1,
+   "formation": "group33",
+   "seed": 1002,
+   "ms": 6037.200000000186,
+   "simSeconds": 66.04999999999754
+  },
+  {
+   "rate": 1,
+   "formation": "group33",
+   "seed": 1003,
+   "ms": 8117.600000000559,
+   "simSeconds": 83.8166666666632
+  },
+  {
+   "rate": 1,
+   "formation": "group33",
+   "seed": 1004,
+   "ms": 6269.4000000003725,
+   "simSeconds": 63.433333333331014
+  },
+  {
+   "rate": 1,
+   "formation": "group33",
+   "seed": 1005,
+   "ms": 6754.200000000186,
+   "simSeconds": 71.19999999999725
+  },
+  {
+   "rate": 1,
+   "formation": "squad2222",
+   "seed": 1001,
+   "ms": 8118.600000000559,
+   "simSeconds": 59.91666666666455
+  },
+  {
+   "rate": 1,
+   "formation": "squad2222",
+   "seed": 1002,
+   "ms": 8644.800000000745,
+   "simSeconds": 59.31666666666458
+  },
+  {
+   "rate": 1,
+   "formation": "squad2222",
+   "seed": 1003,
+   "ms": 7284.5,
+   "simSeconds": 50.53333333333175
+  },
+  {
+   "rate": 1,
+   "formation": "squad2222",
+   "seed": 1004,
+   "ms": 8088.200000000186,
+   "simSeconds": 78.81666666666348
+  },
+  {
+   "rate": 1,
+   "formation": "squad2222",
+   "seed": 1005,
+   "ms": 7095.5999999996275,
+   "simSeconds": 49.98333333333178
+  },
+  {
+   "rate": 1,
+   "formation": "squad3333",
+   "seed": 1001,
+   "ms": 16023.900000000373,
+   "simSeconds": 99.43333333332897
+  },
+  {
+   "rate": 1,
+   "formation": "squad3333",
+   "seed": 1002,
+   "ms": 19094.900000000373,
+   "simSeconds": 116.94999999999465
+  },
+  {
+   "rate": 1,
+   "formation": "squad3333",
+   "seed": 1003,
+   "ms": 16500.199999999255,
+   "simSeconds": 93.48333333332931
+  },
+  {
+   "rate": 1,
+   "formation": "squad3333",
+   "seed": 1004,
+   "ms": 15303.200000000186,
+   "simSeconds": 81.44999999999666
+  },
+  {
+   "rate": 1,
+   "formation": "squad3333",
+   "seed": 1005,
+   "ms": 14296.800000000745,
+   "simSeconds": 64.59999999999762
+  },
+  {
+   "rate": 4,
+   "formation": "group22",
+   "seed": 1001,
+   "ms": 16205.5,
+   "simSeconds": 42.56666666666553
+  },
+  {
+   "rate": 4,
+   "formation": "group22",
+   "seed": 1002,
+   "ms": 16175.900000000373,
+   "simSeconds": 54.69999999999818
+  },
+  {
+   "rate": 4,
+   "formation": "group22",
+   "seed": 1003,
+   "ms": 20717.099999999627,
+   "simSeconds": 70.63333333333061
+  },
+  {
+   "rate": 4,
+   "formation": "group22",
+   "seed": 1004,
+   "ms": 18932.599999999627,
+   "simSeconds": 52.53333333333163
+  },
+  {
+   "rate": 4,
+   "formation": "group22",
+   "seed": 1005,
+   "ms": 17945.299999999814,
+   "simSeconds": 70.08333333333064
+  },
+  {
+   "rate": 4,
+   "formation": "group33",
+   "seed": 1001,
+   "ms": 31902.800000000745,
+   "simSeconds": 66.76666666666416
+  },
+  {
+   "rate": 4,
+   "formation": "group33",
+   "seed": 1002,
+   "ms": 29946.39999999944,
+   "simSeconds": 66.04999999999754
+  },
+  {
+   "rate": 4,
+   "formation": "group33",
+   "seed": 1003,
+   "ms": 39088.60000000056,
+   "simSeconds": 83.8166666666632
+  },
+  {
+   "rate": 4,
+   "formation": "group33",
+   "seed": 1004,
+   "ms": 29906.39999999944,
+   "simSeconds": 63.433333333331014
+  },
+  {
+   "rate": 4,
+   "formation": "group33",
+   "seed": 1005,
+   "ms": 33916.799999999814,
+   "simSeconds": 71.19999999999725
+  },
+  {
+   "rate": 4,
+   "formation": "squad2222",
+   "seed": 1001,
+   "ms": 39483.299999999814,
+   "simSeconds": 59.91666666666455
+  },
+  {
+   "rate": 4,
+   "formation": "squad2222",
+   "seed": 1002,
+   "ms": 46535.299999999814,
+   "simSeconds": 59.31666666666458
+  },
+  {
+   "rate": 4,
+   "formation": "squad2222",
+   "seed": 1003,
+   "ms": 35692.39999999944,
+   "simSeconds": 50.53333333333175
+  },
+  {
+   "rate": 4,
+   "formation": "squad2222",
+   "seed": 1004,
+   "ms": 41552.10000000056,
+   "simSeconds": 78.81666666666348
+  },
+  {
+   "rate": 4,
+   "formation": "squad2222",
+   "seed": 1005,
+   "ms": 36894.09999999963,
+   "simSeconds": 49.98333333333178
+  },
+  {
+   "rate": 4,
+   "formation": "squad3333",
+   "seed": 1001,
+   "ms": 80252.70000000019,
+   "simSeconds": 99.43333333332897
+  },
+  {
+   "rate": 4,
+   "formation": "squad3333",
+   "seed": 1002,
+   "ms": 86648.09999999963,
+   "simSeconds": 116.94999999999465
+  },
+  {
+   "rate": 4,
+   "formation": "squad3333",
+   "seed": 1003,
+   "ms": 71790.29999999981,
+   "simSeconds": 93.48333333332931
+  },
+  {
+   "rate": 4,
+   "formation": "squad3333",
+   "seed": 1004,
+   "ms": 79428.70000000019,
+   "simSeconds": 81.44999999999666
+  },
+  {
+   "rate": 4,
+   "formation": "squad3333",
+   "seed": 1005,
+   "ms": 73511.10000000056,
+   "simSeconds": 64.59999999999762
+  }
+ ]
+}
