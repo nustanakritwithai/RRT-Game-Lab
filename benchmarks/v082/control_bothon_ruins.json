@@ -1,0 +1,4262 @@
+{
+ "type": "SIMULATION_ONLY",
+ "viewport": [
+  393,
+  852
+ ],
+ "seeds": "1001-1050",
+ "arms": [
+  "bothOn"
+ ],
+ "runMs": 275133,
+ "summary": [
+  {
+   "formation": "group22",
+   "size": 4,
+   "map": "ruins",
+   "dteam": "adaptive",
+   "matches": 0,
+   "featuredWins": 0,
+   "featuredLosses": 0,
+   "draws": 0,
+   "featuredWinRate": null,
+   "wilson95": [
+    0,
+    0
+   ],
+   "pairsSweptByFeatured": 0,
+   "pairsSweptByBaseline": 0,
+   "pairs": 0,
+   "meanFeaturedHp": null,
+   "meanBaselineHp": null,
+   "unsafe": 0,
+   "unfinished": 0,
+   "bothOnBlueWins": "33/50"
+  },
+  {
+   "formation": "squad3333",
+   "size": 12,
+   "map": "ruins",
+   "dteam": "adaptive",
+   "matches": 0,
+   "featuredWins": 0,
+   "featuredLosses": 0,
+   "draws": 0,
+   "featuredWinRate": null,
+   "wilson95": [
+    0,
+    0
+   ],
+   "pairsSweptByFeatured": 0,
+   "pairsSweptByBaseline": 0,
+   "pairs": 0,
+   "meanFeaturedHp": null,
+   "meanBaselineHp": null,
+   "unsafe": 0,
+   "unfinished": 0,
+   "bothOnBlueWins": "34/50"
+  }
+ ],
+ "rows": [
+  {
+   "formation": "group22",
+   "seed": 1001,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 42.56666666666553,
+   "safe": true,
+   "blueHp": 213.26046891324222,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 99,
+   "shotsRed": 78,
+   "defenseBlue": {
+    "coverMoves": 113,
+    "jinks": 2343,
+    "bridgeSteps": 351,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 84,
+    "jinks": 1625,
+    "bridgeSteps": 459,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1002,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 54.69999999999818,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 26.465271290391684,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 112,
+   "shotsRed": 107,
+   "defenseBlue": {
+    "coverMoves": 111,
+    "jinks": 1884,
+    "bridgeSteps": 403,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 107,
+    "jinks": 1993,
+    "bridgeSteps": 524,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1003,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 70.63333333333061,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 22.528562839142978,
+   "blueAlive": 0,
+   "redAlive": 1,
+   "shotsBlue": 122,
+   "shotsRed": 123,
+   "defenseBlue": {
+    "coverMoves": 131,
+    "jinks": 1896,
+    "bridgeSteps": 387,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 151,
+    "jinks": 2557,
+    "bridgeSteps": 590,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1004,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 52.53333333333163,
+   "safe": true,
+   "blueHp": 80.3592493319884,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 116,
+   "shotsRed": 99,
+   "defenseBlue": {
+    "coverMoves": 142,
+    "jinks": 2535,
+    "bridgeSteps": 600,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 110,
+    "jinks": 1782,
+    "bridgeSteps": 444,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1005,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 70.08333333333064,
+   "safe": true,
+   "blueHp": 22.748324387706816,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 110,
+   "shotsRed": 101,
+   "defenseBlue": {
+    "coverMoves": 125,
+    "jinks": 2053,
+    "bridgeSteps": 368,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 122,
+    "jinks": 1864,
+    "bridgeSteps": 599,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1006,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 70.96666666666393,
+   "safe": true,
+   "blueHp": 64.1849248195067,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 115,
+   "shotsRed": 118,
+   "defenseBlue": {
+    "coverMoves": 139,
+    "jinks": 2311,
+    "bridgeSteps": 637,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 123,
+    "jinks": 2420,
+    "bridgeSteps": 510,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1007,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 45.14999999999872,
+   "safe": true,
+   "blueHp": 121.82924343645573,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 126,
+   "shotsRed": 91,
+   "defenseBlue": {
+    "coverMoves": 116,
+    "jinks": 3334,
+    "bridgeSteps": 302,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 87,
+    "jinks": 1672,
+    "bridgeSteps": 250,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1008,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 53.033333333331605,
+   "safe": true,
+   "blueHp": 62.75337868742645,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 137,
+   "shotsRed": 100,
+   "defenseBlue": {
+    "coverMoves": 141,
+    "jinks": 3862,
+    "bridgeSteps": 537,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 99,
+    "jinks": 1576,
+    "bridgeSteps": 409,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1009,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 49.13333333333183,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 101.20679716486484,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 105,
+   "shotsRed": 109,
+   "defenseBlue": {
+    "coverMoves": 121,
+    "jinks": 2190,
+    "bridgeSteps": 303,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 127,
+    "jinks": 2625,
+    "bridgeSteps": 455,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1010,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 46.24999999999866,
+   "safe": true,
+   "blueHp": 114.5140423392877,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 100,
+   "shotsRed": 93,
+   "defenseBlue": {
+    "coverMoves": 102,
+    "jinks": 2243,
+    "bridgeSteps": 295,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 87,
+    "jinks": 1929,
+    "bridgeSteps": 439,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1011,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 40.68333333333231,
+   "safe": true,
+   "blueHp": 182.92625096160918,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 88,
+   "shotsRed": 76,
+   "defenseBlue": {
+    "coverMoves": 98,
+    "jinks": 1775,
+    "bridgeSteps": 394,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 73,
+    "jinks": 1822,
+    "bridgeSteps": 402,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1012,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 74.11666666666375,
+   "safe": true,
+   "blueHp": 4.881310222670436,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 115,
+   "shotsRed": 109,
+   "defenseBlue": {
+    "coverMoves": 119,
+    "jinks": 2330,
+    "bridgeSteps": 456,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 116,
+    "jinks": 2194,
+    "bridgeSteps": 618,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1013,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 44.16666666666544,
+   "safe": true,
+   "blueHp": 142.8686225907877,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 101,
+   "shotsRed": 77,
+   "defenseBlue": {
+    "coverMoves": 105,
+    "jinks": 2090,
+    "bridgeSteps": 380,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 84,
+    "jinks": 1705,
+    "bridgeSteps": 352,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1014,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 56.34999999999808,
+   "safe": true,
+   "blueHp": 101.82476329989731,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 119,
+   "shotsRed": 106,
+   "defenseBlue": {
+    "coverMoves": 135,
+    "jinks": 2252,
+    "bridgeSteps": 519,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 133,
+    "jinks": 2100,
+    "bridgeSteps": 608,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1015,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 68.06666666666409,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 30.663589246571064,
+   "blueAlive": 0,
+   "redAlive": 1,
+   "shotsBlue": 127,
+   "shotsRed": 116,
+   "defenseBlue": {
+    "coverMoves": 157,
+    "jinks": 3268,
+    "bridgeSteps": 464,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 135,
+    "jinks": 2277,
+    "bridgeSteps": 672,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1016,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 46.916666666665286,
+   "safe": true,
+   "blueHp": 235.80004074703902,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 107,
+   "shotsRed": 71,
+   "defenseBlue": {
+    "coverMoves": 101,
+    "jinks": 2605,
+    "bridgeSteps": 382,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 74,
+    "jinks": 1234,
+    "bridgeSteps": 366,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1017,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 58.18333333333131,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 90.6803327491507,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 107,
+   "shotsRed": 114,
+   "defenseBlue": {
+    "coverMoves": 115,
+    "jinks": 2364,
+    "bridgeSteps": 421,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 101,
+    "jinks": 2128,
+    "bridgeSteps": 482,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1018,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 43.066666666665505,
+   "safe": true,
+   "blueHp": 190.61881878320128,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 100,
+   "shotsRed": 101,
+   "defenseBlue": {
+    "coverMoves": 110,
+    "jinks": 2067,
+    "bridgeSteps": 344,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 99,
+    "jinks": 2122,
+    "bridgeSteps": 348,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1019,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 60.899999999997824,
+   "safe": true,
+   "blueHp": 69.37884869519621,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 114,
+   "shotsRed": 101,
+   "defenseBlue": {
+    "coverMoves": 129,
+    "jinks": 2559,
+    "bridgeSteps": 430,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 115,
+    "jinks": 1933,
+    "bridgeSteps": 470,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1020,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 53.04999999999827,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 19.082512845285237,
+   "blueAlive": 0,
+   "redAlive": 1,
+   "shotsBlue": 87,
+   "shotsRed": 115,
+   "defenseBlue": {
+    "coverMoves": 89,
+    "jinks": 1913,
+    "bridgeSteps": 326,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 114,
+    "jinks": 2700,
+    "bridgeSteps": 536,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1021,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 72.88333333333048,
+   "safe": true,
+   "blueHp": 36.892657657153904,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 125,
+   "shotsRed": 100,
+   "defenseBlue": {
+    "coverMoves": 126,
+    "jinks": 2464,
+    "bridgeSteps": 482,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 112,
+    "jinks": 1734,
+    "bridgeSteps": 446,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1022,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 37.56666666666582,
+   "safe": true,
+   "blueHp": 201.70265390817076,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 106,
+   "shotsRed": 67,
+   "defenseBlue": {
+    "coverMoves": 86,
+    "jinks": 2302,
+    "bridgeSteps": 288,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 65,
+    "jinks": 1584,
+    "bridgeSteps": 304,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1023,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 51.199999999998376,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 5.859071336686611,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 94,
+   "shotsRed": 109,
+   "defenseBlue": {
+    "coverMoves": 103,
+    "jinks": 1812,
+    "bridgeSteps": 409,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 131,
+    "jinks": 2266,
+    "bridgeSteps": 490,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1024,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 51.516666666665024,
+   "safe": true,
+   "blueHp": 31.546281723305583,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 114,
+   "shotsRed": 114,
+   "defenseBlue": {
+    "coverMoves": 135,
+    "jinks": 1831,
+    "bridgeSteps": 418,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 124,
+    "jinks": 2044,
+    "bridgeSteps": 523,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1025,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 36.98333333333252,
+   "safe": true,
+   "blueHp": 232.48082907218486,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 86,
+   "shotsRed": 69,
+   "defenseBlue": {
+    "coverMoves": 108,
+    "jinks": 2254,
+    "bridgeSteps": 325,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 68,
+    "jinks": 1354,
+    "bridgeSteps": 220,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1026,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 47.966666666665226,
+   "safe": true,
+   "blueHp": 133.67849982250482,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 116,
+   "shotsRed": 92,
+   "defenseBlue": {
+    "coverMoves": 117,
+    "jinks": 2873,
+    "bridgeSteps": 470,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 115,
+    "jinks": 2042,
+    "bridgeSteps": 546,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1027,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 71.91666666666387,
+   "safe": true,
+   "blueHp": 21.948877047747374,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 141,
+   "shotsRed": 138,
+   "defenseBlue": {
+    "coverMoves": 167,
+    "jinks": 2661,
+    "bridgeSteps": 607,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 143,
+    "jinks": 2639,
+    "bridgeSteps": 623,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1028,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 55.566666666664794,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 115.80328929703683,
+   "blueAlive": 0,
+   "redAlive": 4,
+   "shotsBlue": 100,
+   "shotsRed": 120,
+   "defenseBlue": {
+    "coverMoves": 108,
+    "jinks": 1784,
+    "bridgeSteps": 324,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 135,
+    "jinks": 2440,
+    "bridgeSteps": 493,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1029,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 44.71666666666541,
+   "safe": true,
+   "blueHp": 82.55870163626969,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 121,
+   "shotsRed": 95,
+   "defenseBlue": {
+    "coverMoves": 106,
+    "jinks": 2387,
+    "bridgeSteps": 359,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 94,
+    "jinks": 1996,
+    "bridgeSteps": 420,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1030,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 49.066666666665164,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 88.09537438396364,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 83,
+   "shotsRed": 104,
+   "defenseBlue": {
+    "coverMoves": 101,
+    "jinks": 1700,
+    "bridgeSteps": 338,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 101,
+    "jinks": 2340,
+    "bridgeSteps": 560,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1031,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 52.099999999998325,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 164.4417984718457,
+   "blueAlive": 0,
+   "redAlive": 4,
+   "shotsBlue": 79,
+   "shotsRed": 113,
+   "defenseBlue": {
+    "coverMoves": 100,
+    "jinks": 1498,
+    "bridgeSteps": 286,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 118,
+    "jinks": 2995,
+    "bridgeSteps": 607,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1032,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 50.43333333333175,
+   "safe": true,
+   "blueHp": 122.32974409684539,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 113,
+   "shotsRed": 89,
+   "defenseBlue": {
+    "coverMoves": 115,
+    "jinks": 2009,
+    "bridgeSteps": 376,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 98,
+    "jinks": 1917,
+    "bridgeSteps": 362,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1033,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 52.69999999999829,
+   "safe": true,
+   "blueHp": 98.18568074330688,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 139,
+   "shotsRed": 107,
+   "defenseBlue": {
+    "coverMoves": 146,
+    "jinks": 2815,
+    "bridgeSteps": 431,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 120,
+    "jinks": 2310,
+    "bridgeSteps": 457,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1034,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 68.29999999999741,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 92.53319857735187,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 134,
+   "shotsRed": 135,
+   "defenseBlue": {
+    "coverMoves": 141,
+    "jinks": 2554,
+    "bridgeSteps": 558,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 126,
+    "jinks": 2571,
+    "bridgeSteps": 639,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1035,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 58.3833333333313,
+   "safe": true,
+   "blueHp": 4.275097672827542,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 124,
+   "shotsRed": 123,
+   "defenseBlue": {
+    "coverMoves": 114,
+    "jinks": 2727,
+    "bridgeSteps": 255,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 117,
+    "jinks": 2845,
+    "bridgeSteps": 392,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1036,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 56.69999999999806,
+   "safe": true,
+   "blueHp": 90.15598741080612,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 101,
+   "shotsRed": 102,
+   "defenseBlue": {
+    "coverMoves": 127,
+    "jinks": 1566,
+    "bridgeSteps": 625,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 120,
+    "jinks": 1800,
+    "bridgeSteps": 561,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1037,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 53.033333333331605,
+   "safe": true,
+   "blueHp": 152.2885267008096,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 118,
+   "shotsRed": 98,
+   "defenseBlue": {
+    "coverMoves": 129,
+    "jinks": 2375,
+    "bridgeSteps": 464,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 113,
+    "jinks": 2190,
+    "bridgeSteps": 453,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1038,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 43.449999999998816,
+   "safe": true,
+   "blueHp": 203.97694951854646,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 96,
+   "shotsRed": 88,
+   "defenseBlue": {
+    "coverMoves": 99,
+    "jinks": 1713,
+    "bridgeSteps": 398,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 82,
+    "jinks": 1576,
+    "bridgeSteps": 361,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1039,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 61.31666666666447,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 53.19376291241497,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 120,
+   "shotsRed": 122,
+   "defenseBlue": {
+    "coverMoves": 125,
+    "jinks": 2706,
+    "bridgeSteps": 373,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 118,
+    "jinks": 2260,
+    "bridgeSteps": 564,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1040,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 50.99999999999839,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 87.60026779770851,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 90,
+   "shotsRed": 107,
+   "defenseBlue": {
+    "coverMoves": 96,
+    "jinks": 1835,
+    "bridgeSteps": 329,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 113,
+    "jinks": 2079,
+    "bridgeSteps": 669,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1041,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 46.04999999999867,
+   "safe": true,
+   "blueHp": 66.91320651210845,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 118,
+   "shotsRed": 109,
+   "defenseBlue": {
+    "coverMoves": 118,
+    "jinks": 2114,
+    "bridgeSteps": 382,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 112,
+    "jinks": 2477,
+    "bridgeSteps": 503,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1042,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 41.33333333333227,
+   "safe": true,
+   "blueHp": 128.18939477019012,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 113,
+   "shotsRed": 78,
+   "defenseBlue": {
+    "coverMoves": 107,
+    "jinks": 2314,
+    "bridgeSteps": 382,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 86,
+    "jinks": 1175,
+    "bridgeSteps": 400,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1043,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 55.366666666664806,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 51.89454891066998,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 110,
+   "shotsRed": 117,
+   "defenseBlue": {
+    "coverMoves": 121,
+    "jinks": 2284,
+    "bridgeSteps": 467,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 126,
+    "jinks": 2485,
+    "bridgeSteps": 569,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1044,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 50.01666666666511,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 78.9852530118078,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 111,
+   "shotsRed": 109,
+   "defenseBlue": {
+    "coverMoves": 104,
+    "jinks": 2553,
+    "bridgeSteps": 280,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 128,
+    "jinks": 2344,
+    "bridgeSteps": 555,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1045,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 59.999999999997875,
+   "safe": true,
+   "blueHp": 43.606278682127595,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 123,
+   "shotsRed": 106,
+   "defenseBlue": {
+    "coverMoves": 128,
+    "jinks": 1820,
+    "bridgeSteps": 452,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 107,
+    "jinks": 2143,
+    "bridgeSteps": 591,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1046,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 56.74999999999806,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 78.20543890073895,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 98,
+   "shotsRed": 113,
+   "defenseBlue": {
+    "coverMoves": 111,
+    "jinks": 1977,
+    "bridgeSteps": 338,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 100,
+    "jinks": 2362,
+    "bridgeSteps": 383,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1047,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 54.03333333333155,
+   "safe": true,
+   "blueHp": 58.04836776200682,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 113,
+   "shotsRed": 102,
+   "defenseBlue": {
+    "coverMoves": 131,
+    "jinks": 2182,
+    "bridgeSteps": 402,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 111,
+    "jinks": 1843,
+    "bridgeSteps": 505,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1048,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 32.199999999999456,
+   "safe": true,
+   "blueHp": 280.9107344606891,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 84,
+   "shotsRed": 56,
+   "defenseBlue": {
+    "coverMoves": 74,
+    "jinks": 1676,
+    "bridgeSteps": 286,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 58,
+    "jinks": 972,
+    "bridgeSteps": 200,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1049,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 45.91666666666534,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 115.3095439216122,
+   "blueAlive": 0,
+   "redAlive": 4,
+   "shotsBlue": 93,
+   "shotsRed": 104,
+   "defenseBlue": {
+    "coverMoves": 89,
+    "jinks": 1830,
+    "bridgeSteps": 310,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 111,
+    "jinks": 2049,
+    "bridgeSteps": 742,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "group22",
+   "seed": 1050,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 45.99999999999867,
+   "safe": true,
+   "blueHp": 96.24730153754354,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 100,
+   "shotsRed": 88,
+   "defenseBlue": {
+    "coverMoves": 94,
+    "jinks": 2216,
+    "bridgeSteps": 319,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 102,
+    "jinks": 1930,
+    "bridgeSteps": 375,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1001,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 99.43333333332897,
+   "safe": true,
+   "blueHp": 61.11147406697273,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 264,
+   "shotsRed": 272,
+   "defenseBlue": {
+    "coverMoves": 339,
+    "jinks": 4780,
+    "bridgeSteps": 1533,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 383,
+    "jinks": 7372,
+    "bridgeSteps": 1862,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1002,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 116.94999999999465,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 20.499208251014352,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 354,
+   "shotsRed": 306,
+   "defenseBlue": {
+    "coverMoves": 475,
+    "jinks": 9192,
+    "bridgeSteps": 2152,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 413,
+    "jinks": 7304,
+    "bridgeSteps": 2032,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1003,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 93.48333333332931,
+   "safe": true,
+   "blueHp": 28.947690880857408,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 288,
+   "shotsRed": 289,
+   "defenseBlue": {
+    "coverMoves": 384,
+    "jinks": 7382,
+    "bridgeSteps": 1610,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 372,
+    "jinks": 7604,
+    "bridgeSteps": 1668,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1004,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 81.44999999999666,
+   "safe": true,
+   "blueHp": 65.710718001239,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 276,
+   "shotsRed": 264,
+   "defenseBlue": {
+    "coverMoves": 338,
+    "jinks": 6019,
+    "bridgeSteps": 1395,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 354,
+    "jinks": 6725,
+    "bridgeSteps": 1867,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1005,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 64.59999999999762,
+   "safe": true,
+   "blueHp": 221.6104853078723,
+   "redHp": 0,
+   "blueAlive": 6,
+   "redAlive": 0,
+   "shotsBlue": 254,
+   "shotsRed": 277,
+   "defenseBlue": {
+    "coverMoves": 302,
+    "jinks": 4997,
+    "bridgeSteps": 1243,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 351,
+    "jinks": 8177,
+    "bridgeSteps": 1972,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1006,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 79.0999999999968,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 117.16555564105511,
+   "blueAlive": 0,
+   "redAlive": 5,
+   "shotsBlue": 275,
+   "shotsRed": 285,
+   "defenseBlue": {
+    "coverMoves": 338,
+    "jinks": 5819,
+    "bridgeSteps": 1451,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 391,
+    "jinks": 7610,
+    "bridgeSteps": 1973,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1007,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 80.18333333333007,
+   "safe": true,
+   "blueHp": 151.8636170020327,
+   "redHp": 0,
+   "blueAlive": 7,
+   "redAlive": 0,
+   "shotsBlue": 320,
+   "shotsRed": 283,
+   "defenseBlue": {
+    "coverMoves": 386,
+    "jinks": 6898,
+    "bridgeSteps": 1518,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 353,
+    "jinks": 6539,
+    "bridgeSteps": 2077,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1008,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 73.2666666666638,
+   "safe": true,
+   "blueHp": 242.43620045110583,
+   "redHp": 0,
+   "blueAlive": 7,
+   "redAlive": 0,
+   "shotsBlue": 290,
+   "shotsRed": 241,
+   "defenseBlue": {
+    "coverMoves": 395,
+    "jinks": 7630,
+    "bridgeSteps": 1604,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 295,
+    "jinks": 6016,
+    "bridgeSteps": 1526,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1009,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 77.2499999999969,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 110.53286839835346,
+   "blueAlive": 0,
+   "redAlive": 5,
+   "shotsBlue": 251,
+   "shotsRed": 255,
+   "defenseBlue": {
+    "coverMoves": 321,
+    "jinks": 4897,
+    "bridgeSteps": 1405,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 347,
+    "jinks": 5733,
+    "bridgeSteps": 1848,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1010,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 82.74999999999659,
+   "safe": true,
+   "blueHp": 149.34921419341117,
+   "redHp": 0,
+   "blueAlive": 5,
+   "redAlive": 0,
+   "shotsBlue": 261,
+   "shotsRed": 287,
+   "defenseBlue": {
+    "coverMoves": 339,
+    "jinks": 6244,
+    "bridgeSteps": 1626,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 393,
+    "jinks": 8717,
+    "bridgeSteps": 2068,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1011,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 81.93333333332997,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 103.95666438899934,
+   "blueAlive": 0,
+   "redAlive": 5,
+   "shotsBlue": 282,
+   "shotsRed": 280,
+   "defenseBlue": {
+    "coverMoves": 365,
+    "jinks": 8315,
+    "bridgeSteps": 1219,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 366,
+    "jinks": 6842,
+    "bridgeSteps": 2093,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1012,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 104.16666666666204,
+   "safe": true,
+   "blueHp": 15.400817540474236,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 264,
+   "shotsRed": 320,
+   "defenseBlue": {
+    "coverMoves": 339,
+    "jinks": 4910,
+    "bridgeSteps": 1495,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 468,
+    "jinks": 9427,
+    "bridgeSteps": 2133,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1013,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 52.93333333333161,
+   "safe": true,
+   "blueHp": 389.9804561426863,
+   "redHp": 0,
+   "blueAlive": 8,
+   "redAlive": 0,
+   "shotsBlue": 250,
+   "shotsRed": 252,
+   "defenseBlue": {
+    "coverMoves": 323,
+    "jinks": 6355,
+    "bridgeSteps": 1491,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 292,
+    "jinks": 7144,
+    "bridgeSteps": 1572,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1014,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 91.73333333332941,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 94.05774853844196,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 331,
+   "shotsRed": 266,
+   "defenseBlue": {
+    "coverMoves": 417,
+    "jinks": 8765,
+    "bridgeSteps": 1400,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 343,
+    "jinks": 6079,
+    "bridgeSteps": 1990,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1015,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 88.61666666666292,
+   "safe": true,
+   "blueHp": 108.36167916841805,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 294,
+   "shotsRed": 295,
+   "defenseBlue": {
+    "coverMoves": 387,
+    "jinks": 6558,
+    "bridgeSteps": 1518,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 390,
+    "jinks": 7550,
+    "bridgeSteps": 2148,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1016,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 72.83333333333049,
+   "safe": true,
+   "blueHp": 228.7984947245568,
+   "redHp": 0,
+   "blueAlive": 5,
+   "redAlive": 0,
+   "shotsBlue": 286,
+   "shotsRed": 272,
+   "defenseBlue": {
+    "coverMoves": 386,
+    "jinks": 8211,
+    "bridgeSteps": 1512,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 339,
+    "jinks": 6681,
+    "bridgeSteps": 1549,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1017,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 72.29999999999718,
+   "safe": true,
+   "blueHp": 14.765321884304285,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 266,
+   "shotsRed": 288,
+   "defenseBlue": {
+    "coverMoves": 328,
+    "jinks": 6692,
+    "bridgeSteps": 1442,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 354,
+    "jinks": 8119,
+    "bridgeSteps": 1710,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1018,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 105.9833333333286,
+   "safe": true,
+   "blueHp": 277.57508009299636,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 319,
+   "shotsRed": 271,
+   "defenseBlue": {
+    "coverMoves": 449,
+    "jinks": 7914,
+    "bridgeSteps": 1877,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 349,
+    "jinks": 6859,
+    "bridgeSteps": 1562,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1019,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 74.8666666666637,
+   "safe": true,
+   "blueHp": 156.46579072903842,
+   "redHp": 0,
+   "blueAlive": 6,
+   "redAlive": 0,
+   "shotsBlue": 286,
+   "shotsRed": 254,
+   "defenseBlue": {
+    "coverMoves": 382,
+    "jinks": 6878,
+    "bridgeSteps": 1730,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 321,
+    "jinks": 6382,
+    "bridgeSteps": 1618,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1020,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 66.8499999999975,
+   "safe": true,
+   "blueHp": 282.5516033805907,
+   "redHp": 0,
+   "blueAlive": 6,
+   "redAlive": 0,
+   "shotsBlue": 248,
+   "shotsRed": 291,
+   "defenseBlue": {
+    "coverMoves": 304,
+    "jinks": 4929,
+    "bridgeSteps": 1389,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 392,
+    "jinks": 9668,
+    "bridgeSteps": 1822,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1021,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 72.96666666666381,
+   "safe": true,
+   "blueHp": 270.61723121255636,
+   "redHp": 0,
+   "blueAlive": 8,
+   "redAlive": 0,
+   "shotsBlue": 264,
+   "shotsRed": 275,
+   "defenseBlue": {
+    "coverMoves": 333,
+    "jinks": 6210,
+    "bridgeSteps": 1548,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 354,
+    "jinks": 7518,
+    "bridgeSteps": 1825,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1022,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 66.43333333333085,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 344.8413920206949,
+   "blueAlive": 0,
+   "redAlive": 7,
+   "shotsBlue": 254,
+   "shotsRed": 305,
+   "defenseBlue": {
+    "coverMoves": 345,
+    "jinks": 7063,
+    "bridgeSteps": 1085,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 414,
+    "jinks": 9264,
+    "bridgeSteps": 1957,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1023,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 85.49999999999643,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 99.65265217516571,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 281,
+   "shotsRed": 318,
+   "defenseBlue": {
+    "coverMoves": 326,
+    "jinks": 6584,
+    "bridgeSteps": 1188,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 445,
+    "jinks": 9459,
+    "bridgeSteps": 2266,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1024,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 58.86666666666461,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 267.13912467006594,
+   "blueAlive": 0,
+   "redAlive": 9,
+   "shotsBlue": 259,
+   "shotsRed": 262,
+   "defenseBlue": {
+    "coverMoves": 345,
+    "jinks": 6892,
+    "bridgeSteps": 1279,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 355,
+    "jinks": 6192,
+    "bridgeSteps": 1890,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1025,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 92.6166666666627,
+   "safe": true,
+   "blueHp": 61.51395086478442,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 331,
+   "shotsRed": 288,
+   "defenseBlue": {
+    "coverMoves": 389,
+    "jinks": 7188,
+    "bridgeSteps": 1743,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 356,
+    "jinks": 6139,
+    "bridgeSteps": 2069,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1026,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 95.68333333332919,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 85.90440616663545,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 304,
+   "shotsRed": 283,
+   "defenseBlue": {
+    "coverMoves": 419,
+    "jinks": 9236,
+    "bridgeSteps": 1384,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 355,
+    "jinks": 7668,
+    "bridgeSteps": 1574,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1027,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 59.999999999997875,
+   "safe": true,
+   "blueHp": 439.28730168845505,
+   "redHp": 0,
+   "blueAlive": 6,
+   "redAlive": 0,
+   "shotsBlue": 255,
+   "shotsRed": 250,
+   "defenseBlue": {
+    "coverMoves": 321,
+    "jinks": 6831,
+    "bridgeSteps": 1357,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 329,
+    "jinks": 7503,
+    "bridgeSteps": 1509,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1028,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 109.83333333332838,
+   "safe": true,
+   "blueHp": 24.381091442890465,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 315,
+   "shotsRed": 315,
+   "defenseBlue": {
+    "coverMoves": 416,
+    "jinks": 7624,
+    "bridgeSteps": 1418,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 431,
+    "jinks": 6780,
+    "bridgeSteps": 2353,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1029,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 53.91666666666489,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 568.5320816077292,
+   "blueAlive": 0,
+   "redAlive": 9,
+   "shotsBlue": 200,
+   "shotsRed": 287,
+   "defenseBlue": {
+    "coverMoves": 228,
+    "jinks": 4086,
+    "bridgeSteps": 876,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 385,
+    "jinks": 8134,
+    "bridgeSteps": 1860,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1030,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 81.78333333332998,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 124.87769977375865,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 255,
+   "shotsRed": 286,
+   "defenseBlue": {
+    "coverMoves": 300,
+    "jinks": 4863,
+    "bridgeSteps": 1108,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 396,
+    "jinks": 8377,
+    "bridgeSteps": 1678,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1031,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 68.69999999999739,
+   "safe": true,
+   "blueHp": 178.92357305064797,
+   "redHp": 0,
+   "blueAlive": 7,
+   "redAlive": 0,
+   "shotsBlue": 273,
+   "shotsRed": 241,
+   "defenseBlue": {
+    "coverMoves": 397,
+    "jinks": 7752,
+    "bridgeSteps": 1600,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 304,
+    "jinks": 5573,
+    "bridgeSteps": 1660,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1032,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 58.81666666666461,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 389.9477916676551,
+   "blueAlive": 0,
+   "redAlive": 11,
+   "shotsBlue": 229,
+   "shotsRed": 256,
+   "defenseBlue": {
+    "coverMoves": 261,
+    "jinks": 5016,
+    "bridgeSteps": 1146,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 384,
+    "jinks": 7283,
+    "bridgeSteps": 2302,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1033,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 97.98333333332906,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 13.326485092751682,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 304,
+   "shotsRed": 347,
+   "defenseBlue": {
+    "coverMoves": 386,
+    "jinks": 7564,
+    "bridgeSteps": 1543,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 446,
+    "jinks": 9619,
+    "bridgeSteps": 2561,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1034,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 88.98333333332957,
+   "safe": true,
+   "blueHp": 54.96849078126252,
+   "redHp": 0,
+   "blueAlive": 5,
+   "redAlive": 0,
+   "shotsBlue": 254,
+   "shotsRed": 253,
+   "defenseBlue": {
+    "coverMoves": 379,
+    "jinks": 5532,
+    "bridgeSteps": 1522,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 325,
+    "jinks": 6196,
+    "bridgeSteps": 1671,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1035,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 100.13333333332893,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 27.404296347871423,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 294,
+   "shotsRed": 299,
+   "defenseBlue": {
+    "coverMoves": 396,
+    "jinks": 8129,
+    "bridgeSteps": 1890,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 483,
+    "jinks": 8769,
+    "bridgeSteps": 2678,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1036,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 82.99999999999658,
+   "safe": true,
+   "blueHp": 74.05650180950761,
+   "redHp": 0,
+   "blueAlive": 4,
+   "redAlive": 0,
+   "shotsBlue": 252,
+   "shotsRed": 279,
+   "defenseBlue": {
+    "coverMoves": 331,
+    "jinks": 5153,
+    "bridgeSteps": 1595,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 352,
+    "jinks": 7397,
+    "bridgeSteps": 1897,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1037,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 78.89999999999681,
+   "safe": true,
+   "blueHp": 235.3745918814093,
+   "redHp": 0,
+   "blueAlive": 7,
+   "redAlive": 0,
+   "shotsBlue": 323,
+   "shotsRed": 248,
+   "defenseBlue": {
+    "coverMoves": 435,
+    "jinks": 9401,
+    "bridgeSteps": 1498,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 320,
+    "jinks": 5697,
+    "bridgeSteps": 1608,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1038,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 56.24999999999809,
+   "safe": true,
+   "blueHp": 218.68617408536375,
+   "redHp": 0,
+   "blueAlive": 8,
+   "redAlive": 0,
+   "shotsBlue": 251,
+   "shotsRed": 249,
+   "defenseBlue": {
+    "coverMoves": 305,
+    "jinks": 6067,
+    "bridgeSteps": 1163,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 318,
+    "jinks": 7118,
+    "bridgeSteps": 1643,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1039,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 116.19999999999469,
+   "safe": true,
+   "blueHp": 0.3536115661263466,
+   "redHp": 0,
+   "blueAlive": 1,
+   "redAlive": 0,
+   "shotsBlue": 302,
+   "shotsRed": 289,
+   "defenseBlue": {
+    "coverMoves": 430,
+    "jinks": 8145,
+    "bridgeSteps": 2037,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 433,
+    "jinks": 10012,
+    "bridgeSteps": 1980,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1040,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 112.58333333332823,
+   "safe": true,
+   "blueHp": 100.24852991010994,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 289,
+   "shotsRed": 326,
+   "defenseBlue": {
+    "coverMoves": 343,
+    "jinks": 6153,
+    "bridgeSteps": 1428,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 398,
+    "jinks": 8793,
+    "bridgeSteps": 1982,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1041,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 95.78333333332918,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 71.38885042443871,
+   "blueAlive": 0,
+   "redAlive": 2,
+   "shotsBlue": 309,
+   "shotsRed": 301,
+   "defenseBlue": {
+    "coverMoves": 378,
+    "jinks": 6991,
+    "bridgeSteps": 1297,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 371,
+    "jinks": 7094,
+    "bridgeSteps": 2006,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1042,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 75.649999999997,
+   "safe": true,
+   "blueHp": 70.35171385202557,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 287,
+   "shotsRed": 280,
+   "defenseBlue": {
+    "coverMoves": 368,
+    "jinks": 6100,
+    "bridgeSteps": 1406,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 365,
+    "jinks": 6903,
+    "bridgeSteps": 1916,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1043,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 78.71666666666349,
+   "safe": true,
+   "blueHp": 79.62023841775954,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 311,
+   "shotsRed": 267,
+   "defenseBlue": {
+    "coverMoves": 376,
+    "jinks": 6201,
+    "bridgeSteps": 1444,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 339,
+    "jinks": 6822,
+    "bridgeSteps": 1930,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1044,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 63.64999999999767,
+   "safe": true,
+   "blueHp": 441.1818395052105,
+   "redHp": 0,
+   "blueAlive": 9,
+   "redAlive": 0,
+   "shotsBlue": 256,
+   "shotsRed": 200,
+   "defenseBlue": {
+    "coverMoves": 329,
+    "jinks": 7210,
+    "bridgeSteps": 1333,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 266,
+    "jinks": 5881,
+    "bridgeSteps": 1426,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1045,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 73.81666666666376,
+   "safe": true,
+   "blueHp": 210.19527402613312,
+   "redHp": 0,
+   "blueAlive": 6,
+   "redAlive": 0,
+   "shotsBlue": 314,
+   "shotsRed": 249,
+   "defenseBlue": {
+    "coverMoves": 423,
+    "jinks": 8491,
+    "bridgeSteps": 1820,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 333,
+    "jinks": 6752,
+    "bridgeSteps": 1626,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1046,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 80.14999999999674,
+   "safe": true,
+   "blueHp": 51.09980432968587,
+   "redHp": 0,
+   "blueAlive": 2,
+   "redAlive": 0,
+   "shotsBlue": 250,
+   "shotsRed": 288,
+   "defenseBlue": {
+    "coverMoves": 312,
+    "jinks": 4385,
+    "bridgeSteps": 1615,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 401,
+    "jinks": 7805,
+    "bridgeSteps": 2175,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1047,
+   "armName": "bothOn",
+   "winner": "red",
+   "ended": true,
+   "time": 92.84999999999602,
+   "safe": true,
+   "blueHp": 0,
+   "redHp": 52.51773705147207,
+   "blueAlive": 0,
+   "redAlive": 3,
+   "shotsBlue": 303,
+   "shotsRed": 287,
+   "defenseBlue": {
+    "coverMoves": 381,
+    "jinks": 6445,
+    "bridgeSteps": 1746,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 402,
+    "jinks": 6889,
+    "bridgeSteps": 2230,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1048,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 106.0833333333286,
+   "safe": true,
+   "blueHp": 191.04418672528118,
+   "redHp": 0,
+   "blueAlive": 3,
+   "redAlive": 0,
+   "shotsBlue": 298,
+   "shotsRed": 303,
+   "defenseBlue": {
+    "coverMoves": 379,
+    "jinks": 6461,
+    "bridgeSteps": 1439,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 375,
+    "jinks": 7613,
+    "bridgeSteps": 1742,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1049,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 68.79999999999738,
+   "safe": true,
+   "blueHp": 286.0991749530658,
+   "redHp": 0,
+   "blueAlive": 6,
+   "redAlive": 0,
+   "shotsBlue": 321,
+   "shotsRed": 230,
+   "defenseBlue": {
+    "coverMoves": 411,
+    "jinks": 9486,
+    "bridgeSteps": 1924,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 277,
+    "jinks": 6038,
+    "bridgeSteps": 1410,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  },
+  {
+   "formation": "squad3333",
+   "seed": 1050,
+   "armName": "bothOn",
+   "winner": "blue",
+   "ended": true,
+   "time": 71.56666666666389,
+   "safe": true,
+   "blueHp": 116.0779987918213,
+   "redHp": 0,
+   "blueAlive": 5,
+   "redAlive": 0,
+   "shotsBlue": 314,
+   "shotsRed": 255,
+   "defenseBlue": {
+    "coverMoves": 400,
+    "jinks": 7851,
+    "bridgeSteps": 1825,
+    "standoffs": 0
+   },
+   "defenseRed": {
+    "coverMoves": 287,
+    "jinks": 5380,
+    "bridgeSteps": 1437,
+    "standoffs": 0
+   },
+   "override": {
+    "blue": {
+     "rangedDefense": true,
+     "mobile": true
+    },
+    "red": {
+     "rangedDefense": true,
+     "mobile": true
+    }
+   },
+   "featuredTeam": null,
+   "featuredWon": null,
+   "featuredHp": null,
+   "otherHp": null,
+   "errors": []
+  }
+ ]
+}
