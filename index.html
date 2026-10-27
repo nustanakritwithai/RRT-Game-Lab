@@ -2233,22 +2233,25 @@ function withRngStream(name,fn){
 }
 // Transport operates on outgoing packets only; never makes a tactical decision.
 function sendRadioPacket(build){
- const before=team.radio,attempted=build(before);
+ const before=team.radio,adaptive=duel2Active()&&team.mode==='adaptive';
+ // Adaptive PeerMesh needs only the rate-limit book: candidate packets go
+ // into private outboxes, never into the physical radio queue until flush.
+ const packetSource=adaptive?{queue:[],lastSent:before.lastSent}:before;
+ const attempted=build(packetSource);
  // Existing observation-change rate limits are preserved for all modes.
  if(duel2Active()&&Number.isFinite(attempted?.suppressed))
   team.suppressedSightings=(team.suppressedSightings||0)+attempted.suppressed;
- if(duel2Active()&&team.mode==='adaptive'){
-  // Only new packets enter the SENDER's private PeerMesh outbox.
-  // Shared radio queue remains physical transport, never shared decisions.
-  const existingPackets=new Set(before.queue||[]);
-  const newPackets=(attempted.queue||[]).filter(p=>!existingPackets.has(p));
+ if(adaptive){
+  // Outgoing-only candidate avoids copying/scanning the full physical queue
+  // once for each sender/peer/target while preserving first-hand provenance.
+  const newPackets=attempted.queue||[];
   for(const packet of newPackets){
    const sender=bots.find(b=>b.id===packet.sender&&b.hp>0);
    if(!sender||!sender.peerMesh)continue;
    const result=meshCore.offer(sender.peerMesh,packet,elapsed);
    if(!result.accepted)team.peerMeshSuppressed++;
   }
-  team.radio={queue:before.queue.slice(),lastSent:{...(attempted.lastSent||before.lastSent)}};
+  team.radio={queue:before.queue,lastSent:{...(attempted.lastSent||before.lastSent)}};
   return {sent:0,dropped:0,queued:newPackets.length};
  }
  const net=leaderless.applyNetwork(before,attempted,{

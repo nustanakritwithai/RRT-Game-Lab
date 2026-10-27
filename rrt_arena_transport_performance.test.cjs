@@ -38,9 +38,28 @@ test('batched P2P transport equals sequential delivery/loss/ordering for fixed R
  assert.ok(batch.dropped>0);
  assert.equal(batch.radio.queue.length,Math.min(300,batch.sent-batch.dropped));
 });
-test('adaptive sender uses linear identity membership, not repeated full queue scans',()=>{
- assert.match(html,/const existingPackets=new Set\(before\.queue\|\|\[\]\)/);
- assert.doesNotMatch(html,/newPackets=\(attempted\.queue\|\|\[\]\)\.filter\(p=>!\(before\.queue/);
+test('adaptive sender emits only new P2P packets using the shared rate-limit book',()=>{
+ assert.match(html,/const packetSource=adaptive\?\{queue:\[\],lastSent:before\.lastSent\}:before/);
+ assert.match(html,/const newPackets=attempted\.queue\|\|\[\]/);
+ assert.match(html,/team\.radio=\{queue:before\.queue,lastSent:/);
+ assert.doesNotMatch(html,/newPackets=\(attempted\.queue\|\|\[\]\)\.filter/);
+});
+test('outgoing-only packet builders preserve payloads and rate-limit history',()=>{
+ const duel=require('./rrt_arena_duel_v0615.js');
+ const prev={queue:[{type:'SIGHTING',sender:'B1',receiver:'B2',old:true}],
+  lastSent:{'BID:B1>B2':{at:0,targetId:'R1',quality:.31}}};
+ const from={id:'B1',team:'blue',hp:120,maxHp:120,ammo:6,maxAmmo:6,x:0,y:0};
+ const to={id:'B2',team:'blue',hp:120,x:10,y:0};
+ const tracks={R1:{id:'R1',x:120,y:40,status:'visible',confidence:1,lastSeen:1}};
+ const fullSight=duel.sendSightings(prev,from,to,tracks,1,{range:50});
+ const onlySight=duel.sendSightings({queue:[],lastSent:prev.lastSent},from,to,tracks,1,{range:50});
+ assert.deepEqual(fullSight.queue.filter(x=>!x.old),onlySight.queue);
+ assert.deepEqual(fullSight.lastSent,onlySight.lastSent);
+ const visible={R1:{id:'R1',x:120,y:40,status:'visible'}};
+ const fullBid=leaderless.sendBid(prev,from,to,visible,'R1',1,{range:50});
+ const onlyBid=leaderless.sendBid({queue:[],lastSent:prev.lastSent},from,to,visible,'R1',1,{range:50});
+ assert.deepEqual(fullBid.queue.filter(x=>!x.old),onlyBid.queue);
+ assert.deepEqual(fullBid.lastSent,onlyBid.lastSent);
 });
 test('adaptive transport must apply packet loss once per communication tick',()=>{
  assert.ok(flush.startsWith('function flushDuel2PeerMesh(){'));
