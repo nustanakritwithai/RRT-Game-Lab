@@ -1,0 +1,37 @@
+name: Large Formation Performance Diagnostics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/diagnose_formation_performance.cjs'
+      - '.github/workflows/formation-performance.yml'
+      - 'index.html'
+      - 'rrt_arena_peermesh_v07.js'
+      - 'rrt_arena_formation_v0618.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check profiler source syntax
+        run: node --check tools/diagnose_formation_performance.cjs
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Profile 6v6 8v8 12v12 independent versus adaptive
+        run: node tools/diagnose_formation_performance.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formation-cpu-render-profile
+          path: benchmarks/formation-performance-v080.json
+          if-no-files-found: warn
+          retention-days: 14
