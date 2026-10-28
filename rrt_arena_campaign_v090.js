@@ -152,6 +152,12 @@
    while(count>0&&u.agents.length){hurt.push(u.agents.pop());count--;}}
   return hurt;
  }
+ function removeAgents(s,unitIds,ids){
+  const hurt=[];
+  for(const uid of unitIds){const u=s.units.find(x=>x.id===uid);if(!u)continue;
+   for(const id of ids)if(u.agents.includes(id)){u.agents=u.agents.filter(a=>a!==id);hurt.push(id);}}
+  return hurt;
+ }
  function retreatTarget(s,f,from,origin){
   if(origin&&origin!==from){const o=sectorOf(s,origin);if(!s.units.some(u=>u.sector===origin&&u.faction!==f)&&(o.owner===f||o.owner===null))return origin;}
   const hq=s.sectors.find(x=>x.hq===f)?.id;
@@ -161,7 +167,15 @@
  }
 
  /** One WEGO turn. resolver(spec) -> {winner:'attacker'|'defender'|'draw',casualties:{attacker,defender}} */
+ /** Resolve one WEGO turn with a synchronous battle resolver (coarse model by default). */
  function resolveTurn(input,orders={},resolver=coarseBattle){
+  const steps=resolveTurnSteps(input,orders);let step=steps.next();
+  while(!step.done)step=steps.next(resolver(step.value));
+  return step.value;
+ }
+ /** The same turn as a generator: it yields each battle spec in order and waits for its result, so a battle can
+   * be fought in the real engine (asynchronously) before the turn continues. Specs are copies; results are checked. */
+ function* resolveTurnSteps(input,orders={}){
   const s=clone(input);const events=[],battles=[];
   if(s.winner)return {state:s,events,battles};
   const accepted={player:[],enemy:[]};
@@ -193,7 +207,7 @@
   for(const [key,ids] of edgeGroups){
    const side=f=>[...ids].map(id=>s.units.find(u=>u.id===id)).filter(u=>u.faction===f);
    const spec=battleSpec(s,'meeting',key,'open',0,side('player'),side('enemy'));
-   const result=runBattle(s,spec,resolver,events,battles);
+   const result=yield* runBattle(s,spec,events,battles);
    for(const id of ids)bounced.add(id);
    void result;
   }
@@ -211,7 +225,7 @@
     const total=f=>here(f).reduce((n,u)=>n+u.agents.length,0),before={[attF]:total(attF),[defF]:total(defF)};
     const spec=battleSpec(s,kind,sec.id,sec.terrain,sec.owner===defF?sec.fort:0,here(attF),here(defF));spec.round=round;
     if(round)spec.seed=hash32(spec.seed,round);
-    result=runBattle(s,spec,resolver,events,battles);
+    result=yield* runBattle(s,spec,events,battles);
     const lf=result.winner==='attacker'?defF:attF,loserFought=spec[result.winner==='attacker'?'defender':'attacker'].size;
     // Continue only while the beaten side still has fresh reserves that did not fight this round.
     if(result.winner==='draw'||++round>=RULES.battleRounds||total(lf)<2||before[lf]<=loserFought)break;
@@ -269,14 +283,20 @@
   const att=side(attUnits,attUnits[0]?.faction||'player'),def=side(defUnits,defUnits[0]?.faction||'enemy');
   return {kind,sector,terrain,fort,attacker:att,defender:def,seed:hash32(s.seed,s.turn,sector,kind)};
  }
- function runBattle(s,spec,resolver,events,battles){
+ function* runBattle(s,spec,events,battles){
   if(!spec.attacker.size||!spec.defender.size){const r={winner:spec.attacker.size?'attacker':'defender',casualties:{attacker:0,defender:0}};battles.push({...spec,result:r});return r;}
-  const r=resolver(spec);
-  const att=Math.max(0,Math.min(spec.attacker.size,r.casualties?.attacker|0)),def=Math.max(0,Math.min(spec.defender.size,r.casualties?.defender|0));
-  injure(s,removeCasualties(s,spec.attacker.units,att),RULES.injuryTurns);
-  injure(s,removeCasualties(s,spec.defender.units,def),RULES.injuryTurns);
-  const result={winner:['attacker','defender','draw'].includes(r.winner)?r.winner:'draw',casualties:{attacker:att,defender:def}};
-  battles.push({...spec,result});events.push({type:'battle',kind:spec.kind,sector:spec.sector,winner:result.winner});
+  const r=(yield clone(spec))||{};
+  // A resolver may name exactly who fell (real battles); otherwise casualties are a count taken from the fighters.
+  const fallen=side=>{const d=r.dead?.[side],fought=spec[side].agents;
+   return Array.isArray(d)&&d.length<=fought.length&&new Set(d).size===d.length&&d.every(id=>fought.includes(id))?d.slice():null;};
+  const named={attacker:fallen('attacker'),defender:fallen('defender')};
+  const count=side=>named[side]?named[side].length:Math.max(0,Math.min(spec[side].size,r.casualties?.[side]|0));
+  const att=count('attacker'),def=count('defender');
+  injure(s,named.attacker?removeAgents(s,spec.attacker.units,named.attacker):removeCasualties(s,spec.attacker.units,att),RULES.injuryTurns);
+  injure(s,named.defender?removeAgents(s,spec.defender.units,named.defender):removeCasualties(s,spec.defender.units,def),RULES.injuryTurns);
+  const result={winner:['attacker','defender','draw'].includes(r.winner)?r.winner:'draw',casualties:{attacker:att,defender:def},
+   ...(r.source?{source:String(r.source)}:{})};
+  battles.push({...spec,result});events.push({type:'battle',kind:spec.kind,sector:spec.sector,winner:result.winner,...(result.source?{source:result.source}:{})});
   return result;
  }
  function retreatUnits(s,units,f,from,origin,events){
@@ -348,5 +368,5 @@
   return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loser}:{attacker:loser,defender:winnerCas},p};
  }
  return Object.freeze({RULES,TEMPLATES,PRESET_BY_SIZE,presetForSize,presetFloor,create,neighbors,connectedSectors,powered,radioLevel,radioSettings,
-  viewFor,validateOrder,validateOrders,resolveTurn,checkVictory,coarseBattle,COARSE});
+  viewFor,validateOrder,validateOrders,resolveTurn,resolveTurnSteps,checkVictory,coarseBattle,COARSE});
 });

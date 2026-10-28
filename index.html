@@ -167,7 +167,7 @@ aside{display:flex;flex-direction:column;gap:12px}.sidepad{padding:13px 15px 16p
 </div>
 <aside>
 <div class="panel"><div class="sidepad"><h2 class="cardTitle">⚙️ ตั้งค่ากลยุทธ์ + RRT <small>ปรับได้ระหว่างเล่น</small></h2>
-<label class="setlabel" for="mapSelect">รูปแบบสนาม</label><select id="mapSelect"><option value="ruins">🏛️ ซากเมือง · ทางอ้อมหลายทาง</option><option value="lanes">🧱 ถนนและแนวกำแพง</option><option value="open">🌿 ลานโล่ง · สู้กันไว</option></select>
+<label class="setlabel" for="mapSelect">รูปแบบสนาม</label><select id="mapSelect"><option value="ruins">🏛️ ซากเมือง · ทางอ้อมหลายทาง</option><option value="lanes">🧱 ถนนและแนวกำแพง</option><option value="open">🌿 ลานโล่ง · สู้กันไว</option><option value="ruinsFair">🏛️ ซากเมือง · สมมาตร (แผนที่ยุทธศาสตร์)</option><option value="lanesFair">🧱 ถนน · สมมาตร (แผนที่ยุทธศาสตร์)</option><option value="openFair">🌿 ลานโล่ง · สมมาตร (แผนที่ยุทธศาสตร์)</option></select>
 <div class="sliderLine"><label class="setlabel" for="bias">Goal Bias <b id="biasValue">15%</b></label><input id="bias" type="range" min="0" max="45" value="15" step="5"></div>
 <div class="sliderLine guideSlider"><label class="setlabel" for="focus">🧠 Memory-Guided RRT <b id="focusValue">85%</b></label><input id="focus" type="range" min="0" max="100" value="85" step="5" aria-describedby="focusHelp"><div class="subnote" id="focusHelp">0 = RRT สุ่มทั่วสนาม · 85 = เน้นตำแหน่งที่จำและแนวทางไปยังเป้าหมาย แต่ไม่ปิดการสำรวจทางอ้อม</div></div>
 <div class="sliderLine"><label class="setlabel" for="risk">หลีกเลี่ยงเส้นทางเสี่ยง <b id="riskValue">60%</b></label><input id="risk" type="range" min="0" max="100" value="60" step="10"><div class="subnote">0 = เน้นสั้นที่สุด · 100 = ยอมอ้อมเพื่อกำบัง</div></div>
@@ -2597,6 +2597,26 @@ duel2UI.teamMode.value=teamParams.get('dteam')==='adaptive'?'adaptive':
 duel2UI.radioLoss.value=['0','20','50','100'].includes(teamParams.get('loss'))?teamParams.get('loss'):'0';
 duel2UI.radioDelay.value=['0','0.3','0.6','1.2'].includes(teamParams.get('delay'))?teamParams.get('delay'):'0';
 duel2UI.defense.value=teamParams.get('defense')==='off'?'off':'on';
+// Strategic-map battles: optional map by URL, and radio quality per side (from towers / relays on the map).
+if(['ruins','lanes','open','ruinsFair','lanesFair','openFair'].includes(teamParams.get('map')))ui.map.value=teamParams.get('map');
+const duel2SideRadio=(()=>{const L=['0','20','50','100'],D=['0','0.3','0.6','1.2'];
+ if(!['bloss','bdelay','rloss','rdelay'].some(k=>teamParams.has(k)))return null;
+ const side=k=>({loss:L.includes(teamParams.get(k+'loss'))?Number(teamParams.get(k+'loss'))/100:0,
+  delay:D.includes(teamParams.get(k+'delay'))?Number(teamParams.get(k+'delay')):0});
+ return {blue:side('b'),red:side('r')};})();
+/** Per-side radio: one batched loss/delay pass per team, each with that team's settings (still once per tick). */
+function duel2SideNetwork(before,attempted,queueLimit){
+ const rand=()=>rngStreams.next('radio');
+ const old=new Set(before.queue),fresh=attempted.queue.filter(m=>!old.has(m));
+ const teamOf=m=>(bots.find(b=>b.id===(m.from??m.sender))?.team)||(String(m.from??m.sender??'').startsWith('R')?'red':'blue');
+ let radio=before,sent=0,dropped=0,queued=0;
+ for(const side of ['blue','red']){
+  const net=leaderless.applyNetwork(radio,{queue:radio.queue.concat(fresh.filter(m=>teamOf(m)===side)),lastSent:attempted.lastSent},
+   {...duel2SideRadio[side],rand,queueLimit});
+  radio=net.radio;sent+=net.sent;dropped+=net.dropped;queued+=net.queued;
+ }
+ return {radio,sent,dropped,queued};
+}
 let scenario=teamParams.get('mode')==='multi'?'multi':teamParams.get('mode')==='duel2'?'duel2':'duel';
 duel2UI.panel.hidden=scenario!=='duel2';
 let duel2SenseAt=-1,duel2FriendlyBlocks=0,mission=null;
@@ -2633,7 +2653,7 @@ function sendRadioPacket(build,sourceBot=null){
   team.radio={queue:before.queue,lastSent:before.lastSent};
   return {sent:0,dropped:0,queued:newPackets.length};
  }
- const net=leaderless.applyNetwork(before,attempted,{
+ const net=duel2Active()&&duel2SideRadio?duel2SideNetwork(before,attempted,Math.max(240,bots.length*48)):leaderless.applyNetwork(before,attempted,{
   loss:Number((duel2Active()?duel2UI.radioLoss:multiUI.radioLoss).value)/100,
   delay:Number((duel2Active()?duel2UI.radioDelay:multiUI.radioDelay).value),
   rand:()=>rngStreams.next('radio'),queueLimit:duel2Active()?Math.max(240,bots.length*48):240
@@ -2664,7 +2684,7 @@ function flushDuel2PeerMesh(){
  if(!pendingPackets.length)return;
  const before=team.radio,attempted={
   queue:before.queue.concat(pendingPackets),lastSent:{...before.lastSent}};
- const net=leaderless.applyNetwork(before,attempted,{
+ const net=duel2SideRadio?duel2SideNetwork(before,attempted,Math.max(240,bots.length*48)):leaderless.applyNetwork(before,attempted,{
   loss:Number(duel2UI.radioLoss.value)/100,
   delay:Number(duel2UI.radioDelay.value),
   rand:()=>rngStreams.next('radio'),queueLimit:Math.max(240,bots.length*48)
@@ -2685,8 +2705,15 @@ function teamFriendClear(actor,point,radius=2.05){return !teamDuo()||team.blues.
 const layouts={
  ruins:[[.23,.12,.10,.27],[.47,.05,.11,.23],[.64,.33,.10,.22],[.33,.48,.18,.10],[.12,.60,.15,.105],[.55,.71,.17,.12],[.78,.69,.09,.12]],
  lanes:[[.22,.15,.095,.33],[.22,.62,.095,.19],[.43,.05,.12,.24],[.43,.40,.12,.22],[.43,.76,.12,.19],[.70,.19,.10,.29],[.70,.62,.10,.24]],
- open:[[.30,.31,.11,.16],[.56,.47,.13,.13],[.48,.13,.075,.11],[.19,.69,.09,.095],[.78,.73,.075,.09]]
+ open:[[.30,.31,.11,.16],[.56,.47,.13,.13],[.48,.13,.075,.11],[.19,.69,.09,.095],[.78,.73,.075,.09]],
+ // Strategic-map battles: point-symmetric versions (wall at x,y,w,h also at 1-x-w,1-y-h,w,h) because spawns are
+ // point-mirrored; the original layouts give the BLUE side up to 87-100% wins in equal ruins fights. The centre stays
+ // clear: it is the only self-mirrored spot, so the neutral control zone sits there.
+ ruinsFair:[[.23,.12,.10,.27],[.67,.61,.10,.27],[.12,.60,.15,.105],[.73,.295,.15,.105],[.30,.52,.16,.10],[.54,.38,.16,.10],[.47,.05,.11,.23],[.42,.72,.11,.23]],
+ lanesFair:[[.22,.15,.095,.33],[.685,.52,.095,.33],[.22,.62,.095,.19],[.685,.19,.095,.19],[.44,.05,.12,.21],[.44,.74,.12,.21],[.44,.28,.12,.12],[.44,.60,.12,.12]],
+ openFair:[[.30,.31,.11,.16],[.59,.53,.11,.16],[.19,.69,.09,.095],[.72,.215,.09,.095]]
 };
+const fairMap=()=>/Fair$/.test(ui.map.value);
 function resize(){let r=stage.getBoundingClientRect();const oldW=W,oldH=H;W=Math.max(240,r.width);H=Math.max(230,r.height);S=Math.min(W,H);R=clamp(S*.027,7.5,17);STEP=clamp(S*.068,18,40);const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(!bots.length)return;
   // A change of screen orientation rebuilds the world safely, preserving the current match score.
   if(Math.abs(oldW-W)>3||Math.abs(oldH-H)>3){setupRound();if(phase==='running'){showNotice('หน้าจอเปลี่ยนขนาด — เริ่มตำแหน่งในสนามใหม่เพื่อให้คำนวณตรงกัน');}else{phase='ready';showOverlay('⚔️','พร้อมให้บอตดวลกัน!','กดเริ่มดวลเพื่อทดลอง RRT และการต่อสู้');}}
@@ -2695,7 +2722,7 @@ function buildWalls(){walls=(layouts[ui.map.value]||layouts.ruins).map(([x,y,w,h
 function spawnBot(team,x,y,stream=null){return withRngStream(stream|| (team==='blue'?'B1':'enemy'),()=>{const key=(team==='blue'&&multiActive()||duel2Active())?(stream||(team==='blue'?'B1':'R1')):team;const lessons=storedLessons[key]||storedLessons[team];return{team,x,y,hp:120,maxHp:120,ammo:6,maxAmmo:6,reload:0,cool:team==='blue'?.38:.48,moveSpeed:team==='blue'?.318:.338,baseFire:team==='blue'?.56:.50,aim:team==='blue'?.96:.89,range:.47*S,preferred:(team==='blue'?.34:.28)*S,goal:null,path:[],way:0,planner:null,tree:[],treeAge:20,planCooldown:.08+rand(0,.1),thinkCooldown:.01,agePlan:0,failedPlans:0,fireFlash:0,hitFlash:0,dodgeTimer:0,dodgeVec:{x:0,y:0},dodgeCooldown:.0,manual:null,mode:'รอเริ่ม',intent:'ready',reason:'รอสัญญาณเริ่ม',coverPoint:null,pathRisk:0,weightedCost:0,planCount:0,thinkingCount:0,hold:false,lastFoe:null,strafe:team==='blue'?-1:1,stuck:0,steps:0,brain:mem.createMemory(ui.carryMemory.checked?lessons.danger:[],ui.carryMemory.checked?lessons.encounters:[]),lastEncounterLog:-99,scanIndex:0,seenStatus:'unknown',searchCooldown:0,tactic:null,tacticGoal:null,tacticScore:null,maneuverHistory:[],lastMoveAt:0,lastExposedAt:-100,lastDamageAt:-100,defenseHistory:[],defenseGoal:null,defenseReason:null,defenseCount:0};});}
 function setupRound(){mission=null;extraWalls=[];buildWalls();
  if(duel2Active()&&duel2Fort.defender&&duel2Fort.level>0){extraWalls=fortCore.fortWalls(duel2Fort.level,duel2Fort.defender,{w:W,h:H},walls,{clearance:R*2.2});buildWalls();}
- bots=[spawnBot('blue',W*.085,H*.81),spawnBot('red',W*.91,H*.17)];if(multiActive()){withRngStream('world',()=>setupMultiTargets());withRngStream('B2',()=>setupBlueTeam());}else if(duel2Active()){setupDuel2();}else{bots[0].id='B1';bots[0].radioInbox=commsCore.makeInbox();bots[0].evidenceLedger=evidenceCore.emptyLedger();team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),blockedFriendlyShots:0};multi.cover=null;multi.coverDecision=null;multi.pendingCover=false;multi.lastCoverAt=-20;multi.coverage=rangedDef.createCoverage(W,H,10);multi.coverageAt=-1;}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
+ bots=[spawnBot('blue',W*.085,H*.81),fairMap()?spawnBot('red',W*.915,H*.19):spawnBot('red',W*.91,H*.17)];if(multiActive()){withRngStream('world',()=>setupMultiTargets());withRngStream('B2',()=>setupBlueTeam());}else if(duel2Active()){setupDuel2();}else{bots[0].id='B1';bots[0].radioInbox=commsCore.makeInbox();bots[0].evidenceLedger=evidenceCore.emptyLedger();team={mode:'solo',blues:[bots[0]],secondary:null,radio:teamCore.newRadio(),blockedFriendlyShots:0};multi.cover=null;multi.coverDecision=null;multi.pendingCover=false;multi.lastCoverAt=-20;multi.coverage=rangedDef.createCoverage(W,H,10);multi.coverageAt=-1;}bullets=[];particles=[];elapsed=0;scoreDelay=0;stats={nodes:0,plans:0,rejected:0,hits:0,covers:0,flanks:0,replans:0,samples:{goal:0,memory:0,history:0,corridor:0,global:0},maneuvers:{orbit:0,flank:0,pressure:0,kite:0},defense:{moves:0,coverBreaks:0}};frameCount=0;timeline=[];events=[];sampleAcc=0;finalResult=null;replayActive=false;replayPlaying=false;replayIndex=0;replayTimer=0;updateReplayUI();updateHUD();}
 // Duel 2v2 reuses the original BLUE/RED fighter constructors and tactical planners.
 function readTrainingArchive(){
  try{return archiveCore.decode(window.localStorage.getItem(archiveCore.KEY));}
@@ -2727,7 +2754,7 @@ function setupDuel2(){
  };
  // Retain the exact original 2v2 spawn sites for regression. Extra members
  // extend outward from each side using mirrored, collision-safe candidates.
- const slots=[{id:'B2',team:'blue',x:.09,y:.59},{id:'R2',team:'red',x:.91,y:.40}];
+ const slots=[{id:'B2',team:'blue',x:.09,y:.59},{id:'R2',team:'red',x:.91,y:fairMap()?.41:.40}];
  for(const side of ['blue','red'])for(let index=3;index<=formations[side].agents.length;index++){
   const col=Math.floor((index-3)/4),row=(index-3)%4;
   const bx=.10+col*.085,by=[.19,.40,.61,.83][row];
@@ -2738,7 +2765,7 @@ function setupDuel2(){
   let chosen=null;
   for(let radius=0;radius<12&&!chosen;radius++){
    for(let step=0;step<12;step++){
-    const a=step*Math.PI/6,radiusPx=radius*R*1.6;
+    const a=step*Math.PI/6+(fairMap()&&slot.team==='red'?Math.PI:0),radiusPx=radius*R*1.6; // mirrored search on fair maps
     const p={x:clamp(W*slot.x+Math.cos(a)*radiusPx,R+4,W-R-4),
      y:clamp(H*slot.y+Math.sin(a)*radiusPx,R+4,H-R-4)};
     if(freePoint(p,R+2)&&bots.every(b=>dist(b,p)>(Math.max(formations.blue.agents.length,formations.red.agents.length)>8?R*2.30:R*2.75))){chosen=p;break;}
@@ -4786,6 +4813,53 @@ window.__rrtArenaDebug={
  forceMemory:(team,values)=>{const b=bots.find(b=>b.team===team);if(!b)return false;if('danger' in values&&Array.isArray(values.danger))b.brain.danger=values.danger;if('lastSeen' in values)b.brain.lastSeen=values.lastSeen;if('encounters' in values&&Array.isArray(values.encounters))b.brain.encounters=values.encounters;if('visible' in values)b.brain.wasVisible=!!values.visible;return true;}
 };
 resize();setupRound();updateControls();showOverlay('⚔️',multiActive()?'BLUE ตัวเดิม · หลายเป้าหมาย':'พร้อมให้บอตดวลกัน!',multiActive()?'BLUE ใช้ระบบเดิมยิงฝูงประชิด: เปลี่ยนตำแหน่งเพื่อเอาชนะจำนวนมาก':'กด “เริ่มดวล” เพื่อดูบอตวางแผนเส้นทาง RRT และสู้กันแบบอัตโนมัติ');requestAnimationFrame(animation);
+})();
+</script>
+<script id="campaignBattleBridge">
+/* Strategic-map battle bridge (FRACTURED FRONT M4). Only with ?mode=duel2&campaign=1: shows just the arena,
+ * starts the battle, offers x1/x2/x4 speed and reports the result to the map page that opened it
+ * (window.parent, same origin). The battle itself is the unchanged duel2 engine. */
+(function(){'use strict';
+ const q=new URLSearchParams(location.search);
+ if(q.get('mode')!=='duel2'||q.get('campaign')!=='1')return;
+ const token=String(q.get('token')||'').replace(/[^\w-]/g,'').slice(0,64),$=id=>document.getElementById(id);
+ const css=document.createElement('style');
+ css.textContent='body.campaignBattle header,body.campaignBattle .modePanel,body.campaignBattle aside,body.campaignBattle .footer,'+
+  'body.campaignBattle .toolrow,body.campaignBattle .tip,body.campaignBattle .replayBar,body.campaignBattle .panelhead,'+
+  'body.campaignBattle #reset,body.campaignBattle #start,body.campaignBattle #notice{display:none!important}'+
+  'body.campaignBattle.embedded .cbBar b{display:none}'+
+  'body.campaignBattle main{padding-top:8px}body.campaignBattle .layout{grid-template-columns:1fr}'+
+  '.cbBar{display:flex;align-items:center;gap:6px;margin:0 0 8px;flex-wrap:wrap}.cbBar b{flex:1 1 100%;font-size:14px}'+
+  '.cbBar small{flex:1 1 auto;color:#9cb1cc;font-size:11px}.cbBar button{min-height:38px;min-width:46px;border-radius:10px;border:1px solid #3b5270;background:#1a2e49;color:#edf5ff;font-weight:800}'+
+  '.cbBar button.on{border-color:#ffc978;background:#3b3220}';
+ document.head.appendChild(css);document.body.classList.add('campaignBattle');if(window.parent!==window)document.body.classList.add('embedded');
+ const bar=document.createElement('div');bar.className='cbBar';
+ const title=document.createElement('b');title.textContent='⚔️ การรบจริง · '+String(q.get('title')||'แผนที่ยุทธศาสตร์').slice(0,60);
+ const note=document.createElement('small');note.id='cbNote';note.textContent='Agent ทุกตัวทั้งสองฝ่ายใช้ AI ตัวเดียวกัน · ผู้เล่นสั่งได้บนแผนที่เท่านั้น';
+ bar.append(title,note);
+ const speed=$('speed');speed.max='4';
+ for(const v of [1,2,4]){const b=document.createElement('button');b.textContent='×'+v;b.dataset.speed=v;bar.appendChild(b);}
+ const setSpeed=v=>{speed.value=String(v);speed.dispatchEvent(new Event('input',{bubbles:true}));for(const b of bar.querySelectorAll('[data-speed]'))b.classList.toggle('on',Number(b.dataset.speed)===v);};
+ bar.addEventListener('click',e=>{const b=e.target.closest('[data-speed]');if(!b)return;setSpeed(Number(b.dataset.speed));
+  try{localStorage.setItem('rrt-campaign-speed',b.dataset.speed);}catch(err){}});
+ const stats=document.querySelector('.stats');stats.parentNode.insertBefore(bar,stats);
+ const auto=$('autoNext');if(auto)auto.checked=false;
+ setSpeed(Math.min(4,Math.max(1,Number(q.get('speed'))||1)));
+ // Same-origin parent on http(s); file:// pages have an opaque origin, where only '*' delivers (the map page checks the sender frame).
+ const target=/^https?:$/.test(location.protocol)?location.origin:'*';
+ let sent=false;
+ function report(){
+  const d=window.__rrtDuel2Debug;if(!d||sent)return;const st=d.getState();if(st.phase!=='ended')return;
+  sent=true;const alive=t=>st.fighters.filter(f=>f.team===t&&f.hp>0).map(f=>f.id),all=t=>st.fighters.filter(f=>f.team===t).map(f=>f.id);
+  const result={type:'rrt-campaign-battle',token,winner:st.winner,time:st.time,map:$('mapSelect').value,
+   fighters:{blue:all('blue'),red:all('red')},alive:{blue:alive('blue'),red:alive('red')},
+   objective:st.objective?{mode:st.objective.mode,scores:st.objective.scores}:null};
+  note.textContent=st.winner==='draw'?'จบการรบ — เสมอ':'จบการรบ — '+(st.winner==='blue'?'BLUE':'RED')+' ชนะ';
+  const hint=$('overlayHint');if(hint)hint.textContent='ผลส่งกลับแผนที่แล้ว — กด “กลับแผนที่”';
+  try{if(window.parent!==window)window.parent.postMessage(result,target);}catch(e){}
+  window.__rrtCampaignBattleResult=result;
+ }
+ window.addEventListener('load',()=>{setTimeout(()=>{const s=$('start');if(s&&!s.disabled)s.click();},60);setInterval(report,200);});
 })();
 </script>
 </body></html>

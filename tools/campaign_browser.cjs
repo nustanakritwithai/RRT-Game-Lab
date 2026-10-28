@@ -40,6 +40,8 @@ const cases=[{width:320,height:640,map:'nova9',seed:7,ai:'assault'},{width:393,h
    if(far&&!v0.edges.some(e=>e.includes(u2.sector)&&e.includes(far.id))){await tapSector(far.id);
     assert.match(await page.textContent('#notice'),/ติดกัน/);}
    await page.tap('#bEnd');
+   // Each battle asks: watch the real battle or take the quick result.
+   while(await page.evaluate(()=>document.getElementById('battle').classList.contains('open')))await page.tap('#bQuick');
    assert.equal(await page.evaluate(()=>document.getElementById('report').classList.contains('open')),true,'turn report opens');
    await page.waitForFunction(()=>!__rrtCampaignDebug.playing(),null,{timeout:20000});
    if(shots)await page.screenshot({path:path.join(shots,`campaign_${c.width}_report.png`)});
@@ -48,7 +50,7 @@ const cases=[{width:320,height:640,map:'nova9',seed:7,ai:'assault'},{width:393,h
    // Play to the end with BLUE orders from the same AI (entered through the page's order hook).
    for(let t=1;t<40;t++){const v=await page.evaluate(()=>__rrtCampaignDebug.view());if(v.winner)break;
     for(const o of AI.decideOrders(v,'network',t))assert.equal(await page.evaluate(o=>__rrtCampaignDebug.order(o),o),true,JSON.stringify(o));
-    await page.evaluate(()=>{__rrtCampaignDebug.endTurn();__rrtCampaignDebug.skip();});
+    await page.evaluate(()=>{__rrtCampaignDebug.endTurn();if(__rrtCampaignDebug.inTurn())__rrtCampaignDebug.quickAll();__rrtCampaignDebug.skip();});
     const r=await page.evaluate(()=>__rrtCampaignDebug.report());
     for(const b of r.battles)assert.equal(b.abstract,true);}
    const end=await page.evaluate(()=>__rrtCampaignDebug.view());assert.ok(end.winner,'game finished');
@@ -64,6 +66,42 @@ const cases=[{width:320,height:640,map:'nova9',seed:7,ai:'assault'},{width:393,h
    console.log(`ok ${c.width}x${c.height} ${c.map} seed ${c.seed}: ${end.turn} turns, winner ${end.winner}, VP ${end.vp}:${end.opponentVp}, map ${Math.round(b0.map)}px sheet ${Math.round(b0.sheet)}px`);
    n++;await ctx.close();
   }
+  // Real battle end to end: Control A rush, watch it in the embedded arena (x4), result back to the map.
+  {const ctx=await browser.newContext({viewport:{width:393,height:852},hasTouch:true,isMobile:true,deviceScaleFactor:2});
+   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
+   await page.goto(base+'?map=nova9&seed=7&ai=assault');await page.evaluate(()=>localStorage.setItem('rrt-campaign-speed','4'));
+   const rush=async()=>{const v=await page.evaluate(()=>__rrtCampaignDebug.view());
+    for(const u of v.ownUnits)assert.equal(await page.evaluate(o=>__rrtCampaignDebug.order(o),{unit:u.id,type:'move',to:'C2'}),true);};
+   await rush();await page.tap('#bEnd');
+   assert.equal(await page.evaluate(()=>document.getElementById('battle').classList.contains('open')),true,'battle choice shown');
+   const plan=await page.evaluate(()=>__rrtCampaignDebug.battle());
+   assert.match(plan.title,/ชิงเขต/);assert.equal(plan.params.map.endsWith('Fair'),true);assert.ok(plan.slots.blue.every(id=>/^P\d+$/.test(id)));
+   if(shots)await page.screenshot({path:path.join(shots,'campaign_393_battle_choice.png')});
+   const t0=Date.now();await page.tap('#bWatch');assert.equal(await page.evaluate(()=>__rrtCampaignDebug.arenaOpen()),true);
+   const frame=await (await page.waitForSelector('#aFrame')).contentFrame();await frame.waitForLoadState();
+   await frame.waitForFunction(()=>window.__rrtDuel2Debug&&window.__rrtDuel2Debug.getState().phase==='running',null,{timeout:20000});
+   const inside=await frame.evaluate(()=>{const s=__rrtDuel2Debug.getState();return {n:s.fighters.length,map:document.getElementById('mapSelect').value,speed:document.getElementById('speed').value};});
+   assert.equal(inside.n,plan.slots.blue.length+plan.slots.red.length);assert.equal(inside.map,plan.params.map);assert.equal(inside.speed,'4');
+   if(shots)await page.screenshot({path:path.join(shots,'campaign_393_real_battle.png')});
+   await page.waitForSelector('#aDone:not([hidden])',{timeout:150000});
+   if(shots)await page.screenshot({path:path.join(shots,'campaign_393_real_battle_end.png')});
+   const secs=((Date.now()-t0)/1000).toFixed(1);await page.tap('#aBack');
+   while(await page.evaluate(()=>document.getElementById('battle').classList.contains('open')))await page.tap('#bQuick');
+   await page.waitForFunction(()=>!__rrtCampaignDebug.playing(),null,{timeout:20000});
+   const rep=await page.evaluate(()=>__rrtCampaignDebug.report());
+   assert.equal(rep.battles[0].source,'real');assert.equal(rep.battles[0].abstract,false);
+   if(shots)await page.screenshot({path:path.join(shots,'campaign_393_real_report.png')});
+   // The real result is in the save: a reload replays to the same view.
+   const after=await page.evaluate(()=>__rrtCampaignDebug.view());await page.goto(base);
+   assert.deepEqual(await page.evaluate(()=>__rrtCampaignDebug.view()),after,'real result survives reload');
+   // Reload in the middle of a turn: the battle that was waiting is offered again.
+   await page.evaluate(()=>__rrtCampaignDebug.start({template:'nova9',personality:'assault',seed:7}));await rush();await page.tap('#bEnd');
+   const waiting=(await page.evaluate(()=>__rrtCampaignDebug.battle())).title;await page.goto(base);
+   assert.equal(await page.evaluate(()=>__rrtCampaignDebug.inTurn()),true,'unfinished turn resumed');
+   assert.equal((await page.evaluate(()=>__rrtCampaignDebug.battle())).title,waiting);
+   assert.deepEqual(errors,[]);
+   console.log(`ok real battle: ${rep.battles[0].name} ${rep.battles[0].mine}v${rep.battles[0].theirs} ${rep.battles[0].outcome} in ${secs}s at x4, mid-turn resume ok`);
+   await ctx.close();}
  }finally{await browser.close();}
  console.log(`campaign browser smoke: ${n}/${cases.length} passed`);
 })().catch(e=>{console.error(e);process.exit(1);});
