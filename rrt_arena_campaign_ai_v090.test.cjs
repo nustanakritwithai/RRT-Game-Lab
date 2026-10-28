@@ -50,3 +50,8 @@ test('a besieged HQ is relieved by nearby units',()=>{
  const o=AI.decideOrders(C.viewFor(s,'enemy'),'assault',0);
  assert.ok(o.filter(x=>x.type==='move'&&x.to==='C3').length>=2,JSON.stringify(o));
 });
+test('NOVA-9 auto-play: the side behind at turn 6 still comes back sometimes (objective field, contested zones)',()=>{
+ const r=AI.autoplay({games:450,seed:900,template:'nova9'});
+ assert.equal(r.unfinished,0);assert.ok(r.comebackRate>=.15,'comeback '+r.comebackRate.toFixed(2)+' (was 0.09 before M3.1)');
+ assert.ok(r.medianTurns>=9&&r.medianTurns<=14,'median '+r.medianTurns);
+});
