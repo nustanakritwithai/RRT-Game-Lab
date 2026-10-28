@@ -5,31 +5,31 @@
  "games": 3000,
  "seed": 1,
  "unfinished": 0,
- "meanTurns": 11.012,
+ "meanTurns": 11.011,
  "medianTurns": 12,
- "battlesPerTurn": 0.39853493158978087,
+ "battlesPerTurn": 0.39835921654103473,
  "comebackRate": 0.302945301542777,
  "trailingAt6": 2852,
  "reasons": {
-  "victory_points": 1999,
-  "turn_limit_vp": 923,
-  "turn_limit_sectors": 31,
+  "victory_points": 2001,
+  "turn_limit_vp": 919,
+  "turn_limit_sectors": 33,
   "hq_captured": 47
  },
  "sideWins": {
-  "player": 1485,
-  "enemy": 1510,
+  "player": 1483,
+  "enemy": 1512,
   "draw": 5
  },
  "byPersonality": {
   "assault": {
-   "wins": 1165,
-   "losses": 833,
+   "wins": 1164,
+   "losses": 834,
    "draws": 4
   },
   "fortress": {
-   "wins": 1140,
-   "losses": 858,
+   "wins": 1141,
+   "losses": 857,
    "draws": 1
   },
   "network": {
@@ -40,8 +40,8 @@
  },
  "pairs": {
   "assault vs assault": {
-   "player": 157,
-   "enemy": 177,
+   "player": 156,
+   "enemy": 178,
    "draw": 0
   },
   "fortress vs assault": {
@@ -55,8 +55,8 @@
    "draw": 3
   },
   "assault vs fortress": {
-   "player": 162,
-   "enemy": 171,
+   "player": 161,
+   "enemy": 172,
    "draw": 0
   },
   "fortress vs fortress": {
@@ -86,8 +86,8 @@
   }
  },
  "winRates": {
-  "assault": 0.582,
-  "fortress": 0.57,
+  "assault": 0.581,
+  "fortress": 0.571,
   "network": 0.345
  },
  "checks": {

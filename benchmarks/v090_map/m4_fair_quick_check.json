@@ -1,0 +1,5726 @@
+{
+ "type": "SIMULATION_ONLY",
+ "note": "Unequal battles on the point-symmetric fair arena (side-swapped, 10 seeds) to check the quick (coarse) model used when a map battle is not watched.",
+ "elimination": [
+  {
+   "a": 4,
+   "b": 6,
+   "map": "ruinsFair",
+   "fort": 0,
+   "mission": "elimination",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 4,
+   "meanBLost": 0.7,
+   "unsafe": 0
+  },
+  {
+   "a": 4,
+   "b": 6,
+   "map": "lanesFair",
+   "fort": 0,
+   "mission": "elimination",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 4,
+   "meanBLost": 1.3,
+   "unsafe": 0
+  },
+  {
+   "a": 4,
+   "b": 6,
+   "map": "openFair",
+   "fort": 0,
+   "mission": "elimination",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 4,
+   "meanBLost": 0.25,
+   "unsafe": 0
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "map": "ruinsFair",
+   "fort": 0,
+   "mission": "elimination",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 8,
+   "meanBLost": 4.45,
+   "unsafe": 0
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "map": "lanesFair",
+   "fort": 0,
+   "mission": "elimination",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 8,
+   "meanBLost": 4.1,
+   "unsafe": 0
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "map": "openFair",
+   "fort": 0,
+   "mission": "elimination",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 8,
+   "meanBLost": 1.1,
+   "unsafe": 0
+  }
+ ],
+ "control": [
+  {
+   "a": 4,
+   "b": 6,
+   "map": "ruinsFair",
+   "fort": 0,
+   "mission": "control",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 1.9,
+   "meanBLost": 0.4,
+   "unsafe": 0
+  },
+  {
+   "a": 4,
+   "b": 6,
+   "map": "lanesFair",
+   "fort": 0,
+   "mission": "control",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 0.9,
+   "meanBLost": 0.35,
+   "unsafe": 0
+  },
+  {
+   "a": 4,
+   "b": 6,
+   "map": "openFair",
+   "fort": 0,
+   "mission": "control",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 1.55,
+   "meanBLost": 0.25,
+   "unsafe": 0
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "map": "ruinsFair",
+   "fort": 0,
+   "mission": "control",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 3.15,
+   "meanBLost": 2,
+   "unsafe": 0
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "map": "lanesFair",
+   "fort": 0,
+   "mission": "control",
+   "defender": null,
+   "n": 20,
+   "aWins": 3,
+   "bWins": 17,
+   "draws": 0,
+   "pA": 0.15,
+   "meanALost": 2.75,
+   "meanBLost": 2.3,
+   "unsafe": 0
+  },
+  {
+   "a": 8,
+   "b": 12,
+   "map": "openFair",
+   "fort": 0,
+   "mission": "control",
+   "defender": null,
+   "n": 20,
+   "aWins": 0,
+   "bWins": 20,
+   "draws": 0,
+   "pA": 0,
+   "meanALost": 2.4,
+   "meanBLost": 0.1,
+   "unsafe": 0
+  }
+ ],
+ "rows": {
+  "elimination": [
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 31.766666666666143,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 36.53333333333254,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 37.183333333332506,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 43.61666666666547,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 3
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 3
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 38.56666666666576,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 35.283333333332614,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 38.4999999999991,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 4
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 31.916666666666135,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 37.9166666666658,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 42.69999999999886,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 33.51666666666605,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 42.64999999999886,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 26.13333333333313,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.416666666666277,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.68333333333293,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 43.51666666666548,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 35.94999999999924,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 45.56666666666536,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 45.46666666666537,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 22.599999999999998,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 57.2166666666647,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 32.633333333332764,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 53.533333333331576,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 45.29999999999871,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 40.86666666666563,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 53.7666666666649,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 3
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 54.94999999999816,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 55.14999999999815,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 57.083333333331375,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 4
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 28.66666666666632,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 46.94999999999862,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 3
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 3
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 42.516666666665536,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 38.933333333332406,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 69.01666666666404,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 3
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 46.01666666666534,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 54.549999999998185,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 53.816666666664894,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 46.04999999999867,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 34.21666666666601,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 33.98333333333269,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 42.89999999999885,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 79.43333333333011,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 3
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 3
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 42.61666666666553,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 44.116666666665445,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 42.11666666666556,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 26.299999999999788,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 42.06666666666556,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 50.233333333331764,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 28.766666666666314,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 35.5333333333326,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 34.849999999999305,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 31.383333333332832,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 50.41666666666509,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 43.566666666665476,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 47.59999999999858,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.933333333332858,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 37.533333333332486,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 28.81666666666631,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 41.4166666666656,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 55.96666666666477,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 4
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 57.61666666666468,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 7
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 69.566666666664,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 99.23333333332899,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 7
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 63.699999999997665,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 58.19999999999798,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 58.4333333333313,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 72.89999999999715,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 58.49999999999796,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 55.76666666666478,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 56.499999999998074,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 56.69999999999806,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 55.84999999999811,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 77.58333333333022,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 7
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 57.48333333333135,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 64.8499999999976,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 75.18333333333035,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 7
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 68.63333333333073,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 77.58333333333022,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 7
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 55.716666666664786,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 64.38333333333097,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 72.16666666666386,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 66.7999999999975,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 7
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 75.08333333333036,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 113.89999999999482,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 63.33333333333102,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 96.61666666666247,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 8
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 69.98333333333065,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 74.03333333333042,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 63.899999999997654,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 66.58333333333084,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 10
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 92.38333333332938,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 74.99999999999703,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 63.91666666666432,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 72.49999999999717,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 68.61666666666406,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 64.73333333333095,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 96.09999999999583,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 5
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 7
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 70.76666666666394,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 67.63333333333078,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 88.04999999999629,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 44.549999999998754,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 49.73333333333179,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 65.26666666666425,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 7
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 5
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 52.93333333333161,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 48.06666666666522,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 63.56666666666434,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 10
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 57.64999999999801,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 44.199999999998774,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 43.6999999999988,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 35.549999999999265,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 44.68333333333208,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 41.04999999999895,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 51.3333333333317,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 37.93333333333246,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 41.71666666666558,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 42.76666666666552,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 42.54999999999887,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 55.39999999999814,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 10
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 50.88333333333173,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 48.06666666666522,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 0
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 0
+   }
+  ],
+  "control": [
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 24.366666666666564,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 24.58333333333322,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 32.41666666666611,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 36.54999999999921,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 2
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 30.33333333333289,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 32.76666666666609,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 27.833333333333034,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 29.316666666666283,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 1
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 25.86666666666648,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 39.98333333333235,
+    "safe": true,
+    "alive": {
+     "blue": 1,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.21666666666629,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 28.916666666666305,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 25.4666666666665,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 24.249999999999904,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 34.68333333333265,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 41.49999999999893,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 24.333333333333233,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 23.24999999999996,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 38.06666666666579,
+    "safe": true,
+    "alive": {
+     "blue": 1,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.049999999999574,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 2
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 36.61666666666587,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 1
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 39.19999999999906,
+    "safe": true,
+    "alive": {
+     "blue": 2,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 41.39999999999893,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 26.233333333333125,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 33.916666666666025,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.199999999999623,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 29.36666666666628,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 22.999999999999975,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 31.999999999999464,
+    "safe": true,
+    "alive": {
+     "blue": 2,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 31.716666666666146,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 24.41666666666656,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 38.84999999999908,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 24.916666666666533,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 34.28333333333267,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.066666666666297,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.633333333332875,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 35.083333333332625,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 24.599999999999884,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.433333333332886,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 21.58333333333339,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 48.18333333333188,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 5
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 32.783333333332756,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 25.11666666666652,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 25.449999999999836,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 40.13333333333234,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 25.066666666666524,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 24.366666666666564,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.816666666666197,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 2
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.833333333332863,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 33.483333333332716,
+    "safe": true,
+    "alive": {
+     "blue": 2,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 30.549999999999546,
+    "safe": true,
+    "alive": {
+     "blue": 1,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 22.31666666666668,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 4
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 25.5166666666665,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 27.433333333333056,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 54.13333333333154,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 1
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 30.516666666666215,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 0
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 31.366666666666166,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 29.98333333333291,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 25.299999999999844,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 4,
+     "red": 6
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 4,
+    "b": 6,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 23.44999999999995,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 3
+    },
+    "n": {
+     "blue": 6,
+     "red": 4
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.533333333332937,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 32.44999999999944,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 50.733333333331736,
+    "safe": true,
+    "alive": {
+     "blue": 0,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 8,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 24.3499999999999,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 58.88333333333127,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 4
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 27.483333333333054,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 25.449999999999836,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 38.9833333333324,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 35.44999999999927,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 6
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 72.29999999999718,
+    "safe": true,
+    "alive": {
+     "blue": 2,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 6,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 48.633333333331855,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 10
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 36.78333333333253,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 39.11666666666573,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 52.81666666666495,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 4
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 23.1333333333333,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 30.7666666666662,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 50.91666666666506,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 44.44999999999876,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 6
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 38.583333333332426,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "ruinsFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 46.14999999999866,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 10
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 54.76666666666484,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 28.533333333332994,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 68.29999999999741,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "red",
+    "time": 69.766666666664,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": true,
+    "bWon": false,
+    "aLost": 1,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 62.34999999999774,
+    "safe": true,
+    "alive": {
+     "blue": 1,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 7,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 49.11666666666516,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 3
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 36.38333333333255,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 10
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 45.43333333333204,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 31.866666666666138,
+    "safe": true,
+    "alive": {
+     "blue": 8,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 0,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 44.18333333333211,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 58.016666666664655,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 74.06666666666375,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 3
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 50.08333333333177,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 3
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 53.7166666666649,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 69.89999999999732,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 8
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 4
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 37.383333333332494,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 6
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "red",
+    "time": 50.43333333333175,
+    "safe": true,
+    "alive": {
+     "blue": 9,
+     "red": 8
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": true,
+    "bWon": false,
+    "aLost": 0,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "blue",
+    "time": 60.44999999999785,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 9
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": true,
+    "bWon": false,
+    "aLost": 2,
+    "bLost": 3
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 46.84999999999862,
+    "safe": true,
+    "alive": {
+     "blue": 10,
+     "red": 4
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 2
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "lanesFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 85.98333333332974,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 6
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 6
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 26.699999999999765,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 5
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3001,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 29.999999999999577,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 21.516666666666726,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3002,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 24.399999999999896,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 26.24999999999979,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3003,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 42.09999999999889,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 3
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 23.699999999999935,
+    "safe": true,
+    "alive": {
+     "blue": 11,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3004,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 30.88333333333286,
+    "safe": true,
+    "alive": {
+     "blue": 4,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 32.06666666666613,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 21.73333333333338,
+    "safe": true,
+    "alive": {
+     "blue": 5,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 3,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3006,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 22.933333333333312,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3005,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 27.449999999999722,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 6
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 28.533333333332994,
+    "safe": true,
+    "alive": {
+     "blue": 6,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 2,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3007,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 23.549999999999944,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 4
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 4,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 27.366666666666394,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3008,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 34.033333333332685,
+    "safe": true,
+    "alive": {
+     "blue": 3,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 27.41666666666639,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 11
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 1
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 23.79999999999993,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 7
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3010,
+    "aSide": "blue",
+    "winner": "red",
+    "time": 24.916666666666533,
+    "safe": true,
+    "alive": {
+     "blue": 7,
+     "red": 12
+    },
+    "n": {
+     "blue": 8,
+     "red": 12
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 1,
+    "bLost": 0
+   },
+   {
+    "a": 8,
+    "b": 12,
+    "map": "openFair",
+    "fort": 0,
+    "seed": 3009,
+    "aSide": "red",
+    "winner": "blue",
+    "time": 41.86666666666557,
+    "safe": true,
+    "alive": {
+     "blue": 12,
+     "red": 3
+    },
+    "n": {
+     "blue": 12,
+     "red": 8
+    },
+    "aWon": false,
+    "bWon": true,
+    "aLost": 5,
+    "bLost": 0
+   }
+  ]
+ }
+}

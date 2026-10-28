@@ -335,7 +335,10 @@
   // keeping most of its agents. Open terrain: no underdog win in 60 battles, so k is a bounded stand-in.
   // Losses per side grow as c*size^g (cover in ruins keeps them almost flat); the loser takes `lf` of that, the winner
   // `wf`, shrinking further as (loser/winner)^e when the winner outnumbers.
-  control:Object.freeze({ruins:{k:2,c:.95,g:.17,lf:1.38,wf:.62,e:1.35},lanes:{k:8.75,c:.575,g:.86,lf:1.18,wf:.82,e:2.2},
+  // Ruins: the old ruins let a smaller BLUE-side force hold (4v6 25%, 8v12 45%) — side bias, not cover. Map battles use
+  // the point-symmetric arena, where the smaller side won 0 of 40 (m4_fair_quick_check.json), so ruins is refitted
+  // there (k as open; losses from m4_fair_side_bias.json + m4_fair_quick_check.json).
+  control:Object.freeze({ruins:{k:20,c:1.05,g:.6,lf:.85,wf:1.15,e:3.5},lanes:{k:8.75,c:.575,g:.86,lf:1.18,wf:.82,e:2.2},
    open:{k:20,c:.42,g:.98,lf:1.4,wf:.6,e:5.3}}),
   calibration:'m0_calibration.json (meeting) + m0_fort_calibration.json (assault with forts) + m4_contested_control_calibration.json (contested)'});
  function coarseBattle(spec){

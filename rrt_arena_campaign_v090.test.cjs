@@ -229,7 +229,13 @@ test('coarse model matches the measured real-battle table (M0-S3) within toleran
  }
 });
 test('contested (control-zone) model matches the measured M4 table within tolerance',()=>{
- for(const row of require('./benchmarks/v090_map/m4_contested_control_calibration.json').table){
+ // Lanes / open from the original M4 table; ruins from the point-symmetric arena that map battles actually use.
+ const fair=[...require('./benchmarks/v090_map/m4_fair_side_bias.json').rows.control,...require('./benchmarks/v090_map/m4_fair_quick_check.json').rows.control]
+  .filter(r=>r.map==='ruinsFair'),cells={};
+ for(const r of fair){const k=r.a+':'+r.b;const c=cells[k]=cells[k]||{a:r.a,b:r.b,map:'ruins',n:0,w:0,la:0,lb:0};c.n++;if(r.aWon)c.w++;c.la+=r.aLost;c.lb+=r.bLost;}
+ const ruinsRows=Object.values(cells).map(c=>({a:c.a,b:c.b,map:'ruins',n:c.n,pA:c.w/c.n,meanALost:c.la/c.n,meanBLost:c.lb/c.n}));
+ assert.ok(ruinsRows.length>=4);
+ for(const row of [...require('./benchmarks/v090_map/m4_contested_control_calibration.json').table.filter(r=>r.map!=='ruins'),...ruinsRows]){
   let w=0,lost=0;const N=400;
   for(let k=0;k<N;k++){const r=C.coarseBattle({kind:'contested',attacker:{size:row.a},defender:{size:row.b},fort:0,terrain:row.map,seed:k*29+3});
    if(r.winner==='attacker')w++;lost+=r.casualties.attacker+r.casualties.defender;}
