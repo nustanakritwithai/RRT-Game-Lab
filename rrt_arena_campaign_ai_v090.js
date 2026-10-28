@@ -38,6 +38,10 @@
   const threatNear=id=>Math.max(enemyAt(id),...nb(id).map(enemyAt));
   const value=s=>(s.victory?3:0)+s.yield*.8+(s.radioHill?1:0)+(s.hq===foe?6:0)+(s.hq===f?5:0)+
    (s.power?2.5:0)+(s.factory?2:0)+(s.relay?1.5:0)+(s.sensor?.5:0);
+  // Objective field: open victory sectors pull units from afar, weighted by distance and by known defenders,
+  // so a unit sees a free objective two steps away instead of only its neighbours (public map + own intel only).
+  const goals=view.sectors.filter(s=>s.victory&&s.owner!==f).map(s=>({id:s.id,v:value(s),d:dist(s.id),def:enemyAt(s.id)}));
+  const pull=(id,size)=>goals.reduce((m,g)=>Math.max(m,g.v*winProb(size,g.def,g.def>0&&view.sectors.find(x=>x.id===g.id).owner===foe,0)/(1+(g.d.get(id)??9))),0);
   const orders=[],used=new Set();let supply=view.supply;
   const units=view.ownUnits.slice().sort((a,b)=>a.id.localeCompare(b.id));
   // 1. Home defence. HQ under siege (enemy inside it): every unit within two steps converges on it.
@@ -62,10 +66,11 @@
    for(const n of nb(u.sector)){const s=sec(n),known=enemyAt(n),unknown=s.owner!==f&&s.confidence===0?1:0;
     const assault=s.owner===foe,p=winProb(u.size,known+(assault&&unknown?2:0),assault,s.fort??1);
     const gain=(s.owner===f?.25:1)*value(s),forward=((toFoe.get(u.sector)??9)-(toFoe.get(n)??9))*.6;
-    // When behind on points, stepping into an enemy-held victory sector blocks its scoring (contest rule),
-    // which is worth doing even when the fight there is likely lost.
-    const block=behind&&s.victory&&s.owner===foe?3.5:0;
-    opts.push({o:{unit:u.id,type:'move',to:n},score:W.attack*(gain*p+forward)+block-W.risk*(1-p)*u.size*.5});}
+    // When behind on points, a unit that ends the turn inside an enemy-held victory sector blocks its scoring
+    // (contest rule) — only if it wins or meets no defender, so the bonus is weighted by the win chance.
+    const block=behind&&s.victory&&s.owner===foe?3.5*p:0;
+    const toward=Math.max(0,pull(n,u.size)-pull(u.sector,u.size));
+    opts.push({o:{unit:u.id,type:'move',to:n},score:W.attack*(gain*p+forward)+toward*.7*W.attack+block-W.risk*(1-p)*u.size*.5});}
    const threat=threatNear(u.sector);
    const holdOwn=here.owner===f?W.defend*value(here)*Math.min(2,threat/Math.max(1,u.size))+(threat>0&&(here.fort??0)<2?W.dig*1.2:0):W.attack*value(here)*.9;
    opts.push({o:{unit:u.id,type:'hold'},score:holdOwn});

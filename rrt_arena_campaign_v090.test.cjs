@@ -228,6 +228,22 @@ test('coarse model matches the measured real-battle table (M0-S3) within toleran
   assert.ok(Math.abs(w/N-row.pA)<=.12,`${row.a}v${row.b} ${row.map}: model ${(w/N).toFixed(2)} vs measured ${row.pA}`);
  }
 });
+test('contested (control-zone) model matches the measured M4 table within tolerance',()=>{
+ for(const row of require('./benchmarks/v090_map/m4_contested_control_calibration.json').table){
+  let w=0,lost=0;const N=400;
+  for(let k=0;k<N;k++){const r=C.coarseBattle({kind:'contested',attacker:{size:row.a},defender:{size:row.b},fort:0,terrain:row.map,seed:k*29+3});
+   if(r.winner==='attacker')w++;lost+=r.casualties.attacker+r.casualties.defender;}
+  // 20 battles per cell: allow two binomial standard errors of the measurement (at least 0.12).
+  const tol=Math.max(.12,2*Math.sqrt(Math.max(row.pA*(1-row.pA),.05)/row.n));
+  assert.ok(Math.abs(w/N-row.pA)<=tol,`${row.a}v${row.b} ${row.map}: model ${(w/N).toFixed(2)} vs measured ${row.pA} (tol ${tol.toFixed(2)})`);
+  const measured=row.meanALost+row.meanBLost;
+  assert.ok(Math.abs(lost/N-measured)<=Math.max(1.2,measured*.45),`${row.a}v${row.b} ${row.map} total losses: model ${(lost/N).toFixed(1)} vs measured ${measured}`);
+ }
+});
+test('a contested 12v12 sector battle never wipes the loser out',()=>{
+ for(let k=0;k<300;k++){const r=C.coarseBattle({kind:'contested',attacker:{size:12},defender:{size:12},fort:0,terrain:'open',seed:k});
+  assert.ok(Math.max(r.casualties.attacker,r.casualties.defender)<12);}
+});
 test('assault model matches the measured fort table (pooled over terrains) within tolerance',()=>{
  const rows=require('./benchmarks/v090_map/m0_fort_calibration.json').table;const pool={};
  for(const x of rows){const k=x.a+':'+x.b+':'+x.fort;pool[k]=pool[k]||{a:x.a,b:x.b,fort:x.fort,w:0,n:0};pool[k].w+=x.aWins;pool[k].n+=x.n;}

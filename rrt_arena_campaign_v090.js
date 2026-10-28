@@ -9,7 +9,7 @@
 (function(root,factory){'use strict';const api=factory();root.RRTArenaCampaign=api;if(typeof module==='object'&&module.exports)module.exports=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const RULES=Object.freeze({maxUnits:4,supplyCap:12,startSupply:4,towerCost:3,injuryTurns:2,encircledInjuryTurns:3,
-  intelExpiry:4,maxFort:2,vpLead:8,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2,maxAgents:16,factoryEvery:2,battleRounds:3,hqSiegeTurns:4,contestedVpBlocked:true,fortDecay:true});
+  intelExpiry:4,maxFort:2,vpLead:8,vpNeedsSupply:true,maxTurns:15,agentsPerFaction:12,hqFort:2,maxAgents:16,factoryEvery:3,battleRounds:3,hqSiegeTurns:4,contestedVpBlocked:true,fortDecay:true});
  const PRESET_BY_SIZE=Object.freeze({2:'buddy2',3:'buddy3',4:'group22',5:'group23',6:'group33',8:'squad2222',10:'squad2323',12:'squad3333'});
  const RADIO=Object.freeze([{loss:50,delay:0.6},{loss:20,delay:0.3},{loss:0,delay:0}]);
  const FACTIONS=Object.freeze(['player','enemy']);
@@ -309,7 +309,15 @@
   // indistinguishable so far; battles end on zone points,
   // so both sides lose only ~1-3 agents.
   assault:Object.freeze({base:1.45,k:8,fort:Object.freeze([0,1.0,1.1]),loserShare:.4,winnerShare:.15}),
-  calibration:'m0_calibration.json (meeting/contested) + m0_fort_calibration.json (assault with forts)'});
+  // Contested = both sides move into the same sector: a neutral control-zone battle, not a fight to the death.
+  // Fitted to 360 side-swapped battles (benchmarks/v090_map/m4_contested_control_calibration.json): ruins let the
+  // smaller side hold on (4v6 25%, 8v12 45%), lanes and open favour numbers; even 12v12 ends with the loser
+  // keeping most of its agents. Open terrain: no underdog win in 60 battles, so k is a bounded stand-in.
+  // Losses per side grow as c*size^g (cover in ruins keeps them almost flat); the loser takes `lf` of that, the winner
+  // `wf`, shrinking further as (loser/winner)^e when the winner outnumbers.
+  control:Object.freeze({ruins:{k:2,c:.95,g:.17,lf:1.38,wf:.62,e:1.35},lanes:{k:8.75,c:.575,g:.86,lf:1.18,wf:.82,e:2.2},
+   open:{k:20,c:.42,g:.98,lf:1.4,wf:.6,e:5.3}}),
+  calibration:'m0_calibration.json (meeting) + m0_fort_calibration.json (assault with forts) + m4_contested_control_calibration.json (contested)'});
  function coarseBattle(spec){
   const r=rng(spec.seed>>>0);const a=Math.max(1,spec.attacker.size),d=Math.max(1,spec.defender.size);
   if(spec.kind==='assault'){
@@ -322,7 +330,14 @@
    const winnerCas=Math.min(winner-1,Math.round(winner*A.winnerShare*(.5+r())));
    return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loserCas}:{attacker:loserCas,defender:winnerCas},p};
   }
-  // Meeting / contested battles are fights to elimination (m0_calibration.json): one extra agent wins
+  if(spec.kind==='contested'){
+   const T=COARSE.control[spec.terrain]||COARSE.control.open,p=1/(1+Math.exp(-T.k*Math.log(a/d)));
+   const attackerWins=r()<p,loser=attackerWins?d:a,winner=attackerWins?a:d,base=n=>T.c*Math.pow(n,T.g);
+   const loserCas=Math.min(loser,Math.max(1,Math.round(base(loser)*T.lf*(.6+.8*r()))));
+   const winnerCas=Math.min(winner-1,Math.round(base(winner)*T.wf*Math.pow(Math.min(1,loser/winner),T.e)*(.5+r())));
+   return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loserCas}:{attacker:loserCas,defender:winnerCas},p};
+  }
+  // Meeting battles (opposing forces crossing on one edge) are fights to elimination (m0_calibration.json): one extra agent wins
   // ~90-100%, open terrain is the most decisive, the loser is eliminated.
   const T=COARSE.terrain[spec.terrain]||COARSE.terrain.open;
   const p=1/(1+Math.exp(-(T.k*Math.log(a/d))));
