@@ -111,6 +111,22 @@ async function main(){
   check(radioUp.radio.evidenceAccepted>0&&
    radioUp.radio.conflicts<=Math.ceil(radioUp.radio.evidenceAccepted*.15),
    'duel2: normal target movement does not generate mass false conflict reports on '+w+'px');
+  // Team mode runs the V0.6.8 systems for every fighter of BOTH teams, with one symmetric switch.
+  await page.goto(base+sep+'mode=duel2&formation=group22&seed=83');
+  const teamDef=await page.evaluate(()=>{
+   const d=window.__rrtDuel2Debug,e=window.__rrtArenaDebug,sel=document.getElementById('duel2Defense');
+   document.getElementById('start').click();d.advance(20);
+   const on=d.getState(),v=e.validate();
+   sel.value='off';sel.dispatchEvent(new Event('change',{bubbles:true}));
+   document.getElementById('start').click();d.advance(20);
+   const off=d.getState();
+   const used=s=>t=>s.fighters.filter(b=>b.team===t).reduce((n,b)=>n+b.defense.coverMoves+b.defense.jinks+b.defense.bridgeSteps,0);
+   return {hasSwitch:!!sel,onBlue:used(on)('blue'),onRed:used(on)('red'),offAll:used(off)('blue')+used(off)('red'),
+    offIntents:off.fighters.map(b=>b.intent),valid:v.fightersFree&&v.waypointsClear,override:on.featureOverride};
+  });
+  check(teamDef.hasSwitch&&teamDef.onBlue>0&&teamDef.onRed>0,'team mode: ranged defense / keep moving active for BOTH teams ('+teamDef.onBlue+' / '+teamDef.onRed+' actions)');
+  check(teamDef.offAll===0&&!teamDef.offIntents.some(i=>['ranged_cover','ranged_hold'].includes(i)),'team mode: switch off disables the systems for both teams');
+  check(teamDef.valid&&teamDef.override.blue===null&&teamDef.override.red===null,'team mode: collision-safe and no per-team override in normal play');
 
 
 

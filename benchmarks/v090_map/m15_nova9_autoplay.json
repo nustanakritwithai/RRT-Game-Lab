@@ -1,0 +1,100 @@
+{
+ "type": "SIMULATION_ONLY",
+ "note": "strategic AI with calibrated coarse battles; not real-engine battles",
+ "template": "nova9",
+ "games": 3000,
+ "seed": 1,
+ "unfinished": 0,
+ "meanTurns": 11.312666666666667,
+ "medianTurns": 12,
+ "battlesPerTurn": 0.48691731981849257,
+ "comebackRate": 0.0923836389280677,
+ "trailingAt6": 2836,
+ "reasons": {
+  "victory_points": 1938,
+  "turn_limit_vp": 988,
+  "hq_captured": 47,
+  "turn_limit_sectors": 27
+ },
+ "sideWins": {
+  "player": 1474,
+  "enemy": 1510,
+  "draw": 16
+ },
+ "byPersonality": {
+  "assault": {
+   "wins": 1242,
+   "losses": 756,
+   "draws": 4
+  },
+  "fortress": {
+   "wins": 903,
+   "losses": 1096,
+   "draws": 0
+  },
+  "network": {
+   "wins": 839,
+   "losses": 1132,
+   "draws": 28
+  }
+ },
+ "pairs": {
+  "assault vs assault": {
+   "player": 124,
+   "enemy": 209,
+   "draw": 1
+  },
+  "fortress vs assault": {
+   "player": 118,
+   "enemy": 216,
+   "draw": 0
+  },
+  "network vs assault": {
+   "player": 98,
+   "enemy": 236,
+   "draw": 0
+  },
+  "assault vs fortress": {
+   "player": 224,
+   "enemy": 109,
+   "draw": 0
+  },
+  "fortress vs fortress": {
+   "player": 177,
+   "enemy": 156,
+   "draw": 0
+  },
+  "network vs fortress": {
+   "player": 168,
+   "enemy": 165,
+   "draw": 0
+  },
+  "assault vs network": {
+   "player": 233,
+   "enemy": 98,
+   "draw": 2
+  },
+  "fortress vs network": {
+   "player": 178,
+   "enemy": 155,
+   "draw": 0
+  },
+  "network vs network": {
+   "player": 154,
+   "enemy": 166,
+   "draw": 13
+  }
+ },
+ "winRates": {
+  "assault": 0.62,
+  "fortress": 0.452,
+  "network": 0.42
+ },
+ "checks": {
+  "median length 10-14 turns": true,
+  "comeback >= 20% when trailing at turn 6": false,
+  "no personality wins > 60% overall": false,
+  "battles per turn <= 2.5": true,
+  "side balance: player vs enemy within 45-55% of decisive games": true
+ }
+}

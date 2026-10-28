@@ -27,6 +27,8 @@ jobs:
         run: |
           test -s index.html
           test -s network-lab.html
+          test -s campaign.html
+          grep -q 'RRTArenaCampaignUI' campaign.html
           test -s network_lab_core.js
           test -s network_lab_ui.js
           grep -q 'src="network_lab_core.js"' network-lab.html
@@ -59,7 +61,7 @@ jobs:
       - name: Stage static game
         run: |
           mkdir -p dist
-          cp index.html network-lab.html network_lab_core.js network_lab_ui.js dist/
+          cp index.html campaign.html network-lab.html network_lab_core.js network_lab_ui.js dist/
           touch dist/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
