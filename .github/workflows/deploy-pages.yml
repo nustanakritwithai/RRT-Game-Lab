@@ -29,6 +29,8 @@ jobs:
           test -s network-lab.html
           test -s campaign.html
           grep -q 'RRTArenaCampaignUI' campaign.html
+          grep -q 'campaignBattleBridge' index.html
+          grep -q 'ruinsFair' index.html
           test -s network_lab_core.js
           test -s network_lab_ui.js
           grep -q 'src="network_lab_core.js"' network-lab.html

@@ -88,6 +88,15 @@ svg#map{display:block;width:100%;height:auto;touch-action:manipulation;user-sele
 .fight b.won{color:var(--green)}.fight b.lost{color:#ff9aaa}.fight b.draw{color:var(--gold)}
 .badge{display:inline-block;font-size:9.5px;border:1px dashed #8a7a55;color:#ffd99a;border-radius:999px;padding:1px 7px;margin-left:4px;white-space:nowrap}
 .row{display:flex;gap:6px}.row .btn{flex:1;text-align:center}
+.arena{position:fixed;inset:0;z-index:8;background:#07101f;display:flex;flex-direction:column}
+.arena[hidden]{display:none}
+.arenaBar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;font-size:12.5px;font-weight:800;border-bottom:1px solid #233d5c}
+.arenaBar .btn{min-height:36px;padding:6px 10px;font-size:12px}
+.arena iframe{flex:1;width:100%;border:0;background:#07101f}
+.arenaDone{position:absolute;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;justify-content:space-between;
+ background:#0b1830f5;border:1px solid #426280;border-radius:14px;padding:10px 12px;box-shadow:0 -8px 30px #000a}
+.arenaDone[hidden]{display:none}.arenaDone b{font-size:13px}
+.badge.real{border-style:solid;border-color:#5fd2a0;color:#a8f0cf}
 dialog{border:1px solid #426280;border-radius:16px;background:#0b1830;color:var(--ink);width:min(440px,calc(100% - 24px));padding:14px}
 dialog::backdrop{background:#020812b0}
 dialog h3{margin:0 0 10px;font-size:16px}
@@ -124,9 +133,20 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   <button class="btn primary" id="bEnd">จบเทิร์น ▶</button>
  </div>
  <div class="notice" id="notice">แตะเขตที่มีหน่วย BLUE เพื่อเลือก แล้วแตะเขตที่ติดกันเพื่อสั่งเดินทัพ</div>
- <p class="foot">การรบบนแผนที่หน้านี้ใช้ <b>ผลรบแบบย่อ</b> (โมเดลที่ปรับจากการรบจริงหลายร้อยนัด) — ไม่ได้บันทึกเป็นประวัติการเรียนรู้ของ Agent ตัวไหน.
+ <p class="foot">ทุกการรบบนแผนที่เลือกได้: <b>⚔️ ดูการรบจริง</b> (สนามรบจริง Agent ทั้งสองฝ่ายใช้ AI ตัวเดียวกัน) หรือ <b>⏩ ผลย่อ</b>
+  (โมเดลที่ปรับจากการรบจริงหลายร้อยนัด เร็ว เหมาะกับเครื่องที่ช้า) — ยังไม่บันทึกการเรียนรู้ถาวรของ Agent ในรอบนี้.
   RED เป็น AI ที่ตัดสินใจจากมุมมองหมอกสงครามของตัวเองเท่านั้น กติกาเดียวกับผู้เล่น.</p>
 </main>
+<div class="report" id="battle"><div class="box">
+ <h3 id="bTitle">การรบ</h3><p class="sub" id="bInfo" style="font-size:12px;color:var(--soft);margin:0 0 8px"></p>
+ <div class="row"><button class="btn primary" id="bWatch">⚔️ ดูการรบจริง</button><button class="btn ghost" id="bQuick">⏩ ผลย่อ</button></div>
+ <button class="btn ghost" id="bQuickAll" style="width:100%;margin-top:6px;text-align:center">⏩ ใช้ผลย่อกับทุกการรบที่เหลือในเทิร์นนี้</button>
+</div></div>
+<div class="arena" id="arena" hidden>
+ <div class="arenaBar"><span id="aTitle">การรบจริง</span><button class="btn ghost" id="aCancel">ใช้ผลย่อแทน</button></div>
+ <iframe id="aFrame" title="สนามรบจริง" referrerpolicy="same-origin"></iframe>
+ <div class="arenaDone" id="aDone" hidden><b id="aResult"></b><button class="btn primary" id="aBack">กลับแผนที่ ▶</button></div>
+</div>
 <div class="report" id="report"><div class="box">
  <h3 id="rTitle">ผลเทิร์น</h3><ul class="lines" id="rLines"></ul><div id="rFights"></div>
  <div class="row"><button class="btn ghost" id="rSkip">ข้าม ⏩</button><button class="btn primary" id="rClose">สั่งการเทิร์นต่อไป</button></div>
@@ -299,6 +319,12 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
    while(count>0&&u.agents.length){hurt.push(u.agents.pop());count--;}}
   return hurt;
  }
+ function removeAgents(s,unitIds,ids){
+  const hurt=[];
+  for(const uid of unitIds){const u=s.units.find(x=>x.id===uid);if(!u)continue;
+   for(const id of ids)if(u.agents.includes(id)){u.agents=u.agents.filter(a=>a!==id);hurt.push(id);}}
+  return hurt;
+ }
  function retreatTarget(s,f,from,origin){
   if(origin&&origin!==from){const o=sectorOf(s,origin);if(!s.units.some(u=>u.sector===origin&&u.faction!==f)&&(o.owner===f||o.owner===null))return origin;}
   const hq=s.sectors.find(x=>x.hq===f)?.id;
@@ -308,7 +334,15 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
  }
 
  /** One WEGO turn. resolver(spec) -> {winner:'attacker'|'defender'|'draw',casualties:{attacker,defender}} */
+ /** Resolve one WEGO turn with a synchronous battle resolver (coarse model by default). */
  function resolveTurn(input,orders={},resolver=coarseBattle){
+  const steps=resolveTurnSteps(input,orders);let step=steps.next();
+  while(!step.done)step=steps.next(resolver(step.value));
+  return step.value;
+ }
+ /** The same turn as a generator: it yields each battle spec in order and waits for its result, so a battle can
+   * be fought in the real engine (asynchronously) before the turn continues. Specs are copies; results are checked. */
+ function* resolveTurnSteps(input,orders={}){
   const s=clone(input);const events=[],battles=[];
   if(s.winner)return {state:s,events,battles};
   const accepted={player:[],enemy:[]};
@@ -340,7 +374,7 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   for(const [key,ids] of edgeGroups){
    const side=f=>[...ids].map(id=>s.units.find(u=>u.id===id)).filter(u=>u.faction===f);
    const spec=battleSpec(s,'meeting',key,'open',0,side('player'),side('enemy'));
-   const result=runBattle(s,spec,resolver,events,battles);
+   const result=yield* runBattle(s,spec,events,battles);
    for(const id of ids)bounced.add(id);
    void result;
   }
@@ -358,7 +392,7 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
     const total=f=>here(f).reduce((n,u)=>n+u.agents.length,0),before={[attF]:total(attF),[defF]:total(defF)};
     const spec=battleSpec(s,kind,sec.id,sec.terrain,sec.owner===defF?sec.fort:0,here(attF),here(defF));spec.round=round;
     if(round)spec.seed=hash32(spec.seed,round);
-    result=runBattle(s,spec,resolver,events,battles);
+    result=yield* runBattle(s,spec,events,battles);
     const lf=result.winner==='attacker'?defF:attF,loserFought=spec[result.winner==='attacker'?'defender':'attacker'].size;
     // Continue only while the beaten side still has fresh reserves that did not fight this round.
     if(result.winner==='draw'||++round>=RULES.battleRounds||total(lf)<2||before[lf]<=loserFought)break;
@@ -416,14 +450,20 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   const att=side(attUnits,attUnits[0]?.faction||'player'),def=side(defUnits,defUnits[0]?.faction||'enemy');
   return {kind,sector,terrain,fort,attacker:att,defender:def,seed:hash32(s.seed,s.turn,sector,kind)};
  }
- function runBattle(s,spec,resolver,events,battles){
+ function* runBattle(s,spec,events,battles){
   if(!spec.attacker.size||!spec.defender.size){const r={winner:spec.attacker.size?'attacker':'defender',casualties:{attacker:0,defender:0}};battles.push({...spec,result:r});return r;}
-  const r=resolver(spec);
-  const att=Math.max(0,Math.min(spec.attacker.size,r.casualties?.attacker|0)),def=Math.max(0,Math.min(spec.defender.size,r.casualties?.defender|0));
-  injure(s,removeCasualties(s,spec.attacker.units,att),RULES.injuryTurns);
-  injure(s,removeCasualties(s,spec.defender.units,def),RULES.injuryTurns);
-  const result={winner:['attacker','defender','draw'].includes(r.winner)?r.winner:'draw',casualties:{attacker:att,defender:def}};
-  battles.push({...spec,result});events.push({type:'battle',kind:spec.kind,sector:spec.sector,winner:result.winner});
+  const r=(yield clone(spec))||{};
+  // A resolver may name exactly who fell (real battles); otherwise casualties are a count taken from the fighters.
+  const fallen=side=>{const d=r.dead?.[side],fought=spec[side].agents;
+   return Array.isArray(d)&&d.length<=fought.length&&new Set(d).size===d.length&&d.every(id=>fought.includes(id))?d.slice():null;};
+  const named={attacker:fallen('attacker'),defender:fallen('defender')};
+  const count=side=>named[side]?named[side].length:Math.max(0,Math.min(spec[side].size,r.casualties?.[side]|0));
+  const att=count('attacker'),def=count('defender');
+  injure(s,named.attacker?removeAgents(s,spec.attacker.units,named.attacker):removeCasualties(s,spec.attacker.units,att),RULES.injuryTurns);
+  injure(s,named.defender?removeAgents(s,spec.defender.units,named.defender):removeCasualties(s,spec.defender.units,def),RULES.injuryTurns);
+  const result={winner:['attacker','defender','draw'].includes(r.winner)?r.winner:'draw',casualties:{attacker:att,defender:def},
+   ...(r.source?{source:String(r.source)}:{})};
+  battles.push({...spec,result});events.push({type:'battle',kind:spec.kind,sector:spec.sector,winner:result.winner,...(result.source?{source:result.source}:{})});
   return result;
  }
  function retreatUnits(s,units,f,from,origin,events){
@@ -462,7 +502,10 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   // keeping most of its agents. Open terrain: no underdog win in 60 battles, so k is a bounded stand-in.
   // Losses per side grow as c*size^g (cover in ruins keeps them almost flat); the loser takes `lf` of that, the winner
   // `wf`, shrinking further as (loser/winner)^e when the winner outnumbers.
-  control:Object.freeze({ruins:{k:2,c:.95,g:.17,lf:1.38,wf:.62,e:1.35},lanes:{k:8.75,c:.575,g:.86,lf:1.18,wf:.82,e:2.2},
+  // Ruins: the old ruins let a smaller BLUE-side force hold (4v6 25%, 8v12 45%) — side bias, not cover. Map battles use
+  // the point-symmetric arena, where the smaller side won 0 of 40 (m4_fair_quick_check.json), so ruins is refitted
+  // there (k as open; losses from m4_fair_side_bias.json + m4_fair_quick_check.json).
+  control:Object.freeze({ruins:{k:20,c:1.05,g:.6,lf:.85,wf:1.15,e:3.5},lanes:{k:8.75,c:.575,g:.86,lf:1.18,wf:.82,e:2.2},
    open:{k:20,c:.42,g:.98,lf:1.4,wf:.6,e:5.3}}),
   calibration:'m0_calibration.json (meeting) + m0_fort_calibration.json (assault with forts) + m4_contested_control_calibration.json (contested)'});
  function coarseBattle(spec){
@@ -495,7 +538,7 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   return {winner:attackerWins?'attacker':'defender',casualties:attackerWins?{attacker:winnerCas,defender:loser}:{attacker:loser,defender:winnerCas},p};
  }
  return Object.freeze({RULES,TEMPLATES,PRESET_BY_SIZE,presetForSize,presetFloor,create,neighbors,connectedSectors,powered,radioLevel,radioSettings,
-  viewFor,validateOrder,validateOrders,resolveTurn,checkVictory,coarseBattle,COARSE});
+  viewFor,validateOrder,validateOrders,resolveTurn,resolveTurnSteps,checkVictory,coarseBattle,COARSE});
 });
 </script>
 <script id="campaignAiCore">
@@ -652,15 +695,77 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
  }
  const playerView=g=>C.viewFor(g.state,ME);
  const aiSeed=(g,turn)=>(Math.imul(g.seed,7919)+Math.imul(turn+1,104729))>>>0;
- function submitTurn(g,orders=[]){
+ /** A turn in steps: startTurn() runs to the first battle and stops there (t.spec), so the page can let the player
+   * watch it in the real engine (feedBattle with its result) or settle it with the coarse model (quickBattle).
+   * finishTurn() then returns the new game and the fog-of-war report. */
+ function startTurn(g,orders=[]){
   const check=C.validateOrders(g.state,ME,orders);
   if(!check.ok)return {ok:false,reason:check.reason,game:g};
   if(g.state.winner)return {ok:false,reason:'เกมจบแล้ว',game:g};
-  const before=playerView(g);
   const enemy=AI.decideOrders(C.viewFor(g.state,FOE),g.personality,aiSeed(g,g.state.turn));
-  const res=C.resolveTurn(g.state,{player:orders,enemy});
-  const game={...g,state:res.state,turns:g.turns.concat([orders.map(o=>({...o}))])};
-  return {ok:true,game,events:res.events,battles:res.battles,report:turnReport(g.template,before,res.events,res.battles,C.viewFor(res.state,ME),orders)};
+  const steps=C.resolveTurnSteps(g.state,{player:orders,enemy});
+  return advance({ok:true,game:g,orders:orders.map(o=>({...o})),before:playerView(g),steps,index:0,real:{},spec:null,done:null},steps.next());
+ }
+ function advance(t,step){if(step.done){t.spec=null;t.done=step.value;}else t.spec=step.value;return t;}
+ function feedBattle(t,result){
+  if(!t.spec)throw new Error('no battle is waiting');
+  if(result&&result.source==='real')t.real[t.index]=storedResult(result);
+  t.index++;return advance(t,t.steps.next(result));
+ }
+ const quickBattle=t=>feedBattle(t,C.coarseBattle(t.spec));
+ function finishTurn(t){
+  if(!t.done)throw new Error('turn still has battles to resolve');
+  const res=t.done,turn={orders:t.orders,...(Object.keys(t.real).length?{real:t.real}:{})};
+  const game={...t.game,state:res.state,turns:t.game.turns.concat([turn])};
+  return {ok:true,game,events:res.events,battles:res.battles,report:turnReport(t.game.template,t.before,res.events,res.battles,C.viewFor(res.state,ME),t.orders)};
+ }
+ /** Whole turn at once; battles use `resolve(spec,index)` when given (stored real results), else the coarse model. */
+ function submitTurn(g,orders=[],resolve=null){
+  const t=startTurn(g,orders);if(!t.ok)return t;
+  while(t.spec){const r=resolve&&resolve(t.spec,t.index);if(r)feedBattle(t,r);else quickBattle(t);}
+  return finishTurn(t);
+ }
+ function storedResult(r){
+  const ids=a=>Array.isArray(a)?a.filter(x=>typeof x==='string').slice(0,16):[];
+  return {winner:['attacker','defender','draw'].includes(r.winner)?r.winner:'draw',source:'real',
+   dead:{attacker:ids(r.dead?.attacker),defender:ids(r.dead?.defender)},
+   casualties:{attacker:Math.max(0,r.casualties?.attacker|0),defender:Math.max(0,r.casualties?.defender|0)},
+   ...(Number.isFinite(r.time)?{time:Math.round(r.time*10)/10}:{})};
+ }
+
+ // ---- real battle bridge (index.html?mode=duel2&campaign=1) -------------------------------------------
+ const KIND_NAME={meeting:'ปะทะกลางทาง',contested:'ชิงเขต',assault:'บุกเขต'};
+ /** Engine settings for a map battle. The player's side is always the engine's BLUE team; the fair (point-symmetric)
+   * arena layouts remove the side advantage of the original layouts. */
+ function battlePlan(spec,template,token=''){
+  const mine=spec.attacker.faction===ME?'attacker':'defender',theirs=mine==='attacker'?'defender':'attacker';
+  const radio=level=>{const r=C.radioSettings(level);return {loss:String(r.loss),delay:String(r.delay)};};
+  const names=Object.fromEntries(C.TEMPLATES[template].sectors.map(([id,name])=>[id,name]));
+  const where=spec.sector.includes('|')?spec.sector.split('|').map(x=>names[x]||x).join(' ↔ '):(names[spec.sector]||spec.sector);
+  const title=(KIND_NAME[spec.kind]||spec.kind)+' '+where+' · BLUE '+spec[mine].size+' vs RED '+spec[theirs].size;
+  const b=radio(spec[mine].radio),r=radio(spec[theirs].radio);
+  const params={mode:'duel2',campaign:'1',dteam:'adaptive',formation:C.presetForSize(spec[mine].size),rformation:C.presetForSize(spec[theirs].size),
+   map:(spec.terrain||'open')+'Fair',seed:String((spec.seed>>>0)%1000000000),bloss:b.loss,bdelay:b.delay,rloss:r.loss,rdelay:r.delay,title,token:String(token)};
+  if(spec.kind!=='meeting')params.mission='control';
+  if(spec.kind==='assault'){params.defender=spec.defender.faction===ME?'blue':'red';params.fort=String(spec.fort|0);}
+  return {params,query:new URLSearchParams(params).toString(),title,token:String(token),mine,theirs,
+   slots:{blue:spec[mine].agents.slice(),red:spec[theirs].agents.slice()},sizes:{blue:spec[mine].size,red:spec[theirs].size}};
+ }
+ /** Turn the engine's report into a battle result; throws on anything that does not match the plan. */
+ function battleResult(plan,msg){
+  if(!msg||msg.type!=='rrt-campaign-battle'||msg.token!==plan.token)throw new Error('ผลการรบไม่ตรงกับการรบนี้');
+  if(!['blue','red','draw'].includes(msg.winner))throw new Error('ผลการรบไม่มีผู้ชนะที่ถูกต้อง');
+  const slots=(t,n)=>Array.from({length:n},(_,i)=>(t==='blue'?'B':'R')+(i+1));
+  const out={dead:{},casualties:{}};
+  for(const t of ['blue','red']){
+   const want=slots(t,plan.sizes[t]),got=msg.fighters?.[t],alive=msg.alive?.[t];
+   if(!Array.isArray(got)||got.length!==want.length||!want.every(id=>got.includes(id)))throw new Error('จำนวนผู้ต่อสู้ไม่ตรงกับแผนที่');
+   if(!Array.isArray(alive)||!alive.every(id=>want.includes(id)))throw new Error('รายชื่อผู้รอดไม่ถูกต้อง');
+   const role=t==='blue'?plan.mine:plan.theirs,dead=want.map((id,i)=>alive.includes(id)?null:plan.slots[t][i]).filter(Boolean);
+   out.dead[role]=dead;out.casualties[role]=dead.length;
+  }
+  const winner=msg.winner==='draw'?'draw':msg.winner==='blue'?plan.mine:plan.theirs;
+  return {winner,dead:out.dead,casualties:out.casualties,source:'real',...(Number.isFinite(msg.time)?{time:msg.time}:{})};
  }
 
  // ---- orders draft ------------------------------------------------------------------------------
@@ -742,7 +847,7 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   const lines=[],put=(e,source,text,sector)=>lines.push({source,text,sector:sector||null,event:e});
   for(const e of events){const mine=e.faction===ME;
    switch(e.type){
-    case 'battle':put(e,'battle',(e.kind==='meeting'?'ปะทะกลางทาง ':e.kind==='assault'?'บุกเขต ':'ชิงเขต ')+nm(e.sector),e.sector);break;
+    case 'battle':put(e,'battle',(e.kind==='meeting'?'ปะทะกลางทาง ':e.kind==='assault'?'บุกเขต ':'ชิงเขต ')+nm(e.sector)+(e.source==='real'?' (การรบจริง)':''),e.sector);break;
     case 'battle_round':put(e,'battle','การรบที่ '+nm(e.sector)+' ต่อยกที่ '+(e.round+1)+' (กำลังเสริมเข้าสนาม)',e.sector);break;
     case 'capture':put(e,'public',side(e.faction)+' ยึด '+nm(e.sector)+' ได้',e.sector);break;
     case 'victory':put(e,'public',(e.winner==='draw'?'เสมอ':side(e.winner)+' ชนะ')+' — '+({hq_captured:'ยึดฐานบัญชาการ',victory_points:'แต้มนำถึงเป้า',turn_limit_vp:'ครบเทิร์น แต้มมากกว่า',turn_limit_sectors:'ครบเทิร์น ครองเขตมากกว่า'}[e.reason]||e.reason));break;
@@ -768,29 +873,52 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
    const w=b.result.winner;
    out.push({sector:b.sector,name:nm(b.sector),kind:b.kind,round:b.round||0,terrain:b.terrain,fort:b.fort,
     mine:b[me].size,theirs:b[them].size,lost:b.result.casualties[me],killed:b.result.casualties[them],
-    outcome:w==='draw'?'draw':w===me?'won':'lost',abstract:true,learning:false});}
+    outcome:w==='draw'?'draw':w===me?'won':'lost',source:b.result.source==='real'?'real':'abstract',abstract:b.result.source!=='real',learning:false});}
   return {turn:before.turn+1,lines,battles:out};
  }
 
  // ---- save / load -------------------------------------------------------------------------------
- function serialize(g){
-  return JSON.stringify({format:'rrt-campaign-save',version:1,rules:RULES_SIG,seed:g.seed,template:g.template,
-   personality:g.personality,turns:g.turns,check:hash(JSON.stringify(g.state))});
+ /** Save: seed, settings and BLUE's orders per turn, plus the results of battles fought in the real engine (those
+   * cannot be recomputed). `pending` keeps an unfinished turn (orders + real results so far) so a reload resumes it. */
+ function serialize(g,pending=null){
+  return JSON.stringify({format:'rrt-campaign-save',version:2,rules:RULES_SIG,seed:g.seed,template:g.template,
+   personality:g.personality,turns:g.turns,check:hash(JSON.stringify(g.state)),
+   ...(pending?{pending:{orders:pending.orders,real:pending.real||{}}}:{})});
  }
- function deserialize(text){
+ const turnShape=t=>Array.isArray(t)?{orders:t,real:{}}:t&&typeof t==='object'&&Array.isArray(t.orders)?{orders:t.orders,real:t.real&&typeof t.real==='object'?t.real:{}}:null;
+ function realShape(real){
+  for(const [k,r] of Object.entries(real)){
+   if(!/^\d{1,3}$/.test(k)||!r||typeof r!=='object'||!['attacker','defender','draw'].includes(r.winner))throw new TypeError('save battle results malformed');
+   for(const side of ['attacker','defender'])if(r.dead&&r.dead[side]!==undefined&&(!Array.isArray(r.dead[side])||r.dead[side].length>12||!r.dead[side].every(x=>typeof x==='string')))throw new TypeError('save battle results malformed');
+  }
+  return Object.fromEntries(Object.entries(real).map(([k,r])=>[k,storedResult({...r,source:'real'})]));
+ }
+ /** Load a save: replays every turn through the rules (stored real results for those battles) and returns the game
+   * plus any unfinished turn. */
+ function loadSave(text){
   if(typeof text!=='string'||text.length>MAX_SAVE_CHARS)throw new RangeError('save too large / ไฟล์ save ใหญ่เกินไป');
   let s;try{s=JSON.parse(text);}catch{throw new SyntaxError('อ่าน save ไม่ได้ (corrupt save)');}
-  if(!s||s.format!=='rrt-campaign-save'||s.version!==1)throw new TypeError('ไม่ใช่ไฟล์ save ของ RRT campaign');
+  if(!s||s.format!=='rrt-campaign-save'||![1,2].includes(s.version))throw new TypeError('ไม่ใช่ไฟล์ save ของ RRT campaign');
   if(!C.TEMPLATES[s.template])throw new RangeError('Unknown map template '+s.template);
   if(!AI.PERSONALITIES.includes(s.personality))throw new RangeError('Unknown AI personality '+s.personality);
-  if(!Array.isArray(s.turns)||s.turns.length>MAX_TURNS_IN_SAVE||!s.turns.every(t=>Array.isArray(t)&&t.every(o=>o&&typeof o==='object')))throw new TypeError('save orders malformed');
+  const turns=Array.isArray(s.turns)&&s.turns.length<=MAX_TURNS_IN_SAVE?s.turns.map(turnShape):null;
+  if(!turns||turns.some(t=>!t||!t.orders.every(o=>o&&typeof o==='object')))throw new TypeError('save orders malformed');
   if(s.rules!==RULES_SIG)throw new Error('save นี้มาจากกติกาเวอร์ชันอื่น (rules ไม่ตรง)');
   let g=newGame({seed:s.seed,template:s.template,personality:s.personality});
-  for(const orders of s.turns){const r=submitTurn(g,orders);if(!r.ok)throw new Error('เล่นซ้ำ save ไม่ตรงกติกา: '+r.reason);g=r.game;}
+  for(const t of turns){const real=realShape(t.real);
+   const r=submitTurn(g,t.orders,(spec,i)=>real[i]||null);if(!r.ok)throw new Error('เล่นซ้ำ save ไม่ตรงกติกา: '+r.reason);g=r.game;}
   if(hash(JSON.stringify(g.state))!==s.check)throw new Error('ผลเล่นซ้ำไม่ตรงกับ save (rules ไม่ตรง)');
-  return g;
+  const p=s.pending&&turnShape(s.pending);
+  return {game:g,pending:p&&!g.state.winner&&p.orders.every(o=>o&&typeof o==='object')?{orders:p.orders,real:realShape(p.real)}:null};
  }
- return Object.freeze({CARD,MAX_SAVE_CHARS,RULES_SIG,layoutFor,mapSize,supplyLinked,newGame,playerView,aiSeed,submitTurn,emptyDraft,checkOrder,setOrder,clearOrder,
+ const deserialize=text=>loadSave(text).game;
+ /** Re-open an unfinished turn: stored real results are fed back in order; stops at the first battle still to fight. */
+ function resumeTurn(g,pending){
+  const t=startTurn(g,pending.orders);if(!t.ok)return t;
+  while(t.spec&&pending.real[t.index])feedBattle(t,pending.real[t.index]);
+  return t;
+ }
+ return Object.freeze({CARD,MAX_SAVE_CHARS,RULES_SIG,layoutFor,mapSize,supplyLinked,newGame,playerView,aiSeed,submitTurn,startTurn,feedBattle,quickBattle,finishTurn,resumeTurn,battlePlan,battleResult,loadSave,emptyDraft,checkOrder,setOrder,clearOrder,
   selectUnit,tapSector,unitActions,arrows,turnReport,serialize,deserialize,sizeLabel});
 });
 </script>
@@ -879,7 +1007,7 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
    (draft.orders.length?'<ul class="orders">'+draft.orders.map(o=>'<li><span><b>'+esc(o.unit)+'</b> '+ORDER_NAME[o.type]+(o.to?' → '+esc(v.sectors.find(x=>x.id===o.to).name):'')+(o.with?' กับ '+esc(o.with):'')+(o.sizes?' '+o.sizes.join('+'):'')+
     '</span><button data-cancel="'+esc(o.unit)+'">ยกเลิก</button></li>').join('')+'</ul>':'<p class="sub">แตะเขตที่มีหน่วยสีฟ้าเพื่อเลือกหน่วย · แตะเขตอื่นเพื่อดูข้อมูล</p>');
  }
- function render(){const v=view();renderStats(v);renderMap(v);renderSheet(v);$('bEnd').disabled=!!v.winner||!!playback;}
+ function render(){const v=view();renderStats(v);renderMap(v);renderSheet(v);$('bEnd').disabled=!!v.winner||!!playback||!!turn;}
 
  // ---- input ----
  $('map').addEventListener('click',ev=>{if(playback||game.state.winner)return;const v=view();
@@ -902,15 +1030,47 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
   render();});
 
  // ---- turn & playback ----
- function endTurn(){if(playback||game.state.winner)return false;
-  const r=UI.submitTurn(game,draft.orders);if(!r.ok){note(r.reason,true);return false;}
-  game=r.game;draft=UI.emptyDraft();info=null;lastReport=r.report;store.set(AUTO,UI.serialize(game));
-  startPlayback(r.report);return true;}
+ // A turn runs in steps: each battle waits for the player's choice (watch the real battle, or the quick result).
+ let turn=null,plan=null,quickAll=false,arenaResult=null;
+ const autosave=()=>store.set(AUTO,UI.serialize(game,turn&&!turn.done?{orders:turn.orders,real:turn.real}:null));
+ function endTurn(){if(playback||turn||game.state.winner)return false;
+  const t=UI.startTurn(game,draft.orders);if(!t.ok){note(t.reason,true);return false;}
+  turn=t;quickAll=false;draft=UI.emptyDraft();info=null;autosave();nextBattle();return true;}
+ function nextBattle(){
+  while(turn.spec&&quickAll)UI.quickBattle(turn);
+  if(turn.spec){showBattle();return;}
+  const r=UI.finishTurn(turn);turn=null;plan=null;game=r.game;lastReport=r.report;autosave();$('battle').classList.remove('open');
+  startPlayback(r.report);}
+ const TERR={ruins:'ซากเมือง',open:'ทุ่งโล่ง',lanes:'ถนน/ตรอก'},RADIO=['อ่อน','พอใช้','ชัด'];
+ function showBattle(){
+  const token=Array.from(crypto.getRandomValues(new Uint8Array(8)),x=>x.toString(16).padStart(2,'0')).join('');
+  plan=UI.battlePlan(turn.spec,game.template,token);const sp=turn.spec,me=sp[plan.mine],foe=sp[plan.theirs];
+  $('bTitle').textContent=plan.title+(sp.round?' · ยก '+(sp.round+1):'');
+  $('bInfo').textContent='ภูมิประเทศ '+(TERR[sp.terrain]||sp.terrain)+(sp.kind==='assault'?' · ฝ่ายรับ '+(plan.params.defender==='blue'?'BLUE':'RED')+' ป้อม '+sp.fort:'')+' · วิทยุ BLUE '+RADIO[me.radio|0]+' / RED '+RADIO[foe.radio|0]+
+   ' · การรบจริงใช้เวลาสูงสุด 150 วินาทีในเกม (เร่งได้ ×4)';
+  $('report').classList.remove('open');$('battle').classList.add('open');render();
+ }
+ function watchBattle(){if(!plan)return;$('battle').classList.remove('open');arenaResult=null;
+  $('aTitle').textContent=plan.title;$('aDone').hidden=true;$('arena').hidden=false;
+  $('aFrame').src='index.html?'+plan.query+'&speed='+encodeURIComponent(store.get('rrt-campaign-speed')||'1');}
+ function closeArena(){$('arena').hidden=true;$('aFrame').src='about:blank';}
+ function settle(result){closeArena();UI.feedBattle(turn,result);plan=null;autosave();nextBattle();}
+ window.addEventListener('message',ev=>{if(!plan||$('arena').hidden||ev.source!==$('aFrame').contentWindow)return;onEngine(ev.data);});
+ function onEngine(msg){
+  if(!plan)return false;let r;try{r=UI.battleResult(plan,msg);}catch(e){note('ผลการรบอ่านไม่ได้: '+e.message,true);return false;}
+  arenaResult=r;const mine=plan.mine,won=r.winner===mine,draw=r.winner==='draw';
+  $('aResult').textContent=(draw?'เสมอ':won?'BLUE ชนะ':'BLUE แพ้')+' · BLUE เสีย '+r.casualties[mine]+' · RED เสีย '+r.casualties[plan.theirs];
+  $('aDone').hidden=false;return true;}
+ $('bWatch').onclick=watchBattle;
+ $('bQuick').onclick=()=>{if(!turn?.spec)return;UI.quickBattle(turn);plan=null;autosave();nextBattle();};
+ $('bQuickAll').onclick=()=>{if(!turn?.spec)return;quickAll=true;nextBattle();};
+ $('aBack').onclick=()=>{if(arenaResult)settle(arenaResult);};
+ $('aCancel').onclick=()=>{if(!turn?.spec)return;closeArena();UI.quickBattle(turn);plan=null;autosave();nextBattle();};
  function startPlayback(rep){
   $('rTitle').textContent='ผลเทิร์น '+rep.turn+(rep.lines.length?'':' — ไม่มีเหตุการณ์ที่ BLUE รับรู้');
   $('rLines').innerHTML=rep.lines.map(l=>'<li class="'+l.source+'">'+esc(l.text)+'</li>').join('');
   $('rFights').innerHTML=rep.battles.map(b=>'<div class="fight">'+esc(b.name)+(b.round?' (ยก '+(b.round+1)+')':'')+' · <b class="'+b.outcome+'">'+({won:'BLUE ชนะ',lost:'BLUE แพ้',draw:'เสมอ'}[b.outcome])+'</b>'+
-   '<span class="badge">ผลรบแบบย่อ · ไม่บันทึกการเรียนรู้</span><br>BLUE '+b.mine+' คน (เสีย '+b.lost+') vs RED '+b.theirs+' คน (เสีย '+b.killed+')'+(b.fort?' · ป้อม '+b.fort:'')+'</div>').join('');
+   (b.source==='real'?'<span class="badge real">การรบจริง</span>':'<span class="badge">ผลรบแบบย่อ</span>')+'<br>BLUE '+b.mine+' คน (เสีย '+b.lost+') vs RED '+b.theirs+' คน (เสีย '+b.killed+')'+(b.fort?' · ป้อม '+b.fort:'')+'</div>').join('');
   $('report').classList.add('open');const items=[...$('rLines').children];let i=0;
   playback={timer:null};
   const step=()=>{if(i>=items.length){finishPlayback(false);return;}items[i].classList.add('shown');flash=rep.lines[i].sector;i++;render();playback.timer=setTimeout(step,650);};
@@ -925,7 +1085,8 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
 
  // ---- new game / save / load ----
  function start(opts){const personality=opts.personality==='random'?AI.PERSONALITIES[(opts.seed>>>0)%AI.PERSONALITIES.length]:opts.personality;
-  game=UI.newGame({seed:opts.seed,template:opts.template,personality});draft=UI.emptyDraft();info=null;store.set(AUTO,UI.serialize(game));render();
+  closeArena();$('battle').classList.remove('open');turn=null;plan=null;
+  game=UI.newGame({seed:opts.seed,template:opts.template,personality});draft=UI.emptyDraft();info=null;autosave();render();
   note('เริ่ม '+(opts.template==='nova9'?'NOVA-9':'Frontline Basin')+' · seed '+game.seed+' — แตะเขตที่มีหน่วย BLUE เพื่อเลือก');}
  $('bNew').onclick=()=>{$('nMap').value=game.template;$('nSeed').value=String(Math.floor(Math.random()*1e6));$('dNew').showModal();};
  $('dNew').addEventListener('close',()=>{if($('dNew').returnValue!=='ok')return;
@@ -938,7 +1099,10 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
  $('bSave').onclick=()=>{if(!playback)openSave('save');};
  $('bLoad').onclick=()=>{if(!playback)openSave('load');};
  $('svCopy').onclick=ev=>{ev.preventDefault();const t=$('svText');t.select();try{navigator.clipboard?.writeText(t.value);}catch{}try{document.execCommand('copy');}catch{}$('svNote').textContent='คัดลอกแล้ว';};
- function loadText(text){game=UI.deserialize(text);draft=UI.emptyDraft();info=null;store.set(AUTO,UI.serialize(game));render();}
+ function loadText(text){const {game:g,pending}=UI.loadSave(text);closeArena();$('battle').classList.remove('open');
+  game=g;turn=null;plan=null;draft=UI.emptyDraft();info=null;
+  if(pending){const t=UI.resumeTurn(game,pending);if(t.ok){turn=t;autosave();nextBattle();return;}}
+  autosave();render();}
  $('dSave').addEventListener('close',()=>{if($('dSave').returnValue!=='ok'||$('dSave').dataset.mode!=='load')return;
   try{loadText($('svText').value.trim());note('โหลดเกมแล้ว · เทิร์น '+game.state.turn);}catch(e){note('โหลดไม่ได้: '+e.message,true);}});
 
@@ -952,7 +1116,10 @@ textarea{height:96px;font-family:ui-monospace,monospace;font-size:11px;resize:ve
  globalThis.__rrtCampaignDebug=Object.freeze({view,draft:()=>JSON.parse(JSON.stringify(draft)),report:()=>lastReport,
   tapSector:id=>$('map').querySelector('[data-sector="'+id+'"] rect').dispatchEvent(new MouseEvent('click',{bubbles:true})),
   endTurn,skip:()=>finishPlayback(true),
-  order:o=>{const r=UI.setOrder(draft,view(),o);if(r.ok){draft=r.draft;render();}return r.ok;},save:()=>UI.serialize(game),load:loadText,start,playing:()=>!!playback});
+  order:o=>{const r=UI.setOrder(draft,view(),o);if(r.ok){draft=r.draft;render();}return r.ok;},save:()=>UI.serialize(game,turn&&!turn.done?{orders:turn.orders,real:turn.real}:null),load:loadText,start,playing:()=>!!playback,
+  battle:()=>plan&&{title:plan.title,query:plan.query,params:{...plan.params},slots:JSON.parse(JSON.stringify(plan.slots))},
+  watch:watchBattle,quick:()=>$('bQuick').click(),quickAll:()=>$('bQuickAll').click(),engine:onEngine,back:()=>$('aBack').click(),
+  arenaOpen:()=>!$('arena').hidden,inTurn:()=>!!turn});
 })();
 </script>
 </body>

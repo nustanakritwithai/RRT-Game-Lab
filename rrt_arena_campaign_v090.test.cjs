@@ -229,7 +229,13 @@ test('coarse model matches the measured real-battle table (M0-S3) within toleran
  }
 });
 test('contested (control-zone) model matches the measured M4 table within tolerance',()=>{
- for(const row of require('./benchmarks/v090_map/m4_contested_control_calibration.json').table){
+ // Lanes / open from the original M4 table; ruins from the point-symmetric arena that map battles actually use.
+ const fair=[...require('./benchmarks/v090_map/m4_fair_side_bias.json').rows.control,...require('./benchmarks/v090_map/m4_fair_quick_check.json').rows.control]
+  .filter(r=>r.map==='ruinsFair'),cells={};
+ for(const r of fair){const k=r.a+':'+r.b;const c=cells[k]=cells[k]||{a:r.a,b:r.b,map:'ruins',n:0,w:0,la:0,lb:0};c.n++;if(r.aWon)c.w++;c.la+=r.aLost;c.lb+=r.bLost;}
+ const ruinsRows=Object.values(cells).map(c=>({a:c.a,b:c.b,map:'ruins',n:c.n,pA:c.w/c.n,meanALost:c.la/c.n,meanBLost:c.lb/c.n}));
+ assert.ok(ruinsRows.length>=4);
+ for(const row of [...require('./benchmarks/v090_map/m4_contested_control_calibration.json').table.filter(r=>r.map!=='ruins'),...ruinsRows]){
   let w=0,lost=0;const N=400;
   for(let k=0;k<N;k++){const r=C.coarseBattle({kind:'contested',attacker:{size:row.a},defender:{size:row.b},fort:0,terrain:row.map,seed:k*29+3});
    if(r.winner==='attacker')w++;lost+=r.casualties.attacker+r.casualties.defender;}
@@ -334,4 +340,26 @@ test('unattended forts decay to their base level; attended ones do not',()=>{
  assert.equal(s.sectors.find(x=>x.id==='C1').fort,C.RULES.hqFort,'HQ keeps its base fort');
  let t=nova();const u=t.units.find(x=>x.faction==='player');u.sector='S1';t.sectors.find(x=>x.id==='S1').fort=2;
  t=C.resolveTurn(t,{player:[{unit:u.id,type:'hold'}],enemy:[]},noBattles).state;assert.equal(t.sectors.find(x=>x.id==='S1').fort,2);
+});
+test('resolveTurnSteps yields each battle and gives the same result as resolveTurn with that resolver',()=>{
+ let s=C.create({seed:7,template:'nova9'});
+ const orders={player:s.units.filter(u=>u.faction==='player').map(u=>({unit:u.id,type:'move',to:'C2'})),
+  enemy:s.units.filter(u=>u.faction==='enemy').map(u=>({unit:u.id,type:'move',to:'C2'}))};
+ const steps=C.resolveTurnSteps(s,orders);const seen=[];let st=steps.next();
+ while(!st.done){seen.push(st.value);assert.ok(st.value.attacker.agents.length&&st.value.defender.agents.length);st=steps.next(C.coarseBattle(st.value));}
+ assert.ok(seen.length>=1&&seen[0].kind==='contested'&&seen[0].sector==='C2');
+ assert.deepEqual(st.value.state,C.resolveTurn(s,orders).state);
+ assert.equal(s.turn,0,'input untouched');
+});
+test('a resolver can name exactly which agents fell; a malformed list falls back to the count',()=>{
+ const s=C.create({seed:7,template:'nova9'});
+ const orders={player:s.units.filter(u=>u.faction==='player').map(u=>({unit:u.id,type:'move',to:'C2'})),
+  enemy:s.units.filter(u=>u.faction==='enemy').map(u=>({unit:u.id,type:'move',to:'C2'}))};
+ let picked=null;
+ const named=C.resolveTurn(s,orders,spec=>{picked=spec.defender.agents.slice(1,4);return {winner:'attacker',casualties:{attacker:0,defender:0},dead:{attacker:[],defender:picked},source:'real'};});
+ const injured=named.state.roster.filter(a=>a.injuredTurns>0).map(a=>a.id).sort();
+ assert.deepEqual(injured,picked.slice().sort(),'exactly the named agents are injured');
+ assert.equal(named.battles[0].result.source,'real');assert.equal(named.events.find(e=>e.type==='battle').source,'real');
+ const bad=C.resolveTurn(s,orders,()=>({winner:'attacker',casualties:{attacker:0,defender:2},dead:{defender:['nobody']}}));
+ assert.equal(bad.state.roster.filter(a=>a.injuredTurns>0).length,2,'unknown ids ignored, count used');
 });
