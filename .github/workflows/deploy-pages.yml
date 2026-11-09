@@ -64,6 +64,9 @@ jobs:
         run: |
           mkdir -p dist
           cp index.html campaign.html network-lab.html network_lab_core.js network_lab_ui.js dist/
+          # Keep the warlord prototype separate without modifying the RRT game.
+          test -s thongsuek/index.html
+          cp -R thongsuek dist/
           touch dist/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
